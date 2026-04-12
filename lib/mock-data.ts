@@ -702,6 +702,21 @@ export function getDashboardMetrics(userId?: string, teamId?: string): Dashboard
   })
   const totalClawbacks = relevantClawbacks.reduce((sum, c) => sum + c.clawbackAmount, 0)
 
+  // FPC (First Payment Cleared) - commissions that have been paid (cleared)
+  const fpcCommissions = relevantCommissions.filter(c => c.status === 'paid')
+  const debtLoadFPC = fpcCommissions.reduce((sum, c) => sum + c.loanAmount, 0)
+  const unitsFPC = fpcCommissions.length
+
+  // Conversion rates
+  const totalLeads = unitsSubmitted + unitsEnrolled // Total opportunities
+  const conversionRate = totalLeads > 0 ? (unitsEnrolled / totalLeads) * 100 : 0
+  // Qualified = applications and beyond in pipeline
+  const qualifiedPipeline = relevantPipeline.filter(p => 
+    ['application', 'processing', 'underwriting', 'approved', 'closing'].includes(p.status)
+  )
+  const qualifiedLeads = qualifiedPipeline.length + unitsEnrolled
+  const qualifiedConversionRate = qualifiedLeads > 0 ? (unitsEnrolled / qualifiedLeads) * 100 : 0
+
   return {
     debtLoadEnrolled,
     debtLoadEnrolledChange: 12.5,
@@ -711,6 +726,14 @@ export function getDashboardMetrics(userId?: string, teamId?: string): Dashboard
     debtLoadSubmittedChange: 18.7,
     unitsSubmitted,
     unitsSubmittedChange: 15.2,
+    debtLoadFPC,
+    debtLoadFPCChange: 9.8,
+    unitsFPC,
+    unitsFPCChange: 7.2,
+    conversionRate,
+    conversionRateChange: 3.5,
+    qualifiedConversionRate,
+    qualifiedConversionRateChange: 5.1,
     totalCommissions,
     commissionsChange: 15.2,
     totalClawbacks,
@@ -753,18 +776,28 @@ export function getTeamMetrics(): TeamMetrics[] {
 // Default dashboard layout
 export const defaultDashboardLayout: DashboardLayout = {
   widgets: [
+    // Row 1: Enrolled & Submitted
     { id: 'kpi-debt-enrolled', type: 'kpi', title: 'Debt Load Enrolled', size: 'small', order: 1, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
     { id: 'kpi-units-enrolled', type: 'kpi', title: 'Units Enrolled', size: 'small', order: 2, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
     { id: 'kpi-debt-submitted', type: 'kpi', title: 'Debt Load Submitted', size: 'small', order: 3, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
     { id: 'kpi-units-submitted', type: 'kpi', title: 'Units Submitted', size: 'small', order: 4, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
-    { id: 'kpi-commissions', type: 'kpi', title: 'Commission', size: 'small', order: 5, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
-    { id: 'kpi-clawbacks', type: 'kpi', title: 'Clawbacks', size: 'small', order: 6, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
-    { id: 'chart-debt', type: 'chart', title: 'Debt Load Trend', size: 'large', order: 7, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
-    { id: 'chart-pipeline', type: 'chart', title: 'Pipeline by Status', size: 'medium', order: 8, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
-    { id: 'table-pipeline', type: 'table', title: 'Active Pipeline', size: 'large', order: 9, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
-    { id: 'list-announcements', type: 'list', title: 'Recent Announcements', size: 'medium', order: 10, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
-    { id: 'table-team', type: 'table', title: 'Team Performance', size: 'large', order: 11, visible: true, roleAccess: ['leadership', 'executive'] },
-    { id: 'chart-comparison', type: 'chart', title: 'Team Comparison', size: 'large', order: 12, visible: true, roleAccess: ['executive'] },
+    // Row 2: FPC & Conversion
+    { id: 'kpi-debt-fpc', type: 'kpi', title: 'Debt Load FPC', size: 'small', order: 5, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
+    { id: 'kpi-units-fpc', type: 'kpi', title: 'Units FPC', size: 'small', order: 6, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
+    { id: 'kpi-conversion', type: 'kpi', title: 'Conversion Rate', size: 'small', order: 7, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
+    { id: 'kpi-qualified-conversion', type: 'kpi', title: 'Qualified Conversion', size: 'small', order: 8, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
+    // Row 3: Financial
+    { id: 'kpi-commissions', type: 'kpi', title: 'Commission', size: 'small', order: 9, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
+    { id: 'kpi-clawbacks', type: 'kpi', title: 'Clawbacks', size: 'small', order: 10, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
+    { id: 'kpi-avg-debt', type: 'kpi', title: 'Avg Debt Size', size: 'small', order: 11, visible: true, roleAccess: ['leadership', 'executive'] },
+    { id: 'kpi-closing-rate', type: 'kpi', title: 'Closing Rate', size: 'small', order: 12, visible: true, roleAccess: ['leadership', 'executive'] },
+    // Charts & Tables
+    { id: 'chart-debt', type: 'chart', title: 'Debt Load Trend', size: 'large', order: 13, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
+    { id: 'chart-pipeline', type: 'chart', title: 'Pipeline by Status', size: 'medium', order: 14, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
+    { id: 'table-pipeline', type: 'table', title: 'Active Pipeline', size: 'large', order: 15, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
+    { id: 'list-announcements', type: 'list', title: 'Recent Announcements', size: 'medium', order: 16, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
+    { id: 'table-team', type: 'table', title: 'Team Performance', size: 'large', order: 17, visible: true, roleAccess: ['leadership', 'executive'] },
+    { id: 'chart-comparison', type: 'chart', title: 'Team Comparison', size: 'large', order: 18, visible: true, roleAccess: ['executive'] },
   ],
   lastUpdated: new Date().toISOString(),
 }

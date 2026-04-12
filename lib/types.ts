@@ -111,6 +111,16 @@ export interface DashboardMetrics {
   debtLoadSubmittedChange: number
   unitsSubmitted: number
   unitsSubmittedChange: number
+  // FPC (First Payment Cleared) metrics
+  debtLoadFPC: number
+  debtLoadFPCChange: number
+  unitsFPC: number
+  unitsFPCChange: number
+  // Conversion metrics
+  conversionRate: number
+  conversionRateChange: number
+  qualifiedConversionRate: number
+  qualifiedConversionRateChange: number
   // Financial metrics
   totalCommissions: number
   commissionsChange: number
