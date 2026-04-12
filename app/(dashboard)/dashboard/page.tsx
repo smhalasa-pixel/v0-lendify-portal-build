@@ -91,35 +91,53 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* KPI Cards - Row 1: Enrolled */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <KPICard
-          title="Total Volume"
-          value={metrics.totalVolume}
-          change={metrics.volumeChange}
+          title="Debt Load Enrolled"
+          value={metrics.debtLoadEnrolled}
+          change={metrics.debtLoadEnrolledChange}
           format="currency"
           icon={<DollarSign className="size-4" />}
         />
         <KPICard
-          title="Total Units"
-          value={metrics.totalUnits}
-          change={metrics.unitsChange}
+          title="Units Enrolled"
+          value={metrics.unitsEnrolled}
+          change={metrics.unitsEnrolledChange}
           format="number"
           icon={<FileText className="size-4" />}
         />
         <KPICard
-          title="Commissions"
+          title="Commission"
           value={metrics.totalCommissions}
           change={metrics.commissionsChange}
           format="currency"
           icon={<TrendingUp className="size-4" />}
         />
+      </div>
+
+      {/* KPI Cards - Row 2: Submitted & Clawbacks */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <KPICard
-          title="Pipeline Value"
-          value={metrics.pipelineValue}
-          change={metrics.pipelineChange}
+          title="Debt Load Submitted"
+          value={metrics.debtLoadSubmitted}
+          change={metrics.debtLoadSubmittedChange}
           format="currency"
           icon={<Briefcase className="size-4" />}
+        />
+        <KPICard
+          title="Units Submitted"
+          value={metrics.unitsSubmitted}
+          change={metrics.unitsSubmittedChange}
+          format="number"
+          icon={<Target className="size-4" />}
+        />
+        <KPICard
+          title="Clawbacks"
+          value={metrics.totalClawbacks}
+          change={metrics.clawbacksChange}
+          format="currency"
+          icon={<Users className="size-4" />}
         />
       </div>
 

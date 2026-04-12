@@ -106,7 +106,7 @@ export default function LeaderboardsPage() {
               <div className="flex-1">
                 <p className="font-medium">Your Current Ranking</p>
                 <p className="text-sm text-muted-foreground">
-                  {formatCurrency(userRank.totalVolume)} in volume | {userRank.totalUnits} units
+                  {formatCurrency(userRank.debtLoadEnrolled)} enrolled | {userRank.unitsEnrolled} units
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -156,12 +156,12 @@ export default function LeaderboardsPage() {
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div>
                   <p className="text-lg font-bold text-primary">
-                    {formatCurrency(entry.totalVolume / 1000000)}M
+                    {formatCurrency(entry.debtLoadEnrolled / 1000000)}M
                   </p>
-                  <p className="text-xs text-muted-foreground">Volume</p>
+                  <p className="text-xs text-muted-foreground">Enrolled</p>
                 </div>
                 <div>
-                  <p className="text-lg font-bold">{entry.totalUnits}</p>
+                  <p className="text-lg font-bold">{entry.unitsEnrolled}</p>
                   <p className="text-xs text-muted-foreground">Units</p>
                 </div>
                 <div>
@@ -196,9 +196,9 @@ export default function LeaderboardsPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">
-                  {formatCurrency(leaderboard.reduce((sum, e) => sum + e.totalVolume, 0))}
+                  {formatCurrency(leaderboard.reduce((sum, e) => sum + e.debtLoadEnrolled, 0))}
                 </p>
-                <p className="text-sm text-muted-foreground">Total Volume</p>
+                <p className="text-sm text-muted-foreground">Total Debt Load Enrolled</p>
               </div>
             </div>
           </CardContent>
@@ -211,9 +211,9 @@ export default function LeaderboardsPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">
-                  {leaderboard.reduce((sum, e) => sum + e.totalUnits, 0)}
+                  {leaderboard.reduce((sum, e) => sum + e.unitsEnrolled, 0)}
                 </p>
-                <p className="text-sm text-muted-foreground">Total Units</p>
+                <p className="text-sm text-muted-foreground">Total Units Enrolled</p>
               </div>
             </div>
           </CardContent>
@@ -237,7 +237,7 @@ export default function LeaderboardsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Full Rankings</CardTitle>
-          <CardDescription>All agents ranked by total volume</CardDescription>
+          <CardDescription>All agents ranked by debt load enrolled</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -246,9 +246,9 @@ export default function LeaderboardsPage() {
                 <TableHead className="w-[60px]">Rank</TableHead>
                 <TableHead>Agent</TableHead>
                 <TableHead>Team</TableHead>
-                <TableHead className="text-right">Volume</TableHead>
+                <TableHead className="text-right">Debt Enrolled</TableHead>
                 <TableHead className="text-right">Units</TableHead>
-                <TableHead className="text-right">Commissions</TableHead>
+                <TableHead className="text-right">Commission</TableHead>
                 <TableHead className="text-center">Trend</TableHead>
               </TableRow>
             </TableHeader>
@@ -281,9 +281,9 @@ export default function LeaderboardsPage() {
                   </TableCell>
                   <TableCell className="text-muted-foreground">{entry.teamName}</TableCell>
                   <TableCell className="text-right font-medium">
-                    {formatCurrency(entry.totalVolume)}
+                    {formatCurrency(entry.debtLoadEnrolled)}
                   </TableCell>
-                  <TableCell className="text-right">{entry.totalUnits}</TableCell>
+                  <TableCell className="text-right">{entry.unitsEnrolled}</TableCell>
                   <TableCell className="text-right text-success font-medium">
                     {formatCurrency(entry.totalCommissions)}
                   </TableCell>

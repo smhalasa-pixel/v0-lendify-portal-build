@@ -454,8 +454,8 @@ export const mockLeaderboard: LeaderboardEntry[] = [
     agentName: 'Sarah Johnson',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah',
     teamName: 'West Coast Team',
-    totalVolume: 4250000,
-    totalUnits: 12,
+    debtLoadEnrolled: 4250000,
+    unitsEnrolled: 12,
     totalCommissions: 53125,
     previousRank: 2,
     trend: 'up',
@@ -466,8 +466,8 @@ export const mockLeaderboard: LeaderboardEntry[] = [
     agentName: 'Emily Brown',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Emily',
     teamName: 'East Coast Team',
-    totalVolume: 3890000,
-    totalUnits: 11,
+    debtLoadEnrolled: 3890000,
+    unitsEnrolled: 11,
     totalCommissions: 48625,
     previousRank: 1,
     trend: 'down',
@@ -478,8 +478,8 @@ export const mockLeaderboard: LeaderboardEntry[] = [
     agentName: 'David Williams',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=David',
     teamName: 'West Coast Team',
-    totalVolume: 3450000,
-    totalUnits: 9,
+    debtLoadEnrolled: 3450000,
+    unitsEnrolled: 9,
     totalCommissions: 43125,
     previousRank: 3,
     trend: 'same',
@@ -490,8 +490,8 @@ export const mockLeaderboard: LeaderboardEntry[] = [
     agentName: 'Alex Thompson',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex',
     teamName: 'West Coast Team',
-    totalVolume: 2980000,
-    totalUnits: 8,
+    debtLoadEnrolled: 2980000,
+    unitsEnrolled: 8,
     totalCommissions: 37250,
     previousRank: 5,
     trend: 'up',
@@ -502,8 +502,8 @@ export const mockLeaderboard: LeaderboardEntry[] = [
     agentName: 'Maria Santos',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Maria',
     teamName: 'East Coast Team',
-    totalVolume: 2750000,
-    totalUnits: 7,
+    debtLoadEnrolled: 2750000,
+    unitsEnrolled: 7,
     totalCommissions: 34375,
     previousRank: 4,
     trend: 'down',
@@ -514,8 +514,8 @@ export const mockLeaderboard: LeaderboardEntry[] = [
     agentName: 'Ryan Park',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ryan',
     teamName: 'Central Team',
-    totalVolume: 2450000,
-    totalUnits: 6,
+    debtLoadEnrolled: 2450000,
+    unitsEnrolled: 6,
     totalCommissions: 30625,
     previousRank: 7,
     trend: 'up',
@@ -526,8 +526,8 @@ export const mockLeaderboard: LeaderboardEntry[] = [
     agentName: 'Jessica Kim',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jessica',
     teamName: 'Central Team',
-    totalVolume: 2100000,
-    totalUnits: 5,
+    debtLoadEnrolled: 2100000,
+    unitsEnrolled: 5,
     totalCommissions: 26250,
     previousRank: 6,
     trend: 'down',
@@ -538,8 +538,8 @@ export const mockLeaderboard: LeaderboardEntry[] = [
     agentName: 'Brian Rodriguez',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Brian',
     teamName: 'East Coast Team',
-    totalVolume: 1850000,
-    totalUnits: 5,
+    debtLoadEnrolled: 1850000,
+    unitsEnrolled: 5,
     totalCommissions: 23125,
     previousRank: 8,
     trend: 'same',
@@ -661,6 +661,7 @@ export function generateUnitsChartData(days: number): ChartDataPoint[] {
 
 // Dashboard metrics calculation
 export function getDashboardMetrics(userId?: string, teamId?: string): DashboardMetrics {
+  // Filter commissions (enrolled/funded loans)
   const relevantCommissions = mockCommissions.filter(c => {
     if (userId) return c.agentId === userId
     if (teamId) {
@@ -670,11 +671,13 @@ export function getDashboardMetrics(userId?: string, teamId?: string): Dashboard
     return true
   })
 
-  const totalVolume = relevantCommissions.reduce((sum, c) => sum + c.loanAmount, 0)
-  const totalUnits = relevantCommissions.length
+  // Enrolled = funded loans
+  const debtLoadEnrolled = relevantCommissions.reduce((sum, c) => sum + c.loanAmount, 0)
+  const unitsEnrolled = relevantCommissions.length
   const totalCommissions = relevantCommissions.reduce((sum, c) => sum + c.commissionAmount, 0)
-  const avgLoanSize = totalUnits > 0 ? totalVolume / totalUnits : 0
+  const avgLoanSize = unitsEnrolled > 0 ? debtLoadEnrolled / unitsEnrolled : 0
 
+  // Filter pipeline (submitted loans in progress)
   const relevantPipeline = mockPipeline.filter(p => {
     if (userId) return p.agentId === userId
     if (teamId) {
@@ -684,18 +687,37 @@ export function getDashboardMetrics(userId?: string, teamId?: string): Dashboard
     return true
   })
 
-  const pipelineValue = relevantPipeline.reduce((sum, p) => sum + p.loanAmount, 0)
+  // Submitted = loans in pipeline
+  const debtLoadSubmitted = relevantPipeline.reduce((sum, p) => sum + p.loanAmount, 0)
+  const unitsSubmitted = relevantPipeline.length
+
+  // Clawbacks
+  const relevantClawbacks = mockClawbacks.filter(c => {
+    if (userId) return c.agentId === userId
+    if (teamId) {
+      const agent = mockUsers.find(u => u.id === c.agentId)
+      return agent?.teamId === teamId
+    }
+    return true
+  })
+  const totalClawbacks = relevantClawbacks.reduce((sum, c) => sum + c.clawbackAmount, 0)
 
   return {
-    totalVolume,
-    volumeChange: 12.5,
-    totalUnits,
-    unitsChange: 8.3,
+    debtLoadEnrolled,
+    debtLoadEnrolledChange: 12.5,
+    unitsEnrolled,
+    unitsEnrolledChange: 8.3,
+    debtLoadSubmitted,
+    debtLoadSubmittedChange: 18.7,
+    unitsSubmitted,
+    unitsSubmittedChange: 15.2,
     totalCommissions,
     commissionsChange: 15.2,
+    totalClawbacks,
+    clawbacksChange: -5.3,
     avgLoanSize,
     avgLoanSizeChange: 3.8,
-    pipelineValue,
+    pipelineValue: debtLoadSubmitted,
     pipelineChange: 22.1,
     closingRate: 68.5,
     closingRateChange: 2.4,
@@ -731,16 +753,18 @@ export function getTeamMetrics(): TeamMetrics[] {
 // Default dashboard layout
 export const defaultDashboardLayout: DashboardLayout = {
   widgets: [
-    { id: 'kpi-volume', type: 'kpi', title: 'Total Volume', size: 'small', order: 1, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
-    { id: 'kpi-units', type: 'kpi', title: 'Total Units', size: 'small', order: 2, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
-    { id: 'kpi-commissions', type: 'kpi', title: 'Commissions', size: 'small', order: 3, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
-    { id: 'kpi-pipeline', type: 'kpi', title: 'Pipeline Value', size: 'small', order: 4, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
-    { id: 'chart-volume', type: 'chart', title: 'Volume Trend', size: 'large', order: 5, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
-    { id: 'chart-pipeline', type: 'chart', title: 'Pipeline by Status', size: 'medium', order: 6, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
-    { id: 'table-pipeline', type: 'table', title: 'Active Pipeline', size: 'large', order: 7, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
-    { id: 'list-announcements', type: 'list', title: 'Recent Announcements', size: 'medium', order: 8, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
-    { id: 'table-team', type: 'table', title: 'Team Performance', size: 'large', order: 9, visible: true, roleAccess: ['leadership', 'executive'] },
-    { id: 'chart-comparison', type: 'chart', title: 'Team Comparison', size: 'large', order: 10, visible: true, roleAccess: ['executive'] },
+    { id: 'kpi-debt-enrolled', type: 'kpi', title: 'Debt Load Enrolled', size: 'small', order: 1, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
+    { id: 'kpi-units-enrolled', type: 'kpi', title: 'Units Enrolled', size: 'small', order: 2, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
+    { id: 'kpi-debt-submitted', type: 'kpi', title: 'Debt Load Submitted', size: 'small', order: 3, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
+    { id: 'kpi-units-submitted', type: 'kpi', title: 'Units Submitted', size: 'small', order: 4, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
+    { id: 'kpi-commissions', type: 'kpi', title: 'Commission', size: 'small', order: 5, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
+    { id: 'kpi-clawbacks', type: 'kpi', title: 'Clawbacks', size: 'small', order: 6, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
+    { id: 'chart-debt', type: 'chart', title: 'Debt Load Trend', size: 'large', order: 7, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
+    { id: 'chart-pipeline', type: 'chart', title: 'Pipeline by Status', size: 'medium', order: 8, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
+    { id: 'table-pipeline', type: 'table', title: 'Active Pipeline', size: 'large', order: 9, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
+    { id: 'list-announcements', type: 'list', title: 'Recent Announcements', size: 'medium', order: 10, visible: true, roleAccess: ['agent', 'leadership', 'executive'] },
+    { id: 'table-team', type: 'table', title: 'Team Performance', size: 'large', order: 11, visible: true, roleAccess: ['leadership', 'executive'] },
+    { id: 'chart-comparison', type: 'chart', title: 'Team Comparison', size: 'large', order: 12, visible: true, roleAccess: ['executive'] },
   ],
   lastUpdated: new Date().toISOString(),
 }

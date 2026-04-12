@@ -93,20 +93,30 @@ export interface LeaderboardEntry {
   agentName: string
   avatar?: string
   teamName?: string
-  totalVolume: number
-  totalUnits: number
+  debtLoadEnrolled: number
+  unitsEnrolled: number
   totalCommissions: number
   previousRank?: number
   trend: 'up' | 'down' | 'same'
 }
 
 export interface DashboardMetrics {
-  totalVolume: number
-  volumeChange: number
-  totalUnits: number
-  unitsChange: number
+  // Enrolled metrics (funded/closed)
+  debtLoadEnrolled: number
+  debtLoadEnrolledChange: number
+  unitsEnrolled: number
+  unitsEnrolledChange: number
+  // Submitted metrics (in pipeline)
+  debtLoadSubmitted: number
+  debtLoadSubmittedChange: number
+  unitsSubmitted: number
+  unitsSubmittedChange: number
+  // Financial metrics
   totalCommissions: number
   commissionsChange: number
+  totalClawbacks: number
+  clawbacksChange: number
+  // Legacy/additional metrics
   avgLoanSize: number
   avgLoanSizeChange: number
   pipelineValue: number

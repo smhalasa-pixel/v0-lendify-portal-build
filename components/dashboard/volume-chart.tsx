@@ -17,15 +17,15 @@ interface VolumeChartProps {
 
 const chartConfig = {
   value: {
-    label: 'Volume',
+    label: 'Debt Load',
     color: 'var(--chart-1)',
   },
 } satisfies ChartConfig
 
 export function VolumeChart({
   data,
-  title = 'Loan Volume Trend',
-  description = 'Daily funded loan volume over time',
+  title = 'Debt Load Trend',
+  description = 'Daily enrolled debt load over time',
 }: VolumeChartProps) {
   return (
     <div className="group relative">

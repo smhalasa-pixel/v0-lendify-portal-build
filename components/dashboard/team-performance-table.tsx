@@ -31,8 +31,8 @@ export function TeamPerformanceTable({
   title = 'Team Performance',
   description = 'Performance metrics by team',
 }: TeamPerformanceTableProps) {
-  // Sort by total volume to determine rankings
-  const sortedData = [...data].sort((a, b) => b.totalVolume - a.totalVolume)
+  // Sort by debt load enrolled to determine rankings
+  const sortedData = [...data].sort((a, b) => b.debtLoadEnrolled - a.debtLoadEnrolled)
 
   return (
     <Card className="glass-card border-purple-500/20 overflow-hidden">
@@ -57,9 +57,9 @@ export function TeamPerformanceTable({
                 <TableHead className="text-purple-300/70 font-medium w-12">#</TableHead>
                 <TableHead className="text-purple-300/70 font-medium">Team</TableHead>
                 <TableHead className="text-purple-300/70 font-medium text-right">Members</TableHead>
-                <TableHead className="text-purple-300/70 font-medium text-right">Volume</TableHead>
+                <TableHead className="text-purple-300/70 font-medium text-right">Debt Enrolled</TableHead>
                 <TableHead className="text-purple-300/70 font-medium text-right">Units</TableHead>
-                <TableHead className="text-purple-300/70 font-medium text-right">Commissions</TableHead>
+                <TableHead className="text-purple-300/70 font-medium text-right">Commission</TableHead>
                 <TableHead className="text-purple-300/70 font-medium">Top Performer</TableHead>
               </TableRow>
             </TableHeader>
@@ -114,10 +114,10 @@ export function TeamPerformanceTable({
                       {team.memberCount}
                     </TableCell>
                     <TableCell className="text-right font-mono text-sm text-purple-100/80">
-                      {formatCurrency(team.totalVolume)}
+                      {formatCurrency(team.debtLoadEnrolled)}
                     </TableCell>
                     <TableCell className="text-right text-purple-200/70">
-                      {team.totalUnits}
+                      {team.unitsEnrolled}
                     </TableCell>
                     <TableCell className="text-right font-mono text-sm text-emerald-400/80">
                       {formatCurrency(team.totalCommissions)}
