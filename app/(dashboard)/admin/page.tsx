@@ -40,13 +40,6 @@ const adminModules = [
     stats: '24 active users',
   },
   {
-    title: 'Layout Builder',
-    description: 'Configure dashboard widgets and layouts',
-    href: '/admin/settings',
-    icon: LayoutGrid,
-    stats: '3 layouts configured',
-  },
-  {
     title: 'Announcement Manager',
     description: 'Create and manage announcements',
     href: '/admin/announcements',
@@ -83,7 +76,7 @@ const adminModules = [
   },
   {
     title: 'System Settings',
-    description: 'General platform configuration',
+    description: 'Configure layouts and platform settings',
     href: '/admin/settings',
     icon: Settings,
     stats: 'Last updated 2d ago',
@@ -187,7 +180,7 @@ export default function AdminPage() {
           {adminModules.map((module) => {
             const Icon = module.icon
             return (
-              <Link key={module.href} href={module.href}>
+              <Link key={module.title} href={module.href}>
                 <Card className="h-full transition-all hover:shadow-md hover:border-primary/30 cursor-pointer group">
                   <CardContent className="pt-6">
                     <div className="size-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
