@@ -57,7 +57,7 @@ import {
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
-import type { Agent, UserRole } from '@/lib/types'
+import type { User, UserRole } from '@/lib/types'
 
 function getRoleBadgeVariant(role: UserRole) {
   switch (role) {

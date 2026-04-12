@@ -756,9 +756,14 @@ export const dataService = {
   
   getAgents: (): User[] => mockUsers.filter(u => u.role === 'agent'),
   
-  getTeams: (): string[] => {
-    const teams = new Set(mockUsers.map(u => u.teamName).filter(Boolean))
-    return Array.from(teams) as string[]
+  getTeams: (): { id: string; name: string }[] => {
+    const teamsMap = new Map<string, string>()
+    mockUsers.forEach(u => {
+      if (u.teamId && u.teamName) {
+        teamsMap.set(u.teamId, u.teamName)
+      }
+    })
+    return Array.from(teamsMap.entries()).map(([id, name]) => ({ id, name }))
   },
   
   // Commissions
