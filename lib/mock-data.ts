@@ -754,6 +754,8 @@ export const dataService = {
   
   getUsers: (): User[] => mockUsers,
   
+  getAgents: (): User[] => mockUsers.filter(u => u.role === 'agent'),
+  
   // Commissions
   getCommissions: (userId?: string): Commission[] => {
     if (userId) {
