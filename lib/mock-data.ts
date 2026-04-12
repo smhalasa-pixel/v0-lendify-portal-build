@@ -757,7 +757,7 @@ export const dataService = {
   getAgents: (): User[] => mockUsers.filter(u => u.role === 'agent'),
   
   getTeams: (): string[] => {
-    const teams = new Set(mockUsers.map(u => u.team).filter(Boolean))
+    const teams = new Set(mockUsers.map(u => u.teamName).filter(Boolean))
     return Array.from(teams) as string[]
   },
   
