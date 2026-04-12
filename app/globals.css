@@ -4,92 +4,92 @@
 @custom-variant dark (&:is(.dark *));
 
 /* Lendify Portal - Dark Mode Theme matching lendifyassociates.com branding */
-/* Primary: Purple - Lendify's signature purple */
+/* Primary: Vibrant Purple - Lendify's signature purple */
 :root {
-  /* Dark theme as default - premium Lendify aesthetic */
-  --background: oklch(0.12 0.02 285);
-  --foreground: oklch(0.95 0.01 285);
-  --card: oklch(0.16 0.025 285);
-  --card-foreground: oklch(0.95 0.01 285);
-  --popover: oklch(0.16 0.025 285);
-  --popover-foreground: oklch(0.95 0.01 285);
-  /* Lendify Purple as primary */
-  --primary: oklch(0.65 0.22 295);
+  /* Dark theme as default - deep purple-tinted aesthetic */
+  --background: oklch(0.14 0.045 280);
+  --foreground: oklch(0.95 0.02 280);
+  --card: oklch(0.18 0.055 280);
+  --card-foreground: oklch(0.95 0.02 280);
+  --popover: oklch(0.18 0.055 280);
+  --popover-foreground: oklch(0.95 0.02 280);
+  /* Lendify Vibrant Purple as primary */
+  --primary: oklch(0.65 0.28 285);
   --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.20 0.03 285);
-  --secondary-foreground: oklch(0.92 0.01 285);
-  --muted: oklch(0.18 0.02 285);
-  --muted-foreground: oklch(0.65 0.02 285);
-  --accent: oklch(0.22 0.04 290);
-  --accent-foreground: oklch(0.95 0.01 285);
+  --secondary: oklch(0.22 0.06 280);
+  --secondary-foreground: oklch(0.92 0.02 280);
+  --muted: oklch(0.20 0.05 280);
+  --muted-foreground: oklch(0.68 0.04 280);
+  --accent: oklch(0.28 0.08 285);
+  --accent-foreground: oklch(0.95 0.02 280);
   --destructive: oklch(0.55 0.22 25);
   --destructive-foreground: oklch(0.95 0 0);
-  --border: oklch(0.26 0.035 285);
-  --input: oklch(0.20 0.025 285);
-  --ring: oklch(0.65 0.22 295);
-  /* Chart colors - purple-dominant palette */
-  --chart-1: oklch(0.65 0.22 295);
-  --chart-2: oklch(0.58 0.18 320);
-  --chart-3: oklch(0.70 0.15 260);
-  --chart-4: oklch(0.62 0.16 340);
-  --chart-5: oklch(0.55 0.20 275);
+  --border: oklch(0.30 0.07 280);
+  --input: oklch(0.22 0.055 280);
+  --ring: oklch(0.65 0.28 285);
+  /* Chart colors - vibrant purple palette */
+  --chart-1: oklch(0.65 0.28 285);
+  --chart-2: oklch(0.60 0.24 310);
+  --chart-3: oklch(0.72 0.20 260);
+  --chart-4: oklch(0.55 0.22 320);
+  --chart-5: oklch(0.58 0.26 275);
   --radius: 0.5rem;
-  /* Sidebar - deeper dark with purple accents */
-  --sidebar: oklch(0.10 0.02 285);
-  --sidebar-foreground: oklch(0.95 0.01 285);
-  --sidebar-primary: oklch(0.65 0.22 295);
+  /* Sidebar - deeper purple with vibrant accents */
+  --sidebar: oklch(0.12 0.05 280);
+  --sidebar-foreground: oklch(0.95 0.02 280);
+  --sidebar-primary: oklch(0.65 0.28 285);
   --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent: oklch(0.16 0.03 290);
-  --sidebar-accent-foreground: oklch(0.95 0.01 285);
-  --sidebar-border: oklch(0.22 0.03 285);
-  --sidebar-ring: oklch(0.65 0.22 295);
+  --sidebar-accent: oklch(0.20 0.07 285);
+  --sidebar-accent-foreground: oklch(0.95 0.02 280);
+  --sidebar-border: oklch(0.26 0.06 280);
+  --sidebar-ring: oklch(0.65 0.28 285);
   /* Custom tokens for Lendify */
   --success: oklch(0.68 0.17 145);
   --success-foreground: oklch(0.12 0.02 145);
   --warning: oklch(0.78 0.15 85);
   --warning-foreground: oklch(0.15 0.05 85);
-  --info: oklch(0.62 0.15 240);
+  --info: oklch(0.62 0.20 260);
   --info-foreground: oklch(0.95 0 0);
 }
 
 .light {
-  --background: oklch(0.98 0.005 285);
-  --foreground: oklch(0.15 0.02 285);
+  --background: oklch(0.98 0.01 280);
+  --foreground: oklch(0.18 0.04 280);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.15 0.02 285);
+  --card-foreground: oklch(0.18 0.04 280);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.15 0.02 285);
-  --primary: oklch(0.50 0.22 295);
+  --popover-foreground: oklch(0.18 0.04 280);
+  --primary: oklch(0.52 0.28 285);
   --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.95 0.01 285);
-  --secondary-foreground: oklch(0.20 0.02 285);
-  --muted: oklch(0.95 0.01 285);
-  --muted-foreground: oklch(0.45 0.02 285);
-  --accent: oklch(0.94 0.02 290);
-  --accent-foreground: oklch(0.20 0.02 285);
+  --secondary: oklch(0.95 0.02 280);
+  --secondary-foreground: oklch(0.22 0.04 280);
+  --muted: oklch(0.94 0.02 280);
+  --muted-foreground: oklch(0.45 0.04 280);
+  --accent: oklch(0.92 0.04 285);
+  --accent-foreground: oklch(0.22 0.04 280);
   --destructive: oklch(0.55 0.22 25);
   --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.90 0.01 285);
-  --input: oklch(0.90 0.01 285);
-  --ring: oklch(0.50 0.22 295);
-  --chart-1: oklch(0.50 0.22 295);
-  --chart-2: oklch(0.45 0.18 320);
-  --chart-3: oklch(0.55 0.15 260);
-  --chart-4: oklch(0.48 0.16 340);
-  --chart-5: oklch(0.42 0.20 275);
-  --sidebar: oklch(0.97 0.005 285);
-  --sidebar-foreground: oklch(0.15 0.02 285);
-  --sidebar-primary: oklch(0.50 0.22 295);
+  --border: oklch(0.88 0.03 280);
+  --input: oklch(0.88 0.03 280);
+  --ring: oklch(0.52 0.28 285);
+  --chart-1: oklch(0.52 0.28 285);
+  --chart-2: oklch(0.48 0.24 310);
+  --chart-3: oklch(0.58 0.20 260);
+  --chart-4: oklch(0.45 0.22 320);
+  --chart-5: oklch(0.50 0.26 275);
+  --sidebar: oklch(0.96 0.02 280);
+  --sidebar-foreground: oklch(0.18 0.04 280);
+  --sidebar-primary: oklch(0.52 0.28 285);
   --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent: oklch(0.93 0.01 290);
-  --sidebar-accent-foreground: oklch(0.20 0.02 285);
-  --sidebar-border: oklch(0.90 0.01 285);
-  --sidebar-ring: oklch(0.50 0.22 295);
+  --sidebar-accent: oklch(0.92 0.03 285);
+  --sidebar-accent-foreground: oklch(0.22 0.04 280);
+  --sidebar-border: oklch(0.88 0.03 280);
+  --sidebar-ring: oklch(0.52 0.28 285);
   --success: oklch(0.55 0.17 145);
   --success-foreground: oklch(0.98 0 0);
   --warning: oklch(0.70 0.15 85);
   --warning-foreground: oklch(0.20 0.05 85);
-  --info: oklch(0.50 0.15 240);
+  --info: oklch(0.52 0.20 260);
   --info-foreground: oklch(0.98 0 0);
 }
 
