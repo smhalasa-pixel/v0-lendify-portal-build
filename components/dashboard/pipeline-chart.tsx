@@ -1,6 +1,6 @@
 'use client'
 
-import { Bar, BarChart, XAxis, YAxis, ResponsiveContainer, Cell } from 'recharts'
+import { Bar, BarChart, XAxis, YAxis, Cell } from 'recharts'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   ChartConfig,
@@ -71,8 +71,7 @@ export function PipelineChart({
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="h-[250px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
+          <BarChart
               data={aggregated}
               layout="vertical"
               margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
@@ -116,7 +115,6 @@ export function PipelineChart({
                 ))}
               </Bar>
             </BarChart>
-          </ResponsiveContainer>
         </ChartContainer>
       </CardContent>
     </Card>
