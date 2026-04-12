@@ -11,10 +11,12 @@ import {
   Filter,
   Download,
 } from 'lucide-react'
+import type { DateRange } from 'react-day-picker'
 
 import { useAuth } from '@/lib/auth-context'
 import { dataService } from '@/lib/mock-data'
 import { KPICard } from '@/components/dashboard/kpi-card'
+import { DateRangePicker } from '@/components/date-range-picker'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -80,6 +82,7 @@ export default function CommissionsPage() {
   const [searchQuery, setSearchQuery] = React.useState('')
   const [statusFilter, setStatusFilter] = React.useState<string>('all')
   const [typeFilters, setTypeFilters] = React.useState<string[]>([])
+  const [dateRange, setDateRange] = React.useState<DateRange | undefined>(undefined)
 
   // Get commissions based on role
   const allCommissions = React.useMemo(() => {
@@ -112,9 +115,16 @@ export default function CommissionsPage() {
         return false
       }
 
+      // Date filter
+      if (dateRange?.from) {
+        const fundedDate = new Date(commission.fundedDate)
+        if (fundedDate < dateRange.from) return false
+        if (dateRange.to && fundedDate > dateRange.to) return false
+      }
+
       return true
     })
-  }, [allCommissions, searchQuery, statusFilter, typeFilters])
+  }, [allCommissions, searchQuery, statusFilter, typeFilters, dateRange])
 
   // Calculate summary metrics
   const metrics = React.useMemo(() => {
@@ -150,10 +160,16 @@ export default function CommissionsPage() {
             {isAgent ? 'Your commission history and earnings' : 'All commission records and payouts'}
           </p>
         </div>
-        <Button variant="outline" className="w-fit">
-          <Download className="size-4 mr-2" />
-          Export
-        </Button>
+        <div className="flex items-center gap-2">
+          <DateRangePicker
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+          />
+          <Button variant="outline" className="w-fit">
+            <Download className="size-4 mr-2" />
+            Export
+          </Button>
+        </div>
       </div>
 
       {/* KPI Cards */}

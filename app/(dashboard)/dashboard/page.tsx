@@ -9,6 +9,7 @@ import {
   Target,
   Users,
 } from 'lucide-react'
+import type { DateRange } from 'react-day-picker'
 
 import { useAuth } from '@/lib/auth-context'
 import { dataService } from '@/lib/mock-data'
@@ -18,9 +19,11 @@ import { PipelineChart } from '@/components/dashboard/pipeline-chart'
 import { PipelineTable } from '@/components/dashboard/pipeline-table'
 import { AnnouncementsList } from '@/components/dashboard/announcements-list'
 import { TeamPerformanceTable } from '@/components/dashboard/team-performance-table'
+import { DateRangePicker } from '@/components/date-range-picker'
 
 export default function DashboardPage() {
   const { user } = useAuth()
+  const [dateRange, setDateRange] = React.useState<DateRange | undefined>(undefined)
 
   // Determine which data to fetch based on role
   const isAgent = user?.role === 'agent'
@@ -75,9 +78,15 @@ export default function DashboardPage() {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">{dashboardTitle}</h1>
-        <p className="text-muted-foreground">{dashboardDescription}</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">{dashboardTitle}</h1>
+          <p className="text-muted-foreground">{dashboardDescription}</p>
+        </div>
+        <DateRangePicker
+          dateRange={dateRange}
+          onDateRangeChange={setDateRange}
+        />
       </div>
 
       {/* KPI Cards */}

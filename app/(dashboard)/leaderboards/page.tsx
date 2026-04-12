@@ -12,9 +12,11 @@ import {
   Users,
   Target,
 } from 'lucide-react'
+import type { DateRange } from 'react-day-picker'
 
 import { useAuth } from '@/lib/auth-context'
 import { dataService } from '@/lib/mock-data'
+import { DateRangePicker } from '@/components/date-range-picker'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -55,6 +57,7 @@ function getTrendIcon(trend: 'up' | 'down' | 'same') {
 export default function LeaderboardsPage() {
   const { user } = useAuth()
   const [period, setPeriod] = React.useState<'mtd' | 'qtd' | 'ytd'>('mtd')
+  const [dateRange, setDateRange] = React.useState<DateRange | undefined>(undefined)
 
   const leaderboard = React.useMemo(() => dataService.getLeaderboard(period), [period])
 
@@ -77,13 +80,19 @@ export default function LeaderboardsPage() {
             See how you stack up against your peers
           </p>
         </div>
-        <Tabs value={period} onValueChange={(v) => setPeriod(v as 'mtd' | 'qtd' | 'ytd')}>
-          <TabsList>
-            <TabsTrigger value="mtd">This Month</TabsTrigger>
-            <TabsTrigger value="qtd">This Quarter</TabsTrigger>
-            <TabsTrigger value="ytd">This Year</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+          <DateRangePicker
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+          />
+          <Tabs value={period} onValueChange={(v) => setPeriod(v as 'mtd' | 'qtd' | 'ytd')}>
+            <TabsList>
+              <TabsTrigger value="mtd">This Month</TabsTrigger>
+              <TabsTrigger value="qtd">This Quarter</TabsTrigger>
+              <TabsTrigger value="ytd">This Year</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
       </div>
 
       {/* Your Position Card (if applicable) */}

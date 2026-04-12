@@ -9,10 +9,12 @@ import {
   Search,
   MessageSquare,
 } from 'lucide-react'
+import type { DateRange } from 'react-day-picker'
 
 import { useAuth } from '@/lib/auth-context'
 import { dataService } from '@/lib/mock-data'
 import { KPICard } from '@/components/dashboard/kpi-card'
+import { DateRangePicker } from '@/components/date-range-picker'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -73,6 +75,7 @@ export default function ClawbacksPage() {
 
   const [searchQuery, setSearchQuery] = React.useState('')
   const [statusFilter, setStatusFilter] = React.useState<string>('all')
+  const [dateRange, setDateRange] = React.useState<DateRange | undefined>(undefined)
   const [disputeDialogOpen, setDisputeDialogOpen] = React.useState(false)
   const [selectedClawback, setSelectedClawback] = React.useState<string | null>(null)
   const [disputeReason, setDisputeReason] = React.useState('')
@@ -104,9 +107,16 @@ export default function ClawbacksPage() {
         return false
       }
 
+      // Date filter
+      if (dateRange?.from) {
+        const createdDate = new Date(clawback.createdDate)
+        if (createdDate < dateRange.from) return false
+        if (dateRange.to && createdDate > dateRange.to) return false
+      }
+
       return true
     })
-  }, [allClawbacks, searchQuery, statusFilter])
+  }, [allClawbacks, searchQuery, statusFilter, dateRange])
 
   // Calculate summary metrics
   const metrics = React.useMemo(() => {
@@ -134,13 +144,19 @@ export default function ClawbacksPage() {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Clawbacks</h1>
-        <p className="text-muted-foreground">
-          {isAgent
-            ? 'Track and manage commission clawbacks'
-            : 'Manage all commission clawbacks and disputes'}
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Clawbacks</h1>
+          <p className="text-muted-foreground">
+            {isAgent
+              ? 'Track and manage commission clawbacks'
+              : 'Manage all commission clawbacks and disputes'}
+          </p>
+        </div>
+        <DateRangePicker
+          dateRange={dateRange}
+          onDateRangeChange={setDateRange}
+        />
       </div>
 
       {/* KPI Cards */}

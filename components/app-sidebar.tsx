@@ -104,7 +104,7 @@ const adminNavItems = [
     roles: ['executive'] as UserRole[],
   },
   {
-    title: 'Settings',
+    title: 'System Settings',
     href: '/admin/settings',
     icon: Settings,
     roles: ['executive'] as UserRole[],
