@@ -7,25 +7,25 @@
 /* Primary: Vibrant Purple - Lendify's signature purple */
 :root {
   /* Dark theme as default - pure black background with purple accents */
-  --background: oklch(0.08 0 0);
+  --background: #000000;
   --foreground: oklch(0.95 0.02 280);
-  --card: oklch(0.12 0.04 280);
+  --card: oklch(0.10 0.04 280);
   --card-foreground: oklch(0.95 0.02 280);
-  --popover: oklch(0.12 0.04 280);
+  --popover: oklch(0.10 0.04 280);
   --popover-foreground: oklch(0.95 0.02 280);
   /* Lendify Vibrant Purple as primary */
   --primary: oklch(0.65 0.28 285);
   --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.16 0.05 280);
+  --secondary: oklch(0.14 0.05 280);
   --secondary-foreground: oklch(0.92 0.02 280);
-  --muted: oklch(0.14 0.04 280);
+  --muted: oklch(0.12 0.04 280);
   --muted-foreground: oklch(0.68 0.04 280);
-  --accent: oklch(0.20 0.07 285);
+  --accent: oklch(0.18 0.07 285);
   --accent-foreground: oklch(0.95 0.02 280);
   --destructive: oklch(0.55 0.22 25);
   --destructive-foreground: oklch(0.95 0 0);
-  --border: oklch(0.22 0.06 280);
-  --input: oklch(0.16 0.04 280);
+  --border: oklch(0.20 0.06 280);
+  --input: oklch(0.14 0.04 280);
   --ring: oklch(0.65 0.28 285);
   /* Chart colors - vibrant purple palette */
   --chart-1: oklch(0.65 0.28 285);
@@ -35,7 +35,7 @@
   --chart-5: oklch(0.58 0.26 275);
   --radius: 0.5rem;
   /* Sidebar - pure black with purple accents */
-  --sidebar: oklch(0.06 0 0);
+  --sidebar: #000000;
   --sidebar-foreground: oklch(0.95 0.02 280);
   --sidebar-primary: oklch(0.65 0.28 285);
   --sidebar-primary-foreground: oklch(0.98 0 0);
