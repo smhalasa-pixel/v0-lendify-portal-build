@@ -1,6 +1,8 @@
 'use client'
 
 import * as React from 'react'
+import { format } from 'date-fns'
+import { CalendarIcon } from 'lucide-react'
 import {
   DollarSign,
   FileText,
@@ -12,6 +14,20 @@ import {
   Percent,
   ArrowRightLeft,
 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Calendar } from '@/components/ui/calendar'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuth } from '@/lib/auth-context'
 import { dataService } from '@/lib/mock-data'
@@ -70,6 +86,28 @@ export default function DashboardPage() {
 
   // Format tier display
   const tierLabels = ['Bronze', 'Silver', 'Gold']
+
+  // Commission date slicer state
+  const [commissionDatePreset, setCommissionDatePreset] = React.useState('30d')
+  const [commissionCustomRange, setCommissionCustomRange] = React.useState<{
+    from: Date | undefined
+    to: Date | undefined
+  }>({ from: undefined, to: undefined })
+  const [commissionCalendarOpen, setCommissionCalendarOpen] = React.useState(false)
+
+  const commissionDateLabel = React.useMemo(() => {
+    if (commissionDatePreset === 'custom' && commissionCustomRange.from && commissionCustomRange.to) {
+      return `${format(commissionCustomRange.from, 'MMM d')} - ${format(commissionCustomRange.to, 'MMM d')}`
+    }
+    const labels: Record<string, string> = {
+      '7d': 'Last 7 Days',
+      '30d': 'Last 30 Days',
+      '90d': 'Last 90 Days',
+      'mtd': 'Month to Date',
+      'ytd': 'Year to Date',
+    }
+    return labels[commissionDatePreset] || 'Last 30 Days'
+  }, [commissionDatePreset, commissionCustomRange])
 
   return (
     <div className="p-4 lg:p-6 space-y-5">
@@ -180,12 +218,60 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          {/* COMMISSIONS Section - Summary KPIs */}
+          {/* COMMISSIONS Section */}
           <Card className="glass-card border-border/50">
             <CardHeader className="pb-2 pt-3 px-3">
-              <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Commissions Summary
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Commissions
+                </CardTitle>
+                <div className="flex items-center gap-2">
+                  <Select value={commissionDatePreset} onValueChange={(val) => {
+                    if (val === 'custom') {
+                      setCommissionCalendarOpen(true)
+                    } else {
+                      setCommissionDatePreset(val)
+                    }
+                  }}>
+                    <SelectTrigger className="h-6 text-[10px] w-auto min-w-[90px] bg-muted/50 border-border/50">
+                      <SelectValue placeholder="Select range" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="7d">Last 7 Days</SelectItem>
+                      <SelectItem value="30d">Last 30 Days</SelectItem>
+                      <SelectItem value="90d">Last 90 Days</SelectItem>
+                      <SelectItem value="mtd">Month to Date</SelectItem>
+                      <SelectItem value="ytd">Year to Date</SelectItem>
+                      <SelectItem value="custom">Custom Range...</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {commissionDatePreset === 'custom' && (
+                    <Popover open={commissionCalendarOpen} onOpenChange={setCommissionCalendarOpen}>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-6 text-[10px] px-2 bg-muted/50 border-border/50">
+                          <CalendarIcon className="size-3 mr-1" />
+                          {commissionDateLabel}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="end">
+                        <Calendar
+                          mode="range"
+                          selected={{ from: commissionCustomRange.from, to: commissionCustomRange.to }}
+                          onSelect={(range) => {
+                            setCommissionCustomRange({ from: range?.from, to: range?.to })
+                            if (range?.from && range?.to) {
+                              setCommissionDatePreset('custom')
+                              setCommissionCalendarOpen(false)
+                            }
+                          }}
+                          numberOfMonths={2}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  )}
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="px-3 pb-3">
               <div className="grid grid-cols-3 md:grid-cols-7 gap-2">
