@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Search, X } from 'lucide-react'
+import { Search, X, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -26,6 +26,9 @@ import { cn } from '@/lib/utils'
 interface ClientSearchProps {
   data: Client[]
 }
+
+type SortField = 'debtLoad' | 'enrolledDate' | null
+type SortDirection = 'asc' | 'desc'
 
 const statusConfig: Record<Client['status'], { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
   lead: { label: 'Lead', variant: 'outline' },
@@ -58,19 +61,61 @@ function formatDate(dateString: string | undefined): string {
 export function ClientSearch({ data }: ClientSearchProps) {
   const [open, setOpen] = React.useState(false)
   const [searchQuery, setSearchQuery] = React.useState('')
+  const [sortField, setSortField] = React.useState<SortField>(null)
+  const [sortDirection, setSortDirection] = React.useState<SortDirection>('desc')
 
-  const filteredClients = React.useMemo(() => {
-    if (!searchQuery.trim()) return data
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      // Toggle direction if same field
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+    } else {
+      // New field, default to desc
+      setSortField(field)
+      setSortDirection('desc')
+    }
+  }
+
+  const filteredAndSortedClients = React.useMemo(() => {
+    let result = data
     
-    const query = searchQuery.toLowerCase()
-    return data.filter(
-      client =>
-        client.firstName.toLowerCase().includes(query) ||
-        client.lastName.toLowerCase().includes(query) ||
-        client.id.toLowerCase().includes(query) ||
-        `${client.firstName} ${client.lastName}`.toLowerCase().includes(query)
-    )
-  }, [data, searchQuery])
+    // Filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      result = result.filter(
+        client =>
+          client.firstName.toLowerCase().includes(query) ||
+          client.lastName.toLowerCase().includes(query) ||
+          client.id.toLowerCase().includes(query) ||
+          `${client.firstName} ${client.lastName}`.toLowerCase().includes(query)
+      )
+    }
+    
+    // Sort
+    if (sortField) {
+      result = [...result].sort((a, b) => {
+        if (sortField === 'debtLoad') {
+          return sortDirection === 'asc' 
+            ? a.debtLoad - b.debtLoad 
+            : b.debtLoad - a.debtLoad
+        }
+        if (sortField === 'enrolledDate') {
+          const dateA = a.enrolledDate ? new Date(a.enrolledDate).getTime() : 0
+          const dateB = b.enrolledDate ? new Date(b.enrolledDate).getTime() : 0
+          return sortDirection === 'asc' ? dateA - dateB : dateB - dateA
+        }
+        return 0
+      })
+    }
+    
+    return result
+  }, [data, searchQuery, sortField, sortDirection])
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <ArrowUpDown className="ml-1 size-3 text-muted-foreground" />
+    return sortDirection === 'asc' 
+      ? <ArrowUp className="ml-1 size-3" />
+      : <ArrowDown className="ml-1 size-3" />
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -83,7 +128,7 @@ export function ClientSearch({ data }: ClientSearchProps) {
           <span className="text-muted-foreground">Search clients...</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col">
+      <DialogContent className="max-w-[95vw] w-[1200px] max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Client Search</DialogTitle>
         </DialogHeader>
@@ -111,25 +156,41 @@ export function ClientSearch({ data }: ClientSearchProps) {
           <Table>
             <TableHeader className="sticky top-0 bg-background z-10">
               <TableRow>
-                <TableHead className="w-[100px]">ID</TableHead>
-                <TableHead>First Name</TableHead>
-                <TableHead>Last Name</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Debt Load</TableHead>
-                <TableHead>Submitted</TableHead>
-                <TableHead>Enrolled</TableHead>
-                <TableHead>1st Payment</TableHead>
+                <TableHead className="w-[120px]">ID</TableHead>
+                <TableHead className="w-[140px]">First Name</TableHead>
+                <TableHead className="w-[140px]">Last Name</TableHead>
+                <TableHead className="w-[110px]">Status</TableHead>
+                <TableHead className="w-[140px]">
+                  <button
+                    onClick={() => handleSort('debtLoad')}
+                    className="flex items-center text-left font-medium hover:text-foreground transition-colors"
+                  >
+                    Debt Load
+                    <SortIcon field="debtLoad" />
+                  </button>
+                </TableHead>
+                <TableHead className="w-[130px]">Submitted</TableHead>
+                <TableHead className="w-[130px]">
+                  <button
+                    onClick={() => handleSort('enrolledDate')}
+                    className="flex items-center text-left font-medium hover:text-foreground transition-colors"
+                  >
+                    Enrolled
+                    <SortIcon field="enrolledDate" />
+                  </button>
+                </TableHead>
+                <TableHead className="w-[130px]">1st Payment</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredClients.length === 0 ? (
+              {filteredAndSortedClients.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
                     {searchQuery ? `No clients found matching "${searchQuery}"` : 'No clients available'}
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredClients.map((client) => {
+                filteredAndSortedClients.map((client) => {
                   const status = statusConfig[client.status]
                   return (
                     <TableRow key={client.id} className="hover:bg-muted/50">
@@ -151,7 +212,7 @@ export function ClientSearch({ data }: ClientSearchProps) {
                           {status.label}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right font-medium">
+                      <TableCell className="font-medium">
                         {formatCurrency(client.debtLoad)}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
@@ -172,7 +233,7 @@ export function ClientSearch({ data }: ClientSearchProps) {
         </div>
 
         <div className="text-xs text-muted-foreground mt-2">
-          Showing {filteredClients.length} of {data.length} clients
+          Showing {filteredAndSortedClients.length} of {data.length} clients
         </div>
       </DialogContent>
     </Dialog>
