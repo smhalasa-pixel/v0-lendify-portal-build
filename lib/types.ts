@@ -98,6 +98,7 @@ export interface LeaderboardEntry {
   debtLoadEnrolled: number
   unitsEnrolled: number
   conversionRate: number
+  performanceGrade: 'A+' | 'A' | 'A-' | 'B+' | 'B' | 'B-' | 'C+' | 'C' | 'C-' | 'D' | 'F'
   totalCommissions: number
   previousRank?: number
   trend: 'up' | 'down' | 'same'

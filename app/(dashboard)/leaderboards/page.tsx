@@ -249,6 +249,7 @@ export default function LeaderboardsPage() {
                 <TableHead className="text-center">Units Closed</TableHead>
                 <TableHead className="text-center">Debt Enrolled</TableHead>
                 <TableHead className="text-center">Conversion Rate</TableHead>
+                <TableHead className="text-center">Performance Grade</TableHead>
                 <TableHead className="text-center">Trend</TableHead>
               </TableRow>
             </TableHeader>
@@ -286,6 +287,21 @@ export default function LeaderboardsPage() {
                   </TableCell>
                   <TableCell className="text-center font-medium">
                     {entry.conversionRate.toFixed(1)}%
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Badge 
+                      variant="outline" 
+                      className={cn(
+                        "font-semibold",
+                        entry.performanceGrade.startsWith('A') && "border-emerald-500 text-emerald-500 bg-emerald-500/10",
+                        entry.performanceGrade.startsWith('B') && "border-blue-500 text-blue-500 bg-blue-500/10",
+                        entry.performanceGrade.startsWith('C') && "border-amber-500 text-amber-500 bg-amber-500/10",
+                        entry.performanceGrade.startsWith('D') && "border-orange-500 text-orange-500 bg-orange-500/10",
+                        entry.performanceGrade === 'F' && "border-red-500 text-red-500 bg-red-500/10"
+                      )}
+                    >
+                      {entry.performanceGrade}
+                    </Badge>
                   </TableCell>
                   <TableCell className="text-center">
                     <div className="flex items-center justify-center gap-1">
