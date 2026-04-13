@@ -29,6 +29,7 @@ interface KPICardProps {
   color?: 'purple' | 'blue' | 'emerald' | 'amber' | 'rose'
   showDateFilter?: boolean
   compact?: boolean
+  minimal?: boolean // Even more compact, no date filter, centered
 }
 
 const presetRanges = [
@@ -97,6 +98,7 @@ export function KPICard({
   color = 'purple',
   showDateFilter = true,
   compact = false,
+  minimal = false,
 }: KPICardProps) {
   const [selectedPreset, setSelectedPreset] = React.useState('30d')
   const [customRange, setCustomRange] = React.useState<DateRange | undefined>()
@@ -126,6 +128,20 @@ export function KPICard({
     }
     return getPresetShort(selectedPreset)
   }, [isCustom, customRange, selectedPreset])
+
+  // Minimal mode - very compact, centered, no date filter
+  if (minimal) {
+    return (
+      <div className="glass-card rounded-lg p-2 flex flex-col items-center justify-center text-center">
+        <span className="text-[9px] font-medium text-muted-foreground uppercase truncate w-full">
+          {title}
+        </span>
+        <span className={cn("text-sm font-bold tabular-nums", colorMap[color])}>
+          {formatValue(value, formatType)}
+        </span>
+      </div>
+    )
+  }
 
   return (
     <div className={cn(

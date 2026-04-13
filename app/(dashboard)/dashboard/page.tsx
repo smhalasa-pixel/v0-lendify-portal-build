@@ -11,8 +11,6 @@ import {
   CheckCircle,
   Percent,
   ArrowRightLeft,
-  Award,
-  Wallet,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuth } from '@/lib/auth-context'
@@ -21,6 +19,7 @@ import { KPICard } from '@/components/dashboard/kpi-card'
 import { ProgressCard } from '@/components/dashboard/progress-card'
 import { VolumeChart } from '@/components/dashboard/volume-chart'
 import { ClientSearch } from '@/components/dashboard/client-search'
+import { CommissionsTable } from '@/components/dashboard/commissions-table'
 import { AnnouncementsList } from '@/components/dashboard/announcements-list'
 import { TeamPerformanceTable } from '@/components/dashboard/team-performance-table'
 
@@ -50,6 +49,20 @@ export default function DashboardPage() {
 
   const volumeData = React.useMemo(() => dataService.getVolumeChartData(30), [])
   const announcements = React.useMemo(() => dataService.getAnnouncements(), [])
+  
+  const commissions = React.useMemo(() => {
+    if (isAgent && user) {
+      return dataService.getCommissions(user.id)
+    }
+    return dataService.getCommissions()
+  }, [user, isAgent])
+
+  const clawbacks = React.useMemo(() => {
+    if (isAgent && user) {
+      return dataService.getClawbacks(user.id)
+    }
+    return dataService.getClawbacks()
+  }, [user, isAgent])
 
   const teamMetrics = React.useMemo(() => {
     if (isLeadership || isExecutive) {
@@ -169,89 +182,69 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          {/* COMMISSIONS Section */}
+          {/* COMMISSIONS Section - Summary KPIs */}
           <Card className="glass-card border-border/50">
             <CardHeader className="pb-2 pt-3 px-3">
               <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Commissions
+                Commissions Summary
               </CardTitle>
             </CardHeader>
             <CardContent className="px-3 pb-3">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
+              <div className="grid grid-cols-3 md:grid-cols-7 gap-2">
                 <KPICard
                   title="FPC Units"
                   value={metrics.unitsFPC}
-                  change={metrics.unitsFPCChange}
                   format="number"
                   icon={<CheckCircle className="size-3" />}
                   color="emerald"
                   compact
+                  minimal
                 />
                 <KPICard
-                  title="FPC Debt Load"
+                  title="FPC Debt"
                   value={metrics.debtLoadFPC}
-                  change={metrics.debtLoadFPCChange}
                   format="currency"
                   icon={<CheckCircle className="size-3" />}
                   color="emerald"
                   compact
+                  minimal
                 />
                 <KPICard
                   title="Commission"
                   value={metrics.totalCommissions}
-                  change={metrics.commissionsChange}
                   format="currency"
                   icon={<TrendingUp className="size-3" />}
                   color="emerald"
                   compact
+                  minimal
                 />
                 <KPICard
                   title="Clawbacks"
                   value={metrics.totalClawbacks}
-                  change={metrics.clawbacksChange}
                   format="currency"
                   icon={<TrendingDown className="size-3" />}
                   color="rose"
                   compact
+                  minimal
                 />
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                <div className="glass-card rounded-lg p-2.5 flex flex-col">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <div className="p-1 rounded bg-amber-500/10">
-                      <Award className="size-3 text-amber-400" />
-                    </div>
-                    <span className="text-[11px] font-medium text-muted-foreground">Current Tier</span>
-                  </div>
-                  <span className="text-lg font-bold text-foreground">
-                    {tierLabels[metrics.currentTier - 1]} (T{metrics.currentTier})
-                  </span>
+                <div className="glass-card rounded-lg p-2 flex flex-col items-center justify-center">
+                  <span className="text-[9px] font-medium text-muted-foreground uppercase">Tier</span>
+                  <span className="text-sm font-bold text-amber-400">T{metrics.currentTier}</span>
                 </div>
-                <div className="glass-card rounded-lg p-2.5 flex flex-col">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <div className="p-1 rounded bg-purple-500/10">
-                      <Wallet className="size-3 text-purple-400" />
-                    </div>
-                    <span className="text-[11px] font-medium text-muted-foreground">Expected Comm.</span>
-                  </div>
-                  <span className="text-lg font-bold text-foreground">
-                    ${(metrics.expectedCommission / 1000).toFixed(1)}K
-                  </span>
+                <div className="glass-card rounded-lg p-2 flex flex-col items-center justify-center">
+                  <span className="text-[9px] font-medium text-muted-foreground uppercase">Exp. Comm</span>
+                  <span className="text-sm font-bold text-purple-400">${(metrics.expectedCommission / 1000).toFixed(0)}K</span>
                 </div>
-                <div className="glass-card rounded-lg p-2.5 flex flex-col">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <div className="p-1 rounded bg-blue-500/10">
-                      <Award className="size-3 text-blue-400" />
-                    </div>
-                    <span className="text-[11px] font-medium text-muted-foreground">Expected Tier</span>
-                  </div>
-                  <span className="text-lg font-bold text-foreground">
-                    {tierLabels[metrics.expectedTier - 1]} (T{metrics.expectedTier})
-                  </span>
+                <div className="glass-card rounded-lg p-2 flex flex-col items-center justify-center">
+                  <span className="text-[9px] font-medium text-muted-foreground uppercase">Exp. Tier</span>
+                  <span className="text-sm font-bold text-blue-400">T{metrics.expectedTier}</span>
                 </div>
               </div>
             </CardContent>
           </Card>
+
+          {/* COMMISSIONS Table */}
+          <CommissionsTable commissions={commissions} clawbacks={clawbacks} />
 
           {/* Chart */}
           <VolumeChart data={volumeData} />
