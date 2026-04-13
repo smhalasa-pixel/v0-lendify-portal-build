@@ -1526,8 +1526,8 @@ export const dataService = {
         pacingUnits,
         pacingDebtLoad,
         trend: leaderboardEntry?.trend || 'same',
-        // Call queue tier based on performance (1 = best performers get priority)
-        callQueueTier: pacing >= 110 ? 1 : pacing >= 95 ? 2 : pacing >= 80 ? 3 : pacing >= 60 ? 4 : 5,
+        // Call queue tier based on performance
+        callQueueTier: pacing >= 130 ? 'champion' : pacing >= 115 ? 'titanium' : pacing >= 100 ? 'platinum' : pacing >= 85 ? 'diamond' : pacing >= 70 ? 'gold' : pacing >= 55 ? 'silver' : 'bronze',
       }
     }).sort((a, b) => b.debtLoadEnrolled - a.debtLoadEnrolled)
   },

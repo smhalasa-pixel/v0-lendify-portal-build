@@ -214,7 +214,7 @@ export interface AgentPerformance {
   pacingUnits: number // pacing percentage for units
 pacingDebtLoad: number // pacing percentage for debt load
   trend: 'up' | 'down' | 'same'
-  callQueueTier: 1 | 2 | 3 | 4 | 5 // Call queue priority tier (1 = highest priority)
+  callQueueTier: 'bronze' | 'silver' | 'gold' | 'diamond' | 'platinum' | 'titanium' | 'champion' // Call queue tier
   }
 
 export interface ChartDataPoint {

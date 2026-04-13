@@ -62,13 +62,15 @@ export function AgentPerformanceTable({
     return 'text-rose-400'
   }
 
-  const getCallQueueTierConfig = (tier: 1 | 2 | 3 | 4 | 5) => {
+  const getCallQueueTierConfig = (tier: 'bronze' | 'silver' | 'gold' | 'diamond' | 'platinum' | 'titanium' | 'champion') => {
     const configs = {
-      1: { label: 'Tier 1', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30', description: 'Priority queue - Top performers' },
-      2: { label: 'Tier 2', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', description: 'High priority queue' },
-      3: { label: 'Tier 3', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30', description: 'Standard queue' },
-      4: { label: 'Tier 4', color: 'bg-orange-500/20 text-orange-400 border-orange-500/30', description: 'Lower priority queue' },
-      5: { label: 'Tier 5', color: 'bg-rose-500/20 text-rose-400 border-rose-500/30', description: 'Needs improvement queue' },
+      bronze: { label: 'Bronze', abbrev: 'BRZ', color: 'bg-amber-700/20 text-amber-600 border-amber-700/30', description: 'Entry level queue' },
+      silver: { label: 'Silver', abbrev: 'SLV', color: 'bg-slate-400/20 text-slate-300 border-slate-400/30', description: 'Standard queue' },
+      gold: { label: 'Gold', abbrev: 'GLD', color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30', description: 'Priority queue' },
+      diamond: { label: 'Diamond', abbrev: 'DIA', color: 'bg-cyan-400/20 text-cyan-300 border-cyan-400/30', description: 'High priority queue' },
+      platinum: { label: 'Platinum', abbrev: 'PLT', color: 'bg-violet-400/20 text-violet-300 border-violet-400/30', description: 'Elite queue' },
+      titanium: { label: 'Titanium', abbrev: 'TIT', color: 'bg-blue-400/20 text-blue-300 border-blue-400/30', description: 'Top performer queue' },
+      champion: { label: 'Champion', abbrev: 'CHP', color: 'bg-emerald-400/20 text-emerald-300 border-emerald-400/30', description: 'Champion tier - Best performers' },
     }
     return configs[tier]
   }
@@ -202,7 +204,7 @@ export function AgentPerformanceTable({
                               variant="outline" 
                               className={cn("text-[10px] font-semibold cursor-help px-1.5 py-0.5", getCallQueueTierConfig(agent.callQueueTier).color)}
                             >
-                              T{agent.callQueueTier}
+                              {getCallQueueTierConfig(agent.callQueueTier).abbrev}
                             </Badge>
                           </TooltipTrigger>
                           <TooltipContent side="top">
