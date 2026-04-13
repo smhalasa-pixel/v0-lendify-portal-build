@@ -254,7 +254,7 @@ function MetricTile({
           </PopoverContent>
         </Popover>
       </div>
-      <div className="flex items-end justify-between">
+      <div className="flex flex-col items-center text-center">
         {fullValue ? (
           <TooltipProvider>
             <Tooltip>
@@ -271,7 +271,7 @@ function MetricTile({
         )}
         {change !== undefined && (
           <span className={cn(
-            "text-[9px] font-medium flex items-center gap-0.5",
+            "text-[9px] font-medium flex items-center justify-center gap-0.5 mt-0.5",
             change > 0 ? "text-emerald-400" : change < 0 ? "text-rose-400" : "text-muted-foreground"
           )}>
             {change > 0 ? <TrendingUp className="size-2.5" /> : change < 0 ? <TrendingDown className="size-2.5" /> : null}
