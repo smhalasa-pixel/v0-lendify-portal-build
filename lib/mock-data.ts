@@ -1310,19 +1310,49 @@ export const dataService = {
     
     const multiplier = periodMultipliers[period] || 1
     
-    // Different ranking orders for different periods
-    const periodRankings: Record<string, string[]> = {
-      'mtd': ['user-1', 'user-5', 'user-4', 'user-7'], // Sarah #1 for MTD
-      'qtd': ['user-5', 'user-1', 'user-4', 'user-7'], // Emily #1 for QTD
-      'ytd': ['user-4', 'user-5', 'user-1', 'user-7'], // David #1 for YTD
+    // Current period rankings - determines who is #1, #2, etc for this period
+    const periodRankings: Record<string, Record<string, number>> = {
+      'mtd': {
+        'user-1': 1, 'user-5': 2, 'user-4': 3, 'user-7': 4, 
+        'user-8': 5, 'user-9': 6, 'user-10': 7, 'user-11': 8
+      },
+      'qtd': {
+        'user-5': 1, 'user-1': 2, 'user-4': 3, 'user-8': 4,
+        'user-7': 5, 'user-9': 6, 'user-10': 7, 'user-11': 8
+      },
+      'ytd': {
+        'user-4': 1, 'user-5': 2, 'user-1': 3, 'user-9': 4,
+        'user-8': 5, 'user-7': 6, 'user-10': 7, 'user-11': 8
+      },
     }
     
-    const ranking = periodRankings[period] || periodRankings['mtd']
+    // Previous period rankings - what the rankings were before
+    const previousPeriodRankings: Record<string, Record<string, number>> = {
+      'mtd': {
+        'user-1': 2, 'user-5': 1, 'user-4': 3, 'user-7': 5,
+        'user-8': 4, 'user-9': 7, 'user-10': 6, 'user-11': 8
+      },
+      'qtd': {
+        'user-5': 3, 'user-1': 1, 'user-4': 2, 'user-8': 5,
+        'user-7': 4, 'user-9': 6, 'user-10': 8, 'user-11': 7
+      },
+      'ytd': {
+        'user-4': 2, 'user-5': 1, 'user-1': 4, 'user-9': 3,
+        'user-8': 6, 'user-7': 5, 'user-10': 7, 'user-11': 8
+      },
+    }
+    
+    const currentRanks = periodRankings[period] || periodRankings['mtd']
+    const previousRanks = previousPeriodRankings[period] || previousPeriodRankings['mtd']
     
     return mockLeaderboard
       .map(entry => {
-        const newRank = ranking.indexOf(entry.agentId) + 1 || entry.rank
-        const prevRank = entry.rank
+        const newRank = currentRanks[entry.agentId] || entry.rank
+        const prevRank = previousRanks[entry.agentId] || entry.rank
+        
+        let trend: 'up' | 'down' | 'same' = 'same'
+        if (newRank < prevRank) trend = 'up'
+        else if (newRank > prevRank) trend = 'down'
         
         return {
           ...entry,
@@ -1332,7 +1362,7 @@ export const dataService = {
           unitsEnrolled: Math.round(entry.unitsEnrolled * multiplier),
           totalCommissions: Math.round(entry.totalCommissions * multiplier),
           previousRank: prevRank,
-          trend: newRank < prevRank ? 'up' as const : newRank > prevRank ? 'down' as const : 'same' as const,
+          trend,
         }
       })
       .sort((a, b) => a.rank - b.rank)
