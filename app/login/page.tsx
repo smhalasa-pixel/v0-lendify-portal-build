@@ -1,8 +1,9 @@
 'use client'
 
 import * as React from 'react'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { DollarSign, Users, Shield, TrendingUp } from 'lucide-react'
+import { Users, Shield, TrendingUp } from 'lucide-react'
 
 import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/button'
@@ -66,9 +67,14 @@ export default function LoginPage() {
       {/* Header */}
       <header className="border-b border-border/50 bg-background/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4 flex items-center gap-3">
-          <div className="flex items-center justify-center size-10 rounded-xl bg-primary text-primary-foreground">
-            <DollarSign className="size-5" />
-          </div>
+          <Image
+            src="/images/lendify-logo.png"
+            alt="Lendify"
+            width={40}
+            height={40}
+            className="rounded-xl object-contain"
+            style={{ width: 40, height: 'auto' }}
+          />
           <div>
             <h1 className="font-bold text-lg text-foreground">Lendify Portal</h1>
             <p className="text-xs text-muted-foreground">Internal Operations Platform</p>

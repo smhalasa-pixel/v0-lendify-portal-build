@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard,
@@ -161,9 +162,14 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/dashboard">
-                <div className="flex items-center justify-center size-8 rounded-lg bg-primary text-primary-foreground">
-                  <DollarSign className="size-4" />
-                </div>
+                <Image
+                  src="/images/lendify-logo.png"
+                  alt="Lendify"
+                  width={32}
+                  height={32}
+                  className="rounded-lg object-contain"
+                  style={{ width: 32, height: 'auto' }}
+                />
                 <div className="flex flex-col gap-0.5 leading-none">
                   <span className="font-bold text-foreground">Lendify</span>
                   <span className="text-xs text-muted-foreground">Portal</span>
