@@ -186,10 +186,10 @@ function MetricTile({
     <div className="bg-card/50 border border-border/30 rounded-lg p-2.5">
       <div className="flex items-center justify-between gap-1 mb-1">
         <span className="text-[10px] text-muted-foreground truncate flex-1">{label}</span>
-        <div className="flex items-center">
+        <div className="flex items-center gap-0.5 text-[9px] text-muted-foreground">
           <Select value={month} onValueChange={(m) => onDateChange(`${year}-${m}`)}>
-            <SelectTrigger className="h-4 text-[8px] w-auto bg-transparent border-0 p-0 px-0.5 text-muted-foreground/70 hover:text-muted-foreground [&>svg]:hidden">
-              <SelectValue />
+            <SelectTrigger className="h-5 text-[9px] w-auto min-w-[32px] bg-muted/30 border-border/40 px-1 py-0 [&>svg]:size-2.5 [&>svg]:opacity-50">
+              <span>{monthLabel}</span>
             </SelectTrigger>
             <SelectContent>
               {MONTHS.map(m => (
@@ -198,8 +198,8 @@ function MetricTile({
             </SelectContent>
           </Select>
           <Select value={year} onValueChange={(y) => onDateChange(`${y}-${month}`)}>
-            <SelectTrigger className="h-4 text-[8px] w-auto bg-transparent border-0 p-0 px-0.5 text-muted-foreground/70 hover:text-muted-foreground [&>svg]:hidden">
-              <SelectValue />
+            <SelectTrigger className="h-5 text-[9px] w-auto min-w-[44px] bg-muted/30 border-border/40 px-1 py-0 [&>svg]:size-2.5 [&>svg]:opacity-50">
+              <span>{year}</span>
             </SelectTrigger>
             <SelectContent>
               {YEARS.map(y => (
