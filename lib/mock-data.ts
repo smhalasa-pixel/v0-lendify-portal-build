@@ -1135,12 +1135,18 @@ export const dataService = {
       const monthlyTargetUnits = 15
       const monthlyTargetDebtLoad = 3000000
       
-      const unitsProgress = (unitsEnrolled / monthlyTargetUnits) * 100
-      const debtProgress = (debtLoadEnrolled / monthlyTargetDebtLoad) * 100
-      const avgProgress = (unitsProgress + debtProgress) / 2
-      const pacing = avgProgress / expectedProgress * 100
-      const pacingUnits = unitsProgress / expectedProgress * 100
-      const pacingDebtLoad = debtProgress / expectedProgress * 100
+      // Expected progress at this point in the month (as a decimal, e.g., 0.43 for day 13 of 30)
+      const expectedProgressDecimal = daysPassed / daysInMonth
+      
+      // Calculate expected values at this point
+      const expectedUnitsAtThisPoint = monthlyTargetUnits * expectedProgressDecimal
+      const expectedDebtAtThisPoint = monthlyTargetDebtLoad * expectedProgressDecimal
+      
+      // Pacing = actual / expected at this point * 100
+      // 100% = on pace, >100% = ahead, <100% = behind
+      const pacingUnits = (unitsEnrolled / expectedUnitsAtThisPoint) * 100
+      const pacingDebtLoad = (debtLoadEnrolled / expectedDebtAtThisPoint) * 100
+      const pacing = (pacingUnits + pacingDebtLoad) / 2
       
       return {
         agentId: agent.id,
