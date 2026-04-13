@@ -156,8 +156,71 @@ export default function DashboardPage() {
   const [teamsPopoverOpen, setTeamsPopoverOpen] = React.useState(false)
   const [agentsPopoverOpen, setAgentsPopoverOpen] = React.useState(false)
   
-  // Get all agents for the agent dropdown
+  // Get all agents for the agent dropdown - filtered based on current filter selection
   const allAgents = React.useMemo(() => dataService.getAgents(), [])
+  
+  // Filtered agents list based on current filter type selection
+  const filteredAgentsForDropdown = React.useMemo(() => {
+    const agents = dataService.getAgents()
+    
+    if (filterType === 'team-lead') {
+      if (selectedTeamLead === 'all') {
+        // Show agents from all team lead teams
+        const teamLeadTeamIds = teamLeads.map(l => l.teamId).filter(Boolean) as string[]
+        return agents.filter(a => teamLeadTeamIds.includes(a.teamId || ''))
+      }
+      const lead = teamLeads.find(l => l.id === selectedTeamLead)
+      if (lead?.teamId) {
+        return agents.filter(a => a.teamId === lead.teamId)
+      }
+    }
+    
+    if (filterType === 'supervisor') {
+      if (selectedSupervisor === 'all') {
+        // Show agents from all supervisor teams
+        const supervisorTeamIds = new Set<string>()
+        supervisors.forEach(s => s.teamIds?.forEach(id => supervisorTeamIds.add(id)))
+        return agents.filter(a => supervisorTeamIds.has(a.teamId || ''))
+      }
+      const supervisor = supervisors.find(s => s.id === selectedSupervisor)
+      if (supervisor?.teamIds) {
+        return agents.filter(a => supervisor.teamIds!.includes(a.teamId || ''))
+      }
+    }
+    
+    // Default: return all agents
+    return agents
+  }, [filterType, selectedTeamLead, selectedSupervisor, teamLeads, supervisors])
+  
+  // Filtered teams list based on current filter type selection
+  const filteredTeamsForDropdown = React.useMemo(() => {
+    const allTeams = dataService.getTeamMetrics()
+    
+    if (filterType === 'team-lead') {
+      if (selectedTeamLead === 'all') {
+        const teamLeadTeamIds = teamLeads.map(l => l.teamId).filter(Boolean) as string[]
+        return allTeams.filter(t => teamLeadTeamIds.includes(t.teamId))
+      }
+      const lead = teamLeads.find(l => l.id === selectedTeamLead)
+      if (lead?.teamId) {
+        return allTeams.filter(t => t.teamId === lead.teamId)
+      }
+    }
+    
+    if (filterType === 'supervisor') {
+      if (selectedSupervisor === 'all') {
+        const supervisorTeamIds = new Set<string>()
+        supervisors.forEach(s => s.teamIds?.forEach(id => supervisorTeamIds.add(id)))
+        return allTeams.filter(t => supervisorTeamIds.has(t.teamId))
+      }
+      const supervisor = supervisors.find(s => s.id === selectedSupervisor)
+      if (supervisor?.teamIds) {
+        return allTeams.filter(t => supervisor.teamIds!.includes(t.teamId))
+      }
+    }
+    
+    return allTeams
+  }, [filterType, selectedTeamLead, selectedSupervisor, teamLeads, supervisors])
 
   // Get filtered metrics based on filter selection AND dropdown selections
   const metrics = React.useMemo(() => {
@@ -412,6 +475,25 @@ export default function DashboardPage() {
     setSelectedTeamId(null)
     setSelectedAgentId(null)
   }, [filterType])
+  
+  // Reset team/agent dropdown selections when sub-filter changes
+  React.useEffect(() => {
+    setSelectedTeamId(null)
+    setSelectedAgentId(null)
+  }, [selectedTeamLead, selectedSupervisor])
+  
+  // When selecting a specific team, clear agent selection (and vice versa)
+  React.useEffect(() => {
+    if (selectedTeamId) {
+      setSelectedAgentId(null)
+    }
+  }, [selectedTeamId])
+  
+  React.useEffect(() => {
+    if (selectedAgentId) {
+      setSelectedTeamId(null)
+    }
+  }, [selectedAgentId])
 
   return (
     <div className="p-4 lg:p-5 space-y-4 max-w-[1600px] mx-auto">
@@ -526,7 +608,7 @@ export default function DashboardPage() {
                         <span>All Teams</span>
                         {!selectedTeamId && <Check className="size-3" />}
                       </button>
-                      {dataService.getTeamMetrics()
+                      {filteredTeamsForDropdown
                         .filter(team => team.teamName.toLowerCase().includes(teamSearchTerm.toLowerCase()))
                         .map(team => (
                           <button
@@ -598,7 +680,7 @@ export default function DashboardPage() {
                         <span>All Agents</span>
                         {!selectedAgentId && <Check className="size-3" />}
                       </button>
-                      {allAgents
+                      {filteredAgentsForDropdown
                         .filter(agent => agent.name.toLowerCase().includes(agentSearchTerm.toLowerCase()))
                         .map(agent => (
                           <button
