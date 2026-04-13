@@ -160,8 +160,7 @@ function MetricTile({
   onDateChange: (val: string) => void
 }) {
   const [showCustom, setShowCustom] = React.useState(false)
-  const [customStart, setCustomStart] = React.useState<Date>()
-  const [customEnd, setCustomEnd] = React.useState<Date>()
+  const [dateRange, setDateRange] = React.useState<{ from?: Date; to?: Date }>({})
   
   const formatted = React.useMemo(() => {
     if (fmt === 'currency') {
@@ -189,9 +188,9 @@ function MetricTile({
   }
 
   const handleApplyCustom = () => {
-    if (customStart && customEnd) {
-      const startStr = format(customStart, 'yyyy-MM-dd')
-      const endStr = format(customEnd, 'yyyy-MM-dd')
+    if (dateRange.from && dateRange.to) {
+      const startStr = format(dateRange.from, 'yyyy-MM-dd')
+      const endStr = format(dateRange.to, 'yyyy-MM-dd')
       onDateChange(`${startStr} to ${endStr}`)
       setShowCustom(false)
     }
@@ -218,34 +217,28 @@ function MetricTile({
           </PopoverTrigger>
           <PopoverContent className="w-auto p-3" align="end">
             <div className="space-y-3">
-              <div className="text-xs font-medium">Custom Date Range</div>
-              <div className="flex gap-2">
-                <div className="space-y-1">
-                  <span className="text-[10px] text-muted-foreground">Start</span>
-                  <Calendar
-                    mode="single"
-                    selected={customStart}
-                    onSelect={setCustomStart}
-                    className="rounded-md border"
-                  />
+              <div className="text-xs font-medium">Select Date Range</div>
+              <Calendar
+                mode="range"
+                selected={dateRange}
+                onSelect={(range) => setDateRange(range || {})}
+                numberOfMonths={2}
+                className="rounded-md border"
+              />
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>
+                  {dateRange.from ? format(dateRange.from, 'MMM d, yyyy') : 'Start'} 
+                  {' - '} 
+                  {dateRange.to ? format(dateRange.to, 'MMM d, yyyy') : 'End'}
+                </span>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setShowCustom(false)}>
+                    Cancel
+                  </Button>
+                  <Button size="sm" onClick={handleApplyCustom} disabled={!dateRange.from || !dateRange.to}>
+                    Apply
+                  </Button>
                 </div>
-                <div className="space-y-1">
-                  <span className="text-[10px] text-muted-foreground">End</span>
-                  <Calendar
-                    mode="single"
-                    selected={customEnd}
-                    onSelect={setCustomEnd}
-                    className="rounded-md border"
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" size="sm" onClick={() => setShowCustom(false)}>
-                  Cancel
-                </Button>
-                <Button size="sm" onClick={handleApplyCustom} disabled={!customStart || !customEnd}>
-                  Apply
-                </Button>
               </div>
             </div>
           </PopoverContent>
