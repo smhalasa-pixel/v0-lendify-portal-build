@@ -141,14 +141,15 @@ const DATE_PRESETS = [
   { value: 'yesterday', label: 'Yesterday' },
   { value: 'this-week', label: 'This Week' },
   { value: 'last-week', label: 'Last Week' },
-  { value: 'this-month', label: 'This Month' },
+  { value: 'this-month', label: 'MTD' },
   { value: 'last-month', label: 'Last Month' },
-  { value: 'this-quarter', label: 'This Quarter' },
+  { value: 'this-quarter', label: 'QTD' },
   { value: 'last-quarter', label: 'Last Quarter' },
-  { value: 'this-year', label: 'This Year' },
+  { value: 'this-year', label: 'YTD' },
   { value: 'last-year', label: 'Last Year' },
+  { value: 'all', label: 'All Time' },
   { value: 'custom', label: 'Custom...' },
-]
+  ]
 
 // Compact metric tile with date preset selector
 function MetricTile({ 
