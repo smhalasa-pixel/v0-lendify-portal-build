@@ -193,6 +193,76 @@ export default function AdminPage() {
         </div>
       </div>
 
+      {/* EPF Lead Source Performance */}
+      <Card>
+        <CardHeader>
+          <CardTitle>EPF Lead Source Performance</CardTitle>
+          <CardDescription>Marketing spend and cost efficiency by lead source</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Lead Source</th>
+                  <th className="text-right py-3 px-4 font-semibold text-muted-foreground">Spent Budget</th>
+                  <th className="text-right py-3 px-4 font-semibold text-muted-foreground">CPE</th>
+                  <th className="text-right py-3 px-4 font-semibold text-muted-foreground">CPDE</th>
+                  <th className="text-right py-3 px-4 font-semibold text-muted-foreground">Clients FPC</th>
+                  <th className="text-right py-3 px-4 font-semibold text-muted-foreground">DE FPC</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { name: 'Google Ads', spentBudget: 125000, cpe: 2450, cpde: 0.082, clientsFpc: 51, deFpc: 1520000 },
+                  { name: 'Facebook Ads', spentBudget: 85000, cpe: 2125, cpde: 0.071, clientsFpc: 40, deFpc: 1200000 },
+                  { name: 'TikTok Ads', spentBudget: 45000, cpe: 1875, cpde: 0.063, clientsFpc: 24, deFpc: 720000 },
+                  { name: 'Referrals', spentBudget: 15000, cpe: 750, cpde: 0.025, clientsFpc: 20, deFpc: 600000 },
+                  { name: 'Organic Search', spentBudget: 8000, cpe: 400, cpde: 0.013, clientsFpc: 20, deFpc: 600000 },
+                  { name: 'Direct Mail', spentBudget: 32000, cpe: 3200, cpde: 0.107, clientsFpc: 10, deFpc: 300000 },
+                  { name: 'Radio', spentBudget: 28000, cpe: 2800, cpde: 0.093, clientsFpc: 10, deFpc: 300000 },
+                ].map((source, index) => (
+                  <tr key={index} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                    <td className="py-3 px-4 font-medium text-foreground">{source.name}</td>
+                    <td className="py-3 px-4 text-right">
+                      <CurrencyDisplay value={source.spentBudget} className="text-sm" />
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <CurrencyDisplay value={source.cpe} className="text-sm" />
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <CurrencyDisplay value={source.cpde} className="text-sm" />
+                    </td>
+                    <td className="py-3 px-4 text-right font-medium">{source.clientsFpc}</td>
+                    <td className="py-3 px-4 text-right">
+                      <CurrencyDisplay value={source.deFpc} className="text-sm" />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="bg-muted/30 font-semibold">
+                  <td className="py-3 px-4">Total</td>
+                  <td className="py-3 px-4 text-right">
+                    <CurrencyDisplay value={338000} className="text-sm font-semibold" />
+                  </td>
+                  <td className="py-3 px-4 text-right">
+                    <CurrencyDisplay value={1943} className="text-sm font-semibold" />
+                  </td>
+                  <td className="py-3 px-4 text-right">
+                    <CurrencyDisplay value={0.065} className="text-sm font-semibold" />
+                  </td>
+                  <td className="py-3 px-4 text-right">175</td>
+                  <td className="py-3 px-4 text-right">
+                    <CurrencyDisplay value={5240000} className="text-sm font-semibold" />
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Recent Activity */}
       <Card>
         <CardHeader>
