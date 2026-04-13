@@ -10,6 +10,8 @@ import {
   Search,
   Filter,
   Download,
+  Check,
+  X,
 } from 'lucide-react'
 import type { DateRange } from 'react-day-picker'
 
@@ -36,13 +38,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuCheckboxItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import type { Commission } from '@/lib/types'
 
 const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
   pending: { label: 'Pending', variant: 'outline' },
@@ -51,28 +46,27 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'second
   clawback: { label: 'Clawback', variant: 'destructive' },
 }
 
-const loanTypeLabels: Record<string, string> = {
-  conventional: 'Conventional',
-  fha: 'FHA',
-  va: 'VA',
-  jumbo: 'Jumbo',
-  refinance: 'Refinance',
-}
-
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
-    minimumFractionDigits: 2,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   }).format(value)
 }
 
-function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  })
+function getTierFromRate(rate: number): { tier: number; label: string } {
+  if (rate >= 0.0175) return { tier: 3, label: 'T3' }
+  if (rate >= 0.015) return { tier: 2, label: 'T2' }
+  return { tier: 1, label: 'T1' }
+}
+
+function getTierBadgeColor(tier: number): string {
+  switch (tier) {
+    case 3: return 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+    case 2: return 'bg-slate-400/20 text-slate-300 border-slate-400/30'
+    default: return 'bg-orange-700/20 text-orange-400 border-orange-700/30'
+  }
 }
 
 export default function CommissionsPage() {
@@ -81,7 +75,6 @@ export default function CommissionsPage() {
 
   const [searchQuery, setSearchQuery] = React.useState('')
   const [statusFilter, setStatusFilter] = React.useState<string>('all')
-  const [typeFilters, setTypeFilters] = React.useState<string[]>([])
   const [dateRange, setDateRange] = React.useState<DateRange | undefined>(undefined)
 
   // Get commissions based on role
@@ -100,18 +93,13 @@ export default function CommissionsPage() {
         const query = searchQuery.toLowerCase()
         const matchesSearch =
           commission.borrowerName.toLowerCase().includes(query) ||
-          commission.loanId.toLowerCase().includes(query) ||
-          commission.agentName.toLowerCase().includes(query)
+          commission.id.toLowerCase().includes(query) ||
+          commission.loanId.toLowerCase().includes(query)
         if (!matchesSearch) return false
       }
 
       // Status filter
       if (statusFilter !== 'all' && commission.status !== statusFilter) {
-        return false
-      }
-
-      // Type filter
-      if (typeFilters.length > 0 && !typeFilters.includes(commission.loanType)) {
         return false
       }
 
@@ -124,7 +112,7 @@ export default function CommissionsPage() {
 
       return true
     })
-  }, [allCommissions, searchQuery, statusFilter, typeFilters, dateRange])
+  }, [allCommissions, searchQuery, statusFilter, dateRange])
 
   // Calculate summary metrics
   const metrics = React.useMemo(() => {
@@ -141,14 +129,6 @@ export default function CommissionsPage() {
 
     return { total, paid, pending, clawback }
   }, [allCommissions])
-
-  const handleTypeFilterChange = (type: string, checked: boolean) => {
-    if (checked) {
-      setTypeFilters([...typeFilters, type])
-    } else {
-      setTypeFilters(typeFilters.filter((t) => t !== type))
-    }
-  }
 
   return (
     <div className="p-6 space-y-6">
@@ -179,28 +159,35 @@ export default function CommissionsPage() {
           value={metrics.total}
           format="currency"
           icon={<DollarSign className="size-4" />}
+          showDateFilter={false}
         />
         <KPICard
           title="Paid"
           value={metrics.paid}
           format="currency"
           icon={<CheckCircle className="size-4" />}
+          color="emerald"
+          showDateFilter={false}
         />
         <KPICard
           title="Pending"
           value={metrics.pending}
           format="currency"
           icon={<Clock className="size-4" />}
+          color="amber"
+          showDateFilter={false}
         />
         <KPICard
           title="Clawbacks"
           value={metrics.clawback}
           format="currency"
           icon={<AlertTriangle className="size-4" />}
+          color="rose"
+          showDateFilter={false}
         />
       </div>
 
-      {/* Filters */}
+      {/* Commissions Table */}
       <Card>
         <CardHeader>
           <CardTitle>Commission Records</CardTitle>
@@ -214,7 +201,7 @@ export default function CommissionsPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
               <Input
-                placeholder="Search by borrower, loan ID, or agent..."
+                placeholder="Search by ID or client name..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"
@@ -232,96 +219,83 @@ export default function CommissionsPage() {
                 <SelectItem value="clawback">Clawback</SelectItem>
               </SelectContent>
             </Select>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="w-full sm:w-auto">
-                  <Filter className="size-4 mr-2" />
-                  Loan Type
-                  {typeFilters.length > 0 && (
-                    <Badge variant="secondary" className="ml-2">
-                      {typeFilters.length}
-                    </Badge>
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-[180px]">
-                {Object.entries(loanTypeLabels).map(([value, label]) => (
-                  <DropdownMenuCheckboxItem
-                    key={value}
-                    checked={typeFilters.includes(value)}
-                    onCheckedChange={(checked) => handleTypeFilterChange(value, checked)}
-                  >
-                    {label}
-                  </DropdownMenuCheckboxItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
 
           {/* Table */}
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Loan ID</TableHead>
-                <TableHead>Borrower</TableHead>
-                {!isAgent && <TableHead>Agent</TableHead>}
-                <TableHead>Type</TableHead>
-                <TableHead className="text-right">Loan Amount</TableHead>
-                <TableHead className="text-right">Rate</TableHead>
-                <TableHead className="text-right">Commission</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Funded</TableHead>
-                <TableHead>Paid</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredCommissions.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={isAgent ? 9 : 10}
-                    className="text-center text-muted-foreground py-8"
-                  >
-                    No commissions found
-                  </TableCell>
+          <div className="rounded-lg border border-border overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/30">
+                  <TableHead className="font-semibold">ID</TableHead>
+                  <TableHead className="font-semibold">Client Name</TableHead>
+                  <TableHead className="font-semibold">Status</TableHead>
+                  <TableHead className="font-semibold text-right">Debt Load</TableHead>
+                  <TableHead className="font-semibold text-center">Payable Tier</TableHead>
+                  <TableHead className="font-semibold text-right">Commission</TableHead>
+                  <TableHead className="font-semibold text-center">Paid</TableHead>
                 </TableRow>
-              ) : (
-                filteredCommissions.map((commission) => (
-                  <TableRow key={commission.id}>
-                    <TableCell className="font-mono text-xs">
-                      {commission.loanId}
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {commission.borrowerName}
-                    </TableCell>
-                    {!isAgent && <TableCell>{commission.agentName}</TableCell>}
-                    <TableCell>
-                      <Badge variant="outline">
-                        {loanTypeLabels[commission.loanType]}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency(commission.loanAmount)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {(commission.commissionRate * 100).toFixed(2)}%
-                    </TableCell>
-                    <TableCell className="text-right font-medium">
-                      {formatCurrency(commission.commissionAmount)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={statusConfig[commission.status].variant}>
-                        {statusConfig[commission.status].label}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{formatDate(commission.fundedDate)}</TableCell>
-                    <TableCell>
-                      {commission.paidDate ? formatDate(commission.paidDate) : '-'}
+              </TableHeader>
+              <TableBody>
+                {filteredCommissions.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={7}
+                      className="text-center text-muted-foreground py-8"
+                    >
+                      No commissions found
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  filteredCommissions.map((commission) => {
+                    const tierInfo = getTierFromRate(commission.commissionRate)
+                    const isPaid = commission.status === 'paid'
+                    
+                    return (
+                      <TableRow key={commission.id} className="hover:bg-muted/20">
+                        <TableCell className="font-mono text-xs text-muted-foreground">
+                          {commission.id.slice(0, 12)}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {commission.borrowerName}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={statusConfig[commission.status].variant}>
+                            {statusConfig[commission.status].label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-mono">
+                          {formatCurrency(commission.loanAmount)}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge className={getTierBadgeColor(tierInfo.tier)}>
+                            {tierInfo.label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-mono font-medium text-emerald-400">
+                          {formatCurrency(commission.commissionAmount)}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {isPaid ? (
+                            <div className="flex items-center justify-center">
+                              <div className="size-6 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                                <Check className="size-3.5 text-emerald-400" />
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-center">
+                              <div className="size-6 rounded-full bg-muted flex items-center justify-center">
+                                <Clock className="size-3.5 text-muted-foreground" />
+                              </div>
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

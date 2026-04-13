@@ -8,6 +8,8 @@ import {
   XCircle,
   Search,
   MessageSquare,
+  Check,
+  X,
 } from 'lucide-react'
 import type { DateRange } from 'react-day-picker'
 
@@ -46,27 +48,36 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 
-const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive'; icon: React.ReactNode }> = {
-  pending: { label: 'Pending', variant: 'outline', icon: <Clock className="size-3" /> },
-  deducted: { label: 'Deducted', variant: 'destructive', icon: <CheckCircle className="size-3" /> },
-  disputed: { label: 'Disputed', variant: 'secondary', icon: <MessageSquare className="size-3" /> },
-  waived: { label: 'Waived', variant: 'default', icon: <XCircle className="size-3" /> },
+const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
+  pending: { label: 'Pending', variant: 'outline' },
+  deducted: { label: 'Deducted', variant: 'destructive' },
+  disputed: { label: 'Disputed', variant: 'secondary' },
+  waived: { label: 'Waived', variant: 'default' },
 }
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
-    minimumFractionDigits: 2,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   }).format(value)
 }
 
-function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  })
+function getTierFromAmount(originalAmount: number, clawbackAmount: number): { tier: number; label: string } {
+  // Estimate tier based on the clawback ratio
+  const ratio = clawbackAmount / originalAmount
+  if (ratio >= 0.0175) return { tier: 3, label: 'T3' }
+  if (ratio >= 0.015) return { tier: 2, label: 'T2' }
+  return { tier: 1, label: 'T1' }
+}
+
+function getTierBadgeColor(tier: number): string {
+  switch (tier) {
+    case 3: return 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+    case 2: return 'bg-slate-400/20 text-slate-300 border-slate-400/30'
+    default: return 'bg-orange-700/20 text-orange-400 border-orange-700/30'
+  }
 }
 
 export default function ClawbacksPage() {
@@ -96,9 +107,8 @@ export default function ClawbacksPage() {
         const query = searchQuery.toLowerCase()
         const matchesSearch =
           clawback.borrowerName.toLowerCase().includes(query) ||
-          clawback.loanId.toLowerCase().includes(query) ||
-          clawback.agentName.toLowerCase().includes(query) ||
-          clawback.reason.toLowerCase().includes(query)
+          clawback.id.toLowerCase().includes(query) ||
+          clawback.loanId.toLowerCase().includes(query)
         if (!matchesSearch) return false
       }
 
@@ -135,7 +145,6 @@ export default function ClawbacksPage() {
   }, [allClawbacks])
 
   const handleDispute = () => {
-    // In a real app, this would submit the dispute
     setDisputeDialogOpen(false)
     setSelectedClawback(null)
     setDisputeReason('')
@@ -166,24 +175,32 @@ export default function ClawbacksPage() {
           value={metrics.total}
           format="currency"
           icon={<AlertTriangle className="size-4" />}
+          color="rose"
+          showDateFilter={false}
         />
         <KPICard
           title="Pending"
           value={metrics.pending}
           format="currency"
           icon={<Clock className="size-4" />}
+          color="amber"
+          showDateFilter={false}
         />
         <KPICard
           title="Deducted"
           value={metrics.deducted}
           format="currency"
           icon={<CheckCircle className="size-4" />}
+          color="rose"
+          showDateFilter={false}
         />
         <KPICard
           title="Disputed"
           value={metrics.disputed}
           format="currency"
           icon={<MessageSquare className="size-4" />}
+          color="blue"
+          showDateFilter={false}
         />
       </div>
 
@@ -201,7 +218,7 @@ export default function ClawbacksPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
               <Input
-                placeholder="Search by borrower, loan ID, or reason..."
+                placeholder="Search by ID or client name..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"
@@ -222,140 +239,155 @@ export default function ClawbacksPage() {
           </div>
 
           {/* Table */}
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Loan ID</TableHead>
-                <TableHead>Borrower</TableHead>
-                {!isAgent && <TableHead>Agent</TableHead>}
-                <TableHead className="text-right">Original Amount</TableHead>
-                <TableHead className="text-right">Clawback Amount</TableHead>
-                <TableHead>Reason</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredClawbacks.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={isAgent ? 8 : 9}
-                    className="text-center text-muted-foreground py-8"
-                  >
-                    No clawbacks found
-                  </TableCell>
+          <div className="rounded-lg border border-border overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/30">
+                  <TableHead className="font-semibold">ID</TableHead>
+                  <TableHead className="font-semibold">Client Name</TableHead>
+                  <TableHead className="font-semibold">Status</TableHead>
+                  <TableHead className="font-semibold text-right">Debt Load</TableHead>
+                  <TableHead className="font-semibold text-center">Payable Tier</TableHead>
+                  <TableHead className="font-semibold text-right">Clawback</TableHead>
+                  <TableHead className="font-semibold text-center">Deducted</TableHead>
+                  <TableHead className="font-semibold">Actions</TableHead>
                 </TableRow>
-              ) : (
-                filteredClawbacks.map((clawback) => (
-                  <TableRow key={clawback.id}>
-                    <TableCell className="font-mono text-xs">
-                      {clawback.loanId}
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {clawback.borrowerName}
-                    </TableCell>
-                    {!isAgent && <TableCell>{clawback.agentName}</TableCell>}
-                    <TableCell className="text-right">
-                      {formatCurrency(clawback.originalAmount)}
-                    </TableCell>
-                    <TableCell className="text-right font-medium text-destructive">
-                      -{formatCurrency(clawback.clawbackAmount)}
-                    </TableCell>
-                    <TableCell className="max-w-[200px]">
-                      <span className="truncate block" title={clawback.reason}>
-                        {clawback.reason}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={statusConfig[clawback.status].variant}
-                        className="gap-1"
-                      >
-                        {statusConfig[clawback.status].icon}
-                        {statusConfig[clawback.status].label}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{formatDate(clawback.createdDate)}</TableCell>
-                    <TableCell>
-                      {clawback.status === 'pending' && (
-                        <Dialog
-                          open={disputeDialogOpen && selectedClawback === clawback.id}
-                          onOpenChange={(open) => {
-                            setDisputeDialogOpen(open)
-                            if (!open) {
-                              setSelectedClawback(null)
-                              setDisputeReason('')
-                            }
-                          }}
-                        >
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setSelectedClawback(clawback.id)}
-                            >
-                              Dispute
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Dispute Clawback</DialogTitle>
-                              <DialogDescription>
-                                Submit a dispute for clawback on loan {clawback.loanId}.
-                                Please provide a detailed explanation.
-                              </DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-4 py-4">
-                              <div className="space-y-2">
-                                <Label>Clawback Details</Label>
-                                <div className="rounded-lg bg-muted p-3 text-sm space-y-1">
-                                  <p>
-                                    <span className="text-muted-foreground">Amount:</span>{' '}
-                                    {formatCurrency(clawback.clawbackAmount)}
-                                  </p>
-                                  <p>
-                                    <span className="text-muted-foreground">Reason:</span>{' '}
-                                    {clawback.reason}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor="dispute-reason">Dispute Reason</Label>
-                                <Textarea
-                                  id="dispute-reason"
-                                  placeholder="Explain why this clawback should be reviewed..."
-                                  value={disputeReason}
-                                  onChange={(e) => setDisputeReason(e.target.value)}
-                                  rows={4}
-                                />
-                              </div>
-                            </div>
-                            <DialogFooter>
-                              <Button
-                                variant="outline"
-                                onClick={() => setDisputeDialogOpen(false)}
-                              >
-                                Cancel
-                              </Button>
-                              <Button onClick={handleDispute} disabled={!disputeReason.trim()}>
-                                Submit Dispute
-                              </Button>
-                            </DialogFooter>
-                          </DialogContent>
-                        </Dialog>
-                      )}
-                      {clawback.status === 'disputed' && (
-                        <Badge variant="secondary" className="text-xs">
-                          Under Review
-                        </Badge>
-                      )}
+              </TableHeader>
+              <TableBody>
+                {filteredClawbacks.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={8}
+                      className="text-center text-muted-foreground py-8"
+                    >
+                      No clawbacks found
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  filteredClawbacks.map((clawback) => {
+                    const tierInfo = getTierFromAmount(clawback.originalAmount, clawback.clawbackAmount)
+                    const isDeducted = clawback.status === 'deducted'
+                    
+                    return (
+                      <TableRow key={clawback.id} className="hover:bg-muted/20">
+                        <TableCell className="font-mono text-xs text-muted-foreground">
+                          {clawback.id.slice(0, 12)}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {clawback.borrowerName}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={statusConfig[clawback.status].variant}>
+                            {statusConfig[clawback.status].label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-mono">
+                          {formatCurrency(clawback.originalAmount)}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge className={getTierBadgeColor(tierInfo.tier)}>
+                            {tierInfo.label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-mono font-medium text-rose-400">
+                          -{formatCurrency(clawback.clawbackAmount)}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {isDeducted ? (
+                            <div className="flex items-center justify-center">
+                              <div className="size-6 rounded-full bg-rose-500/20 flex items-center justify-center">
+                                <Check className="size-3.5 text-rose-400" />
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-center">
+                              <div className="size-6 rounded-full bg-muted flex items-center justify-center">
+                                <Clock className="size-3.5 text-muted-foreground" />
+                              </div>
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {clawback.status === 'pending' && (
+                            <Dialog
+                              open={disputeDialogOpen && selectedClawback === clawback.id}
+                              onOpenChange={(open) => {
+                                setDisputeDialogOpen(open)
+                                if (!open) {
+                                  setSelectedClawback(null)
+                                  setDisputeReason('')
+                                }
+                              }}
+                            >
+                              <DialogTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setSelectedClawback(clawback.id)}
+                                >
+                                  Dispute
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>Dispute Clawback</DialogTitle>
+                                  <DialogDescription>
+                                    Submit a dispute for clawback on loan {clawback.loanId}.
+                                    Please provide a detailed explanation.
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-4 py-4">
+                                  <div className="space-y-2">
+                                    <Label>Clawback Details</Label>
+                                    <div className="rounded-lg bg-muted p-3 text-sm space-y-1">
+                                      <p>
+                                        <span className="text-muted-foreground">Amount:</span>{' '}
+                                        {formatCurrency(clawback.clawbackAmount)}
+                                      </p>
+                                      <p>
+                                        <span className="text-muted-foreground">Reason:</span>{' '}
+                                        {clawback.reason}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor="dispute-reason">Dispute Reason</Label>
+                                    <Textarea
+                                      id="dispute-reason"
+                                      placeholder="Explain why this clawback should be reviewed..."
+                                      value={disputeReason}
+                                      onChange={(e) => setDisputeReason(e.target.value)}
+                                      rows={4}
+                                    />
+                                  </div>
+                                </div>
+                                <DialogFooter>
+                                  <Button
+                                    variant="outline"
+                                    onClick={() => setDisputeDialogOpen(false)}
+                                  >
+                                    Cancel
+                                  </Button>
+                                  <Button onClick={handleDispute} disabled={!disputeReason.trim()}>
+                                    Submit Dispute
+                                  </Button>
+                                </DialogFooter>
+                              </DialogContent>
+                            </Dialog>
+                          )}
+                          {clawback.status === 'disputed' && (
+                            <Badge variant="secondary" className="text-xs">
+                              Under Review
+                            </Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 

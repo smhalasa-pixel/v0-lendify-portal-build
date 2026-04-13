@@ -19,7 +19,6 @@ import { KPICard } from '@/components/dashboard/kpi-card'
 import { ProgressCard } from '@/components/dashboard/progress-card'
 import { VolumeChart } from '@/components/dashboard/volume-chart'
 import { ClientSearch } from '@/components/dashboard/client-search'
-import { CommissionsTable } from '@/components/dashboard/commissions-table'
 import { AnnouncementsList } from '@/components/dashboard/announcements-list'
 import { TeamPerformanceTable } from '@/components/dashboard/team-performance-table'
 
@@ -49,20 +48,6 @@ export default function DashboardPage() {
 
   const volumeData = React.useMemo(() => dataService.getVolumeChartData(30), [])
   const announcements = React.useMemo(() => dataService.getAnnouncements(), [])
-  
-  const commissions = React.useMemo(() => {
-    if (isAgent && user) {
-      return dataService.getCommissions(user.id)
-    }
-    return dataService.getCommissions()
-  }, [user, isAgent])
-
-  const clawbacks = React.useMemo(() => {
-    if (isAgent && user) {
-      return dataService.getClawbacks(user.id)
-    }
-    return dataService.getClawbacks()
-  }, [user, isAgent])
 
   const teamMetrics = React.useMemo(() => {
     if (isLeadership || isExecutive) {
@@ -245,9 +230,6 @@ export default function DashboardPage() {
 
           {/* Chart */}
           <VolumeChart data={volumeData} />
-
-          {/* COMMISSIONS Table - placed after chart for visibility */}
-          <CommissionsTable commissions={commissions} clawbacks={clawbacks} />
         </div>
 
         {/* Right Column - Targets, Search, Announcements */}
