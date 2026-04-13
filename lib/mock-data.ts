@@ -16,6 +16,7 @@ import type {
   DashboardWidget,
   DashboardLayout,
   Task,
+  AgentPerformance,
 } from './types'
 
 // Helper functions
@@ -1116,6 +1117,48 @@ export const dataService = {
   // Dashboard
   getDashboardMetrics,
   getTeamMetrics,
+  
+  // Agent Performance by Team (for team leaders)
+  getAgentPerformanceByTeam: (teamId: string): AgentPerformance[] => {
+    const teamAgents = mockUsers.filter(u => u.teamId === teamId && u.role === 'agent')
+    const leaderboardData = mockLeaderboard
+    
+    return teamAgents.map(agent => {
+      const leaderboardEntry = leaderboardData.find(l => l.agentId === agent.id)
+      const now = new Date()
+      const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+      const daysPassed = now.getDate()
+      const expectedProgress = (daysPassed / daysInMonth) * 100
+      
+      const unitsEnrolled = leaderboardEntry?.unitsClosed || Math.floor(Math.random() * 10) + 2
+      const debtLoadEnrolled = leaderboardEntry?.debtLoadEnrolled || Math.floor(Math.random() * 2000000) + 500000
+      const monthlyTargetUnits = 15
+      const monthlyTargetDebtLoad = 3000000
+      
+      const unitsProgress = (unitsEnrolled / monthlyTargetUnits) * 100
+      const debtProgress = (debtLoadEnrolled / monthlyTargetDebtLoad) * 100
+      const avgProgress = (unitsProgress + debtProgress) / 2
+      const pacing = avgProgress / expectedProgress * 100
+      
+      return {
+        agentId: agent.id,
+        agentName: agent.name,
+        avatar: agent.avatar,
+        teamId: agent.teamId!,
+        teamName: agent.teamName!,
+        unitsSubmitted: Math.floor(unitsEnrolled * 1.3),
+        debtLoadSubmitted: Math.floor(debtLoadEnrolled * 1.25),
+        unitsEnrolled,
+        debtLoadEnrolled,
+        conversionRate: leaderboardEntry?.conversionRate || Math.floor(Math.random() * 20) + 55,
+        performanceGrade: leaderboardEntry?.performanceGrade || 'B',
+        monthlyTargetUnits,
+        monthlyTargetDebtLoad,
+        pacing: Math.min(pacing, 150),
+        trend: leaderboardEntry?.trend || 'same',
+      }
+    }).sort((a, b) => b.debtLoadEnrolled - a.debtLoadEnrolled)
+  },
   
   getDashboardLayout: (): DashboardLayout => {
     const stored = typeof window !== 'undefined' 

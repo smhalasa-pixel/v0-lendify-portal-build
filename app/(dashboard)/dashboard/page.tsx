@@ -32,6 +32,7 @@ import { VolumeChart } from '@/components/dashboard/volume-chart'
 import { ClientSearch } from '@/components/dashboard/client-search'
 import { AnnouncementsList } from '@/components/dashboard/announcements-list'
 import { TeamPerformanceTable } from '@/components/dashboard/team-performance-table'
+import { AgentPerformanceTable } from '@/components/dashboard/agent-performance-table'
 import { cn } from '@/lib/utils'
 
 // Compact metric display with hover tooltip for full value
@@ -146,6 +147,14 @@ export default function DashboardPage() {
     // All roles can now see team performance
     return dataService.getTeamMetrics()
   }, [])
+  
+  // Agent performance for team leaders
+  const agentPerformance = React.useMemo(() => {
+    if (isLeadership && user?.teamId) {
+      return dataService.getAgentPerformanceByTeam(user.teamId)
+    }
+    return []
+  }, [isLeadership, user?.teamId])
 
   const dashboardTitle = isAgent ? 'My Dashboard' : isLeadership ? `${user?.teamName || 'Team'} Dashboard` : 'Executive Dashboard'
 
@@ -398,6 +407,15 @@ export default function DashboardPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Agent Performance - visible to team leaders only */}
+      {isLeadership && agentPerformance.length > 0 && (
+        <AgentPerformanceTable 
+          data={agentPerformance}
+          title="My Team Agents"
+          description="Individual performance breakdown for your team members"
+        />
+      )}
 
       {/* Team Performance - visible to all roles */}
       {teamMetrics.length > 0 && (

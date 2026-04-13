@@ -159,6 +159,24 @@ export interface TeamMetrics extends DashboardMetrics {
   topPerformer: string
 }
 
+export interface AgentPerformance {
+  agentId: string
+  agentName: string
+  avatar?: string
+  teamId: string
+  teamName: string
+  unitsSubmitted: number
+  debtLoadSubmitted: number
+  unitsEnrolled: number
+  debtLoadEnrolled: number
+  conversionRate: number
+  performanceGrade: 'A+' | 'A' | 'A-' | 'B+' | 'B' | 'B-' | 'C+' | 'C' | 'C-' | 'D' | 'F'
+  monthlyTargetUnits: number
+  monthlyTargetDebtLoad: number
+  pacing: number // percentage of target based on time elapsed
+  trend: 'up' | 'down' | 'same'
+}
+
 export interface ChartDataPoint {
   date: string
   value: number
