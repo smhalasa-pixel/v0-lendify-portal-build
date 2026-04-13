@@ -249,6 +249,7 @@ export default function LeaderboardsPage() {
                 <TableHead className="text-center">Units Closed</TableHead>
                 <TableHead className="text-center">Debt Enrolled</TableHead>
                 <TableHead className="text-center">Conversion Rate</TableHead>
+                <TableHead className="text-center">Trend</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -285,6 +286,16 @@ export default function LeaderboardsPage() {
                   </TableCell>
                   <TableCell className="text-center font-medium">
                     {entry.conversionRate.toFixed(1)}%
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      {getTrendIcon(entry.trend)}
+                      {entry.previousRank && entry.rank !== entry.previousRank && (
+                        <span className="text-xs text-muted-foreground">
+                          ({entry.previousRank > entry.rank ? '+' : ''}{entry.previousRank - entry.rank})
+                        </span>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
