@@ -159,12 +159,22 @@ export default function DashboardPage() {
   // Get all agents for the agent dropdown
   const allAgents = React.useMemo(() => dataService.getAgents(), [])
 
-  // Get filtered metrics based on filter selection
+  // Get filtered metrics based on filter selection AND dropdown selections
   const metrics = React.useMemo(() => {
     // Agent always sees their own metrics
     if (isAgent && user) return dataService.getDashboardMetrics(user.id)
     
-    // For other roles, apply filter
+    // If a specific agent is selected from the Agents dropdown, show that agent's metrics
+    if (selectedAgentId) {
+      return dataService.getDashboardMetrics(selectedAgentId)
+    }
+    
+    // If a specific team is selected from the Teams dropdown, show that team's metrics
+    if (selectedTeamId) {
+      return dataService.getDashboardMetrics(undefined, selectedTeamId)
+    }
+    
+    // For other roles, apply main filter
     if (filterType === 'team-lead') {
       if (selectedTeamLead === 'all') {
         // All team leads = all teams
@@ -188,7 +198,7 @@ export default function DashboardPage() {
     // Default: leadership sees their team, others see global
     if (isLeadership && user?.teamId) return dataService.getDashboardMetrics(undefined, user.teamId)
     return dataService.getDashboardMetrics()
-  }, [user, isAgent, isLeadership, filterType, selectedTeamLead, selectedSupervisor, teamLeads, supervisors])
+  }, [user, isAgent, isLeadership, filterType, selectedTeamLead, selectedSupervisor, teamLeads, supervisors, selectedTeamId, selectedAgentId])
 
   const pipeline = React.useMemo(() => {
     if (isAgent && user) return dataService.getPipeline(user.id)
@@ -282,9 +292,22 @@ export default function DashboardPage() {
     return agents
   }, [filterType, selectedTeamLead, selectedSupervisor, teamLeads, supervisors, allTeamIds, isLeadership, isSupervisor, isExecutive, user?.teamId, user?.teamIds, selectedAgentId])
 
-  // Dashboard title based on filter
+  // Dashboard title based on filter AND dropdown selections
   const dashboardTitle = React.useMemo(() => {
     if (isAgent) return 'My Dashboard'
+    
+    // If specific agent is selected from dropdown
+    if (selectedAgentId) {
+      const agent = allAgents.find(a => a.id === selectedAgentId)
+      return agent ? `${agent.name}'s Dashboard` : 'Agent Dashboard'
+    }
+    
+    // If specific team is selected from dropdown
+    if (selectedTeamId) {
+      const allTeams = dataService.getTeamMetrics()
+      const team = allTeams.find(t => t.teamId === selectedTeamId)
+      return team ? `${team.teamName} Dashboard` : 'Team Dashboard'
+    }
     
     if (filterType === 'team-lead') {
       if (selectedTeamLead === 'all') return 'All Team Leads'
@@ -301,7 +324,7 @@ export default function DashboardPage() {
     if (isLeadership) return `${user?.teamName || 'Team'} Dashboard`
     if (isSupervisor) return 'Supervisor Dashboard'
     return 'Executive Dashboard'
-  }, [isAgent, isLeadership, isSupervisor, filterType, selectedTeamLead, selectedSupervisor, teamLeads, supervisors, user?.teamName])
+  }, [isAgent, isLeadership, isSupervisor, filterType, selectedTeamLead, selectedSupervisor, teamLeads, supervisors, user?.teamName, selectedAgentId, selectedTeamId, allAgents])
 
   // Date slicer states
   const [enrollmentDate, setEnrollmentDate] = React.useState('30d')
