@@ -228,23 +228,23 @@ export default function DashboardPage() {
                 <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Submissions</span>
                 <DateSelector value={submissionDate} onChange={setSubmissionDate} id="submission" />
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <Metric label="Units" value={metrics.unitsSubmitted} change={metrics.unitsSubmittedChange} />
                 <Metric label="Debt Load" value={metrics.debtLoadSubmitted} change={metrics.debtLoadSubmittedChange} format="currency" />
-                <Metric label="FPC Units" value={metrics.unitsFPC} change={metrics.unitsFPCChange} />
-                <Metric label="FPC Debt" value={metrics.debtLoadFPC} change={metrics.debtLoadFPCChange} format="currency" />
               </div>
             </CardContent>
           </Card>
 
-          {/* Row 3: Commissions */}
+          {/* Row 3: Cleared Payments & Commissions */}
           <Card className="glass-card border-border/40">
             <CardContent className="p-3">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Commissions</span>
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Cleared Payments & Commissions</span>
                 <DateSelector value={commissionDate} onChange={setCommissionDate} id="commission" />
               </div>
               <div className="grid grid-cols-3 md:grid-cols-7 gap-3">
+                <Metric label="FPC Units" value={metrics.unitsFPC} change={metrics.unitsFPCChange} />
+                <Metric label="FPC Debt" value={metrics.debtLoadFPC} change={metrics.debtLoadFPCChange} format="currency" />
                 <Metric label="Commission" value={metrics.totalCommissions} format="currency" />
                 <Metric label="Clawbacks" value={metrics.totalClawbacks} format="currency" />
                 <div className="flex flex-col gap-0.5">
