@@ -268,8 +268,14 @@ export default function LeaderboardsPage() {
     return `${format(dateRangeInfo.comparisonFrom, 'MMM d')} - ${format(dateRangeInfo.comparisonTo, 'MMM d, yyyy')}`
   }, [dateRangeInfo])
 
-  // Find current user's position
+  // Find current user's position (agent view)
   const userRank = user ? leaderboard.find((entry) => entry.agentId === user.id) : null
+  
+  // Find current user's team position (team view)
+  const userTeamRank = React.useMemo(() => {
+    if (!user?.teamId) return null
+    return teamLeaderboard.find((team) => team.teamId === user.teamId)
+  }, [user, teamLeaderboard])
 
   // Top 3 for podium
   const topThree = leaderboard.slice(0, 3)
@@ -361,7 +367,7 @@ export default function LeaderboardsPage() {
       </div>
 
       {/* Your Position Card (if applicable) */}
-      {userRank && (
+      {viewType === 'agent' && userRank && (
         <Card className="bg-primary/5 border-primary/20">
           <CardContent className="py-4">
             <div className="flex items-center gap-4">
@@ -382,6 +388,41 @@ export default function LeaderboardsPage() {
                       <span className="text-sm text-muted-foreground">
                         {userRank.previousRank && userRank.rank !== userRank.previousRank
                           ? `${userRank.trend === 'up' ? '+' : ''}${userRank.previousRank - userRank.rank} from last period`
+                          : 'No change'}
+                      </span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p className="text-xs">Compared to: {comparisonPeriodLabel}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
+      {viewType === 'team' && userTeamRank && (
+        <Card className="bg-primary/5 border-primary/20">
+          <CardContent className="py-4">
+            <div className="flex items-center gap-4">
+              <div className="size-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <span className="text-xl font-bold text-primary">#{userTeamRank.rank}</span>
+              </div>
+              <div className="flex-1">
+                <p className="font-medium">Your Team&apos;s Current Ranking</p>
+                <p className="text-sm text-muted-foreground">
+                  {userTeamRank.teamName} | {formatCurrency(userTeamRank.debtLoadEnrolled)} enrolled | {userTeamRank.unitsClosed} units closed
+                </p>
+              </div>
+              <TooltipProvider delayDuration={100}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-2 cursor-help">
+                      {getTrendIcon(userTeamRank.trend)}
+                      <span className="text-sm text-muted-foreground">
+                        {userTeamRank.previousRank && userTeamRank.rank !== userTeamRank.previousRank
+                          ? `${userTeamRank.trend === 'up' ? '+' : ''}${userTeamRank.previousRank - userTeamRank.rank} from last period`
                           : 'No change'}
                       </span>
                     </div>
