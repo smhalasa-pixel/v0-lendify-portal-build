@@ -3,63 +3,34 @@
 import * as React from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { Users, Shield, TrendingUp, UserCheck } from 'lucide-react'
+import { Eye, EyeOff, Lock, User, AlertCircle } from 'lucide-react'
 
 import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
-const demoUsers = [
-  {
-    id: 'user-1',
-    name: 'Sarah Johnson',
-    role: 'agent' as const,
-    description: 'Sales agent view with personal KPIs and commissions',
-    icon: TrendingUp,
-    features: ['Personal Dashboard', 'My Commissions', 'My Pipeline', 'Scripts & KB'],
-  },
-  {
-    id: 'user-2',
-    name: 'Michael Chen',
-    role: 'leadership' as const,
-    description: 'Team leader view with single team oversight',
-    icon: Users,
-    features: ['Team Dashboard', 'Team Agent Performance', 'Team Metrics', 'All Agent Features'],
-  },
-  {
-    id: 'user-7',
-    name: 'Alex Thompson',
-    role: 'supervisor' as const,
-    description: 'Supervisor view with multiple teams oversight',
-    icon: UserCheck,
-    features: ['Multi-Team Dashboard', 'All Teams Agent Performance', 'Cross-Team Metrics', 'All Leadership Features'],
-  },
-  {
-    id: 'user-3',
-    name: 'Jennifer Martinez',
-    role: 'executive' as const,
-    description: 'Executive view with global metrics and administrative controls',
-    icon: Shield,
-    features: ['Global Dashboard', 'All Teams View', 'Admin Panel', 'Layout Builder'],
-  },
-]
-
-function getRoleBadgeVariant(role: string) {
-  switch (role) {
-    case 'executive':
-      return 'default'
-    case 'supervisor':
-      return 'default'
-    case 'leadership':
-      return 'secondary'
-    default:
-      return 'outline'
-  }
+// Demo credentials mapping - in production this would be a database lookup
+const demoCredentials: Record<string, { password: string; userId: string }> = {
+  'sarah.johnson': { password: 'agent123', userId: 'user-1' },
+  'michael.chen': { password: 'lead123', userId: 'user-2' },
+  'alex.thompson': { password: 'super123', userId: 'user-7' },
+  'jennifer.martinez': { password: 'exec123', userId: 'user-3' },
+  // Additional agents
+  'david.williams': { password: 'agent123', userId: 'user-4' },
+  'emily.brown': { password: 'agent123', userId: 'user-5' },
 }
 
 export default function LoginPage() {
   const { login, user } = useAuth()
   const router = useRouter()
+  
+  const [username, setUsername] = React.useState('')
+  const [password, setPassword] = React.useState('')
+  const [showPassword, setShowPassword] = React.useState(false)
+  const [error, setError] = React.useState('')
+  const [isLoading, setIsLoading] = React.useState(false)
 
   React.useEffect(() => {
     if (user) {
@@ -67,8 +38,30 @@ export default function LoginPage() {
     }
   }, [user, router])
 
-  const handleLogin = (userId: string) => {
-    login(userId)
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setIsLoading(true)
+    
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 500))
+    
+    const credentials = demoCredentials[username.toLowerCase()]
+    
+    if (!credentials) {
+      setError('Invalid username. Please check your credentials.')
+      setIsLoading(false)
+      return
+    }
+    
+    if (credentials.password !== password) {
+      setError('Invalid password. Please try again.')
+      setIsLoading(false)
+      return
+    }
+    
+    // Successful login
+    login(credentials.userId)
     router.push('/dashboard')
   }
 
@@ -93,64 +86,98 @@ export default function LoginPage() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 container mx-auto px-4 py-16">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold tracking-tight text-foreground mb-3">
-              Welcome to Lendify
-            </h2>
-            <p className="text-muted-foreground max-w-xl mx-auto">
-              Select a demo account to explore the platform. Each role provides a different view 
-              tailored to their responsibilities.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-5">
-            {demoUsers.map((demoUser) => {
-              const Icon = demoUser.icon
-              return (
-                <div
-                  key={demoUser.id}
-                  className="glass-card rounded-xl p-5 cursor-pointer"
-                  onClick={() => handleLogin(demoUser.id)}
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="size-11 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Icon className="size-5 text-primary" />
-                    </div>
-                    <Badge variant={getRoleBadgeVariant(demoUser.role)}>
-                      {demoUser.role.charAt(0).toUpperCase() + demoUser.role.slice(1)}
-                    </Badge>
+      <main className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md">
+          <Card className="glass-card border-border/40">
+            <CardHeader className="text-center pb-2">
+              <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
+              <CardDescription>
+                Enter your credentials to access the portal
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {error && (
+                  <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+                    <AlertCircle className="size-4 shrink-0" />
+                    {error}
                   </div>
-                  
-                  <h3 className="text-lg font-semibold text-foreground mb-2">{demoUser.name}</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    {demoUser.description}
-                  </p>
-                  
-                  <ul className="space-y-1.5 mb-5">
-                    {demoUser.features.map((feature, index) => (
-                      <li key={index} className="text-sm text-muted-foreground flex items-center gap-2">
-                        <div className="size-1 rounded-full bg-primary" />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                  
-                  <Button className="w-full">
-                    Sign in as {demoUser.name.split(' ')[0]}
-                  </Button>
+                )}
+                
+                <div className="space-y-2">
+                  <Label htmlFor="username">Username</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                    <Input
+                      id="username"
+                      type="text"
+                      placeholder="Enter your username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      className="pl-10"
+                      autoComplete="username"
+                      required
+                    />
+                  </div>
                 </div>
-              )
-            })}
-          </div>
-
-          <div className="mt-12 text-center">
-            <p className="text-sm text-muted-foreground max-w-lg mx-auto">
-              This is a demo environment with mock data. In production, this would connect to your 
-              authentication provider and real database.
-            </p>
-          </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                    <Input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Enter your password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="pl-10 pr-10"
+                      autoComplete="current-password"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    </button>
+                  </div>
+                </div>
+                
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? 'Signing in...' : 'Sign In'}
+                </Button>
+              </form>
+              
+              {/* Demo Credentials Info */}
+              <div className="mt-6 pt-6 border-t border-border/50">
+                <p className="text-xs text-muted-foreground mb-3 text-center">Demo Credentials</p>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="p-2 rounded-md bg-muted/30 border border-border/30">
+                    <p className="font-medium text-foreground">Agent</p>
+                    <p className="text-muted-foreground">sarah.johnson</p>
+                    <p className="text-muted-foreground">agent123</p>
+                  </div>
+                  <div className="p-2 rounded-md bg-muted/30 border border-border/30">
+                    <p className="font-medium text-foreground">Team Lead</p>
+                    <p className="text-muted-foreground">michael.chen</p>
+                    <p className="text-muted-foreground">lead123</p>
+                  </div>
+                  <div className="p-2 rounded-md bg-muted/30 border border-border/30">
+                    <p className="font-medium text-foreground">Supervisor</p>
+                    <p className="text-muted-foreground">alex.thompson</p>
+                    <p className="text-muted-foreground">super123</p>
+                  </div>
+                  <div className="p-2 rounded-md bg-muted/30 border border-border/30">
+                    <p className="font-medium text-foreground">Executive</p>
+                    <p className="text-muted-foreground">jennifer.martinez</p>
+                    <p className="text-muted-foreground">exec123</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </main>
 

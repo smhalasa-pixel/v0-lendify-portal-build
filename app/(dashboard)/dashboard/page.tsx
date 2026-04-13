@@ -883,9 +883,9 @@ export default function DashboardPage() {
                       Behind
                     </Badge>
                   )}
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1.5">
                     <Select value={selectedMonth} onValueChange={handleMonthChange}>
-                      <SelectTrigger className="w-[100px] h-7 text-xs bg-background/50 border-border/50">
+                      <SelectTrigger className="w-[110px] h-7 text-xs bg-background/50 border-border/50 pr-7">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -897,7 +897,7 @@ export default function DashboardPage() {
                       </SelectContent>
                     </Select>
                     <Select value={selectedYear} onValueChange={handleYearChange}>
-                      <SelectTrigger className="w-[75px] h-7 text-xs bg-background/50 border-border/50">
+                      <SelectTrigger className="w-[80px] h-7 text-xs bg-background/50 border-border/50 pr-7">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
