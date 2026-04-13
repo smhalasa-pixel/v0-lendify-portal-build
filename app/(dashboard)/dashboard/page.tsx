@@ -473,18 +473,42 @@ export default function DashboardPage() {
     </div>
   )
 
-  // Get month list for dropdown (last 12 months)
-  const monthOptions = React.useMemo(() => {
-    const options = []
-    const now = new Date()
-    for (let i = 0; i < 12; i++) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
-      const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-      const label = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-      options.push({ value, label })
+  // Month and year options for separate dropdowns
+  const months = [
+    { value: '01', label: 'January' },
+    { value: '02', label: 'February' },
+    { value: '03', label: 'March' },
+    { value: '04', label: 'April' },
+    { value: '05', label: 'May' },
+    { value: '06', label: 'June' },
+    { value: '07', label: 'July' },
+    { value: '08', label: 'August' },
+    { value: '09', label: 'September' },
+    { value: '10', label: 'October' },
+    { value: '11', label: 'November' },
+    { value: '12', label: 'December' },
+  ]
+  
+  // Years from 2020 to current year + 1
+  const years = React.useMemo(() => {
+    const currentYear = new Date().getFullYear()
+    const yearList = []
+    for (let y = currentYear + 1; y >= 2020; y--) {
+      yearList.push({ value: String(y), label: String(y) })
     }
-    return options
+    return yearList
   }, [])
+  
+  // Separate state for month and year
+  const [selectedMonth, selectedYear] = selectedTargetMonth.split('-')
+  
+  const handleMonthChange = (month: string) => {
+    setSelectedTargetMonth(`${selectedYear}-${month}`)
+  }
+  
+  const handleYearChange = (year: string) => {
+    setSelectedTargetMonth(`${year}-${selectedMonth}`)
+  }
   
   // Get monthly target metrics based on selected month
   const monthlyTargetMetrics = React.useMemo(() => {
@@ -493,9 +517,10 @@ export default function DashboardPage() {
   
   // Progress calculations - based on selected month
   const now = new Date()
-  const [selectedYear, selectedMonthNum] = selectedTargetMonth.split('-').map(Number)
-  const isCurrentMonth = selectedYear === now.getFullYear() && selectedMonthNum === now.getMonth() + 1
-  const daysInSelectedMonth = new Date(selectedYear, selectedMonthNum, 0).getDate()
+  const selectedYearNum = parseInt(selectedYear)
+  const selectedMonthNum = parseInt(selectedMonth)
+  const isCurrentMonth = selectedYearNum === now.getFullYear() && selectedMonthNum === now.getMonth() + 1
+  const daysInSelectedMonth = new Date(selectedYearNum, selectedMonthNum, 0).getDate()
   const dayOfMonth = isCurrentMonth ? now.getDate() : daysInSelectedMonth // For past months, show full month
   const expectedProgress = isCurrentMonth ? (dayOfMonth / daysInSelectedMonth) * 100 : 100
   
@@ -858,18 +883,32 @@ export default function DashboardPage() {
                       PIP Risk
                     </Badge>
                   )}
-                  <Select value={selectedTargetMonth} onValueChange={setSelectedTargetMonth}>
-                    <SelectTrigger className="w-[140px] h-7 text-xs bg-background/50 border-border/50">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {monthOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value} className="text-xs">
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center gap-1">
+                    <Select value={selectedMonth} onValueChange={handleMonthChange}>
+                      <SelectTrigger className="w-[100px] h-7 text-xs bg-background/50 border-border/50">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {months.map(m => (
+                          <SelectItem key={m.value} value={m.value} className="text-xs">
+                            {m.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select value={selectedYear} onValueChange={handleYearChange}>
+                      <SelectTrigger className="w-[75px] h-7 text-xs bg-background/50 border-border/50">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {years.map(y => (
+                          <SelectItem key={y.value} value={y.value} className="text-xs">
+                            {y.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
               <div className="space-y-4">
