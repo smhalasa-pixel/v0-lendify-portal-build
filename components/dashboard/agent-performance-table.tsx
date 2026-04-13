@@ -215,7 +215,9 @@ export function AgentPerformanceTable({
                       </TooltipProvider>
                     </TableCell>
                     <TableCell className="text-center">
-                      {getTrendIcon(agent.trend)}
+                      <div className="flex items-center justify-center">
+                        {getTrendIcon(agent.trend)}
+                      </div>
                     </TableCell>
                   </TableRow>
                 )

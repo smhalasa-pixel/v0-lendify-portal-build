@@ -208,7 +208,9 @@ export function TeamPerformanceTable({
                         </TooltipProvider>
                       </TableCell>
                       <TableCell className="text-center">
-                        {getTrendIcon(team.trend)}
+                        <div className="flex items-center justify-center">
+                          {getTrendIcon(team.trend)}
+                        </div>
                       </TableCell>
                       <TableCell className="text-center">
                         <div className="flex items-center justify-center gap-2">
