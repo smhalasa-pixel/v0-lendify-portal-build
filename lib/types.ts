@@ -2,6 +2,8 @@
 
 export type UserRole = 'agent' | 'leadership' | 'supervisor' | 'executive' | 'admin'
 
+export type Region = 'dubai' | 'jordan'
+
 export interface User {
   id: string
   email: string
@@ -12,6 +14,7 @@ export interface User {
   teamName?: string
   teamIds?: string[] // For supervisors who manage multiple teams
   teamNames?: string[] // Names of teams for supervisors
+  region?: Region // Optional - for regional segregation
   hireDate: string
   status: 'active' | 'inactive' | 'pending'
 }

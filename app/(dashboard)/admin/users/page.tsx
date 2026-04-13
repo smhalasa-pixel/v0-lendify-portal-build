@@ -107,6 +107,7 @@ export default function UserManagementPage() {
   const [searchQuery, setSearchQuery] = React.useState('')
   const [roleFilter, setRoleFilter] = React.useState<string>('all')
   const [statusFilter, setStatusFilter] = React.useState<string>('all')
+  const [regionFilter, setRegionFilter] = React.useState<string>('all')
   const [isAddUserOpen, setIsAddUserOpen] = React.useState(false)
 
   // Redirect non-admins
@@ -144,7 +145,10 @@ export default function UserManagementPage() {
       u.email.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesRole = roleFilter === 'all' || u.role === roleFilter
     const matchesStatus = statusFilter === 'all' || u.status === statusFilter
-    return matchesSearch && matchesRole && matchesStatus
+    const matchesRegion = regionFilter === 'all' || 
+      (regionFilter === 'none' && !u.region) || 
+      u.region === regionFilter
+    return matchesSearch && matchesRole && matchesStatus && matchesRegion
   })
 
   // Stats
@@ -222,6 +226,22 @@ export default function UserManagementPage() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="region">Region (Optional)</Label>
+                <Select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select region (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No Region</SelectItem>
+                    <SelectItem value="dubai">Dubai</SelectItem>
+                    <SelectItem value="jordan">Jordan</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Leave empty for users who should see all regions (e.g., executives, admins)
+                </p>
               </div>
             </div>
             <DialogFooter>
@@ -316,6 +336,17 @@ export default function UserManagementPage() {
                 <SelectItem value="pending">Pending</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={regionFilter} onValueChange={setRegionFilter}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Region" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Regions</SelectItem>
+                <SelectItem value="dubai">Dubai</SelectItem>
+                <SelectItem value="jordan">Jordan</SelectItem>
+                <SelectItem value="none">No Region</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
@@ -335,6 +366,7 @@ export default function UserManagementPage() {
                 <TableHead>User</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Team</TableHead>
+                <TableHead>Region</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Hire Date</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -366,6 +398,9 @@ export default function UserManagementPage() {
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {u.teamName || u.teamNames?.join(', ') || '-'}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground capitalize">
+                      {u.region || '-'}
                     </TableCell>
                     <TableCell>
                       {getStatusBadge(u.status)}

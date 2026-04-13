@@ -536,6 +536,9 @@ export default function DashboardPage() {
   const [clientsCancelledDate, setClientsCancelledDate] = React.useState(defaultDate)
   const [cancellationRateDate, setCancellationRateDate] = React.useState(defaultDate)
   
+  // Region slicer state - for executive and admin views
+  const [selectedRegion, setSelectedRegion] = React.useState<'all' | 'dubai' | 'jordan'>('all')
+  
   const [customRange, setCustomRange] = React.useState<{ from?: Date; to?: Date }>({})
   const [calendarOpen, setCalendarOpen] = React.useState<string | null>(null)
 
@@ -693,6 +696,22 @@ export default function DashboardPage() {
         </div>
         
         <div className="flex items-center gap-2 flex-wrap">
+          {/* Region Slicer - Only for Executive and Admin */}
+          {hasExecutiveView && (
+            <div className="flex items-center gap-1.5 bg-muted/50 rounded-lg p-1.5">
+              <Select value={selectedRegion} onValueChange={(val) => setSelectedRegion(val as 'all' | 'dubai' | 'jordan')}>
+                <SelectTrigger className="h-7 text-xs w-auto min-w-[100px] bg-background border-0">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Regions</SelectItem>
+                  <SelectItem value="dubai">Dubai</SelectItem>
+                  <SelectItem value="jordan">Jordan</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          
           {/* Data Filter Slicer - Available to all roles except Agent */}
           {!isAgent && (
             <div className="flex items-center gap-2 bg-muted/50 rounded-lg p-1.5">
