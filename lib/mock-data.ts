@@ -17,6 +17,7 @@ import type {
   DashboardLayout,
   Task,
   AgentPerformance,
+  Client,
 } from './types'
 
 // Helper functions
@@ -706,6 +707,155 @@ export const mockPipeline: PipelineLoan[] = [
   },
 ]
 
+// Mock Clients - for client search functionality
+export const mockClients: Client[] = [
+  {
+    id: 'CL-2024-001',
+    firstName: 'Thomas',
+    lastName: 'Moore',
+    status: 'enrolled',
+    debtLoad: 52500,
+    submittedDate: '2024-01-15',
+    enrolledDate: '2024-02-01',
+    firstPaymentDate: '2024-03-15',
+    agentId: 'user-1',
+    agentName: 'Sarah Johnson',
+    teamId: 'team-1',
+  },
+  {
+    id: 'CL-2024-002',
+    firstName: 'Jennifer',
+    lastName: 'Williams',
+    status: 'active',
+    debtLoad: 38900,
+    submittedDate: '2024-01-20',
+    enrolledDate: '2024-02-05',
+    firstPaymentDate: '2024-03-01',
+    agentId: 'user-1',
+    agentName: 'Sarah Johnson',
+    teamId: 'team-1',
+  },
+  {
+    id: 'CL-2024-003',
+    firstName: 'Robert',
+    lastName: 'Garcia',
+    status: 'submitted',
+    debtLoad: 67200,
+    submittedDate: '2024-02-10',
+    agentId: 'user-1',
+    agentName: 'Sarah Johnson',
+    teamId: 'team-1',
+  },
+  {
+    id: 'CL-2024-004',
+    firstName: 'Maria',
+    lastName: 'Martinez',
+    status: 'lead',
+    debtLoad: 45000,
+    agentId: 'user-4',
+    agentName: 'David Williams',
+    teamId: 'team-1',
+  },
+  {
+    id: 'CL-2024-005',
+    firstName: 'James',
+    lastName: 'Johnson',
+    status: 'enrolled',
+    debtLoad: 89500,
+    submittedDate: '2024-01-08',
+    enrolledDate: '2024-01-25',
+    firstPaymentDate: '2024-02-25',
+    agentId: 'user-4',
+    agentName: 'David Williams',
+    teamId: 'team-1',
+  },
+  {
+    id: 'CL-2024-006',
+    firstName: 'Patricia',
+    lastName: 'Brown',
+    status: 'active',
+    debtLoad: 34200,
+    submittedDate: '2024-01-12',
+    enrolledDate: '2024-01-28',
+    firstPaymentDate: '2024-02-28',
+    agentId: 'user-5',
+    agentName: 'Emily Brown',
+    teamId: 'team-2',
+  },
+  {
+    id: 'CL-2024-007',
+    firstName: 'Michael',
+    lastName: 'Davis',
+    status: 'cancelled',
+    debtLoad: 28700,
+    submittedDate: '2024-01-05',
+    enrolledDate: '2024-01-20',
+    agentId: 'user-5',
+    agentName: 'Emily Brown',
+    teamId: 'team-2',
+  },
+  {
+    id: 'CL-2024-008',
+    firstName: 'Linda',
+    lastName: 'Wilson',
+    status: 'completed',
+    debtLoad: 41800,
+    submittedDate: '2023-10-15',
+    enrolledDate: '2023-11-01',
+    firstPaymentDate: '2023-12-01',
+    agentId: 'user-5',
+    agentName: 'Emily Brown',
+    teamId: 'team-2',
+  },
+  {
+    id: 'CL-2024-009',
+    firstName: 'William',
+    lastName: 'Anderson',
+    status: 'enrolled',
+    debtLoad: 72300,
+    submittedDate: '2024-02-01',
+    enrolledDate: '2024-02-15',
+    firstPaymentDate: '2024-03-15',
+    agentId: 'user-4',
+    agentName: 'David Williams',
+    teamId: 'team-1',
+  },
+  {
+    id: 'CL-2024-010',
+    firstName: 'Elizabeth',
+    lastName: 'Taylor',
+    status: 'submitted',
+    debtLoad: 55600,
+    submittedDate: '2024-02-12',
+    agentId: 'user-1',
+    agentName: 'Sarah Johnson',
+    teamId: 'team-1',
+  },
+  {
+    id: 'CL-2024-011',
+    firstName: 'Christopher',
+    lastName: 'Thomas',
+    status: 'lead',
+    debtLoad: 31200,
+    agentId: 'user-5',
+    agentName: 'Emily Brown',
+    teamId: 'team-2',
+  },
+  {
+    id: 'CL-2024-012',
+    firstName: 'Susan',
+    lastName: 'Jackson',
+    status: 'active',
+    debtLoad: 48900,
+    submittedDate: '2024-01-18',
+    enrolledDate: '2024-02-03',
+    firstPaymentDate: '2024-03-03',
+    agentId: 'user-4',
+    agentName: 'David Williams',
+    teamId: 'team-1',
+  },
+]
+
 // Mock Tasks
 export const mockTasks: Task[] = [
   {
@@ -1161,6 +1311,20 @@ export const dataService = {
       return mockPipeline.filter(p => p.agentId === userId)
     }
     return mockPipeline
+  },
+  
+  // Clients - for client search
+  getClients: (agentId?: string, teamIds?: string[]): Client[] => {
+    if (agentId) {
+      // For agents - only their own clients
+      return mockClients.filter(c => c.agentId === agentId)
+    }
+    if (teamIds && teamIds.length > 0) {
+      // For supervisors - clients from their teams
+      return mockClients.filter(c => teamIds.includes(c.teamId))
+    }
+    // For executives - all clients
+    return mockClients
   },
   
   // Dashboard

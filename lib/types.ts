@@ -207,6 +207,20 @@ export interface PipelineLoan {
   lastActivity: string
 }
 
+export interface Client {
+  id: string
+  firstName: string
+  lastName: string
+  status: 'lead' | 'submitted' | 'enrolled' | 'active' | 'cancelled' | 'completed'
+  debtLoad: number
+  submittedDate?: string
+  enrolledDate?: string
+  firstPaymentDate?: string
+  agentId: string
+  agentName: string
+  teamId: string
+}
+
 export interface DashboardWidget {
   id: string
   type: 'kpi' | 'chart' | 'table' | 'list'

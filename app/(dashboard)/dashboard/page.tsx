@@ -268,6 +268,21 @@ export default function DashboardPage() {
     return dataService.getPipeline()
   }, [user, isAgent])
 
+  // Clients data for client search - agents only see their own clients
+  const clients = React.useMemo(() => {
+    if (isAgent && user) {
+      return dataService.getClients(user.id)
+    }
+    if (isLeadership && user?.teamId) {
+      return dataService.getClients(undefined, [user.teamId])
+    }
+    if (isSupervisor && user?.teamIds) {
+      return dataService.getClients(undefined, user.teamIds)
+    }
+    // Executives see all clients
+    return dataService.getClients()
+  }, [user, isAgent, isLeadership, isSupervisor])
+
   const volumeData = React.useMemo(() => dataService.getVolumeChartData(30), [])
   const announcements = React.useMemo(() => dataService.getAnnouncements(), [])
   
@@ -836,8 +851,8 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Client Search */}
-          <ClientSearch data={pipeline} />
+{/* Client Search */}
+      <ClientSearch data={clients} />
 
           {/* Announcements */}
           <AnnouncementsList announcements={announcements} userId={user?.id} limit={3} />
