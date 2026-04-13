@@ -2,12 +2,13 @@
 
 import * as React from 'react'
 import { format } from 'date-fns'
-import { CalendarIcon, TrendingUp, TrendingDown, AlertTriangle, Target, Users, User, Filter } from 'lucide-react'
+import { CalendarIcon, TrendingUp, TrendingDown, AlertTriangle, Target, Users, User, Filter, Search, ChevronDown, Check } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
 import {
   Tooltip,
   TooltipContent,
@@ -142,6 +143,21 @@ export default function DashboardPage() {
   
   // View toggle for tables: 'teams' or 'agents'
   const [tableView, setTableView] = React.useState<'teams' | 'agents'>('teams')
+  
+  // Selected specific team or agent from dropdown
+  const [selectedTeamId, setSelectedTeamId] = React.useState<string | null>(null)
+  const [selectedAgentId, setSelectedAgentId] = React.useState<string | null>(null)
+  
+  // Search terms for dropdowns
+  const [teamSearchTerm, setTeamSearchTerm] = React.useState('')
+  const [agentSearchTerm, setAgentSearchTerm] = React.useState('')
+  
+  // Popover open states
+  const [teamsPopoverOpen, setTeamsPopoverOpen] = React.useState(false)
+  const [agentsPopoverOpen, setAgentsPopoverOpen] = React.useState(false)
+  
+  // Get all agents for the agent dropdown
+  const allAgents = React.useMemo(() => dataService.getAgents(), [])
 
   // Get filtered metrics based on filter selection
   const metrics = React.useMemo(() => {
@@ -186,6 +202,11 @@ export default function DashboardPage() {
   const teamMetrics = React.useMemo(() => {
     const allTeams = dataService.getTeamMetrics()
     
+    // If a specific team is selected from dropdown, filter to that team only
+    if (selectedTeamId) {
+      return allTeams.filter(t => t.teamId === selectedTeamId)
+    }
+    
     if (filterType === 'team-lead') {
       if (selectedTeamLead === 'all') {
         return allTeams
@@ -215,48 +236,51 @@ export default function DashboardPage() {
     }
     
     return allTeams
-  }, [filterType, selectedTeamLead, selectedSupervisor, teamLeads, supervisors, isLeadership, isSupervisor, user?.teamId, user?.teamIds])
+  }, [filterType, selectedTeamLead, selectedSupervisor, teamLeads, supervisors, isLeadership, isSupervisor, user?.teamId, user?.teamIds, selectedTeamId])
   
   // Agent performance - filtered by selection
   const agentPerformance = React.useMemo(() => {
+    let agents = [] as ReturnType<typeof dataService.getAgentPerformanceByTeams>
+    
     if (filterType === 'team-lead') {
       if (selectedTeamLead === 'all') {
-        // Get all team IDs that have a team lead
         const teamLeadTeamIds = teamLeads.map(l => l.teamId).filter(Boolean) as string[]
-        return dataService.getAgentPerformanceByTeams(teamLeadTeamIds.length > 0 ? teamLeadTeamIds : allTeamIds)
+        agents = dataService.getAgentPerformanceByTeams(teamLeadTeamIds.length > 0 ? teamLeadTeamIds : allTeamIds)
+      } else {
+        const lead = teamLeads.find(l => l.id === selectedTeamLead)
+        if (lead?.teamId) {
+          agents = dataService.getAgentPerformanceByTeam(lead.teamId)
+        }
       }
-      const lead = teamLeads.find(l => l.id === selectedTeamLead)
-      if (lead?.teamId) {
-        return dataService.getAgentPerformanceByTeam(lead.teamId)
-      }
-    }
-    
-    if (filterType === 'supervisor') {
+    } else if (filterType === 'supervisor') {
       if (selectedSupervisor === 'all') {
-        // Get all team IDs across all supervisors
         const supervisorTeamIds = new Set<string>()
         supervisors.forEach(s => s.teamIds?.forEach(id => supervisorTeamIds.add(id)))
-        return dataService.getAgentPerformanceByTeams(supervisorTeamIds.size > 0 ? Array.from(supervisorTeamIds) : allTeamIds)
+        agents = dataService.getAgentPerformanceByTeams(supervisorTeamIds.size > 0 ? Array.from(supervisorTeamIds) : allTeamIds)
+      } else {
+        const supervisor = supervisors.find(s => s.id === selectedSupervisor)
+        if (supervisor?.teamIds) {
+          agents = dataService.getAgentPerformanceByTeams(supervisor.teamIds)
+        }
       }
-      const supervisor = supervisors.find(s => s.id === selectedSupervisor)
-      if (supervisor?.teamIds) {
-        return dataService.getAgentPerformanceByTeams(supervisor.teamIds)
+    } else {
+      // Default behavior by role
+      if (isLeadership && user?.teamId) {
+        agents = dataService.getAgentPerformanceByTeam(user.teamId)
+      } else if (isSupervisor && user?.teamIds && user.teamIds.length > 0) {
+        agents = dataService.getAgentPerformanceByTeams(user.teamIds)
+      } else if (isExecutive) {
+        agents = dataService.getAgentPerformanceByTeams(allTeamIds)
       }
     }
     
-    // Default behavior by role
-    if (isLeadership && user?.teamId) {
-      return dataService.getAgentPerformanceByTeam(user.teamId)
-    }
-    if (isSupervisor && user?.teamIds && user.teamIds.length > 0) {
-      return dataService.getAgentPerformanceByTeams(user.teamIds)
-    }
-    if (isExecutive) {
-      return dataService.getAgentPerformanceByTeams(allTeamIds)
+    // If a specific agent is selected from dropdown, filter to that agent only
+    if (selectedAgentId) {
+      return agents.filter(a => a.agentId === selectedAgentId)
     }
     
-    return []
-  }, [filterType, selectedTeamLead, selectedSupervisor, teamLeads, supervisors, allTeamIds, isLeadership, isSupervisor, isExecutive, user?.teamId, user?.teamIds])
+    return agents
+  }, [filterType, selectedTeamLead, selectedSupervisor, teamLeads, supervisors, allTeamIds, isLeadership, isSupervisor, isExecutive, user?.teamId, user?.teamIds, selectedAgentId])
 
   // Dashboard title based on filter
   const dashboardTitle = React.useMemo(() => {
@@ -362,6 +386,8 @@ export default function DashboardPage() {
   React.useEffect(() => {
     setSelectedTeamLead('all')
     setSelectedSupervisor('all')
+    setSelectedTeamId(null)
+    setSelectedAgentId(null)
   }, [filterType])
 
   return (
@@ -426,33 +452,155 @@ export default function DashboardPage() {
             </div>
           )}
           
-          {/* View Toggle for tables (Teams/Agents) - not for agents */}
+          {/* View Toggle for tables (Teams/Agents) with searchable dropdowns - not for agents */}
           {!isAgent && (
-            <div className="flex items-center bg-muted rounded-lg p-1">
-              <button
-                onClick={() => setTableView('teams')}
-                className={cn(
-                  "px-3 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-1.5",
-                  tableView === 'teams' 
-                    ? "bg-background text-foreground shadow-sm" 
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <Users className="size-3" />
-                Teams
-              </button>
-              <button
-                onClick={() => setTableView('agents')}
-                className={cn(
-                  "px-3 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-1.5",
-                  tableView === 'agents' 
-                    ? "bg-background text-foreground shadow-sm" 
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <User className="size-3" />
-                Agents
-              </button>
+            <div className="flex items-center bg-muted rounded-lg p-1 gap-1">
+              {/* Teams Dropdown */}
+              <Popover open={teamsPopoverOpen} onOpenChange={setTeamsPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    onClick={() => {
+                      setTableView('teams')
+                      setTeamsPopoverOpen(true)
+                    }}
+                    className={cn(
+                      "px-3 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-1.5",
+                      tableView === 'teams' 
+                        ? "bg-background text-foreground shadow-sm" 
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <Users className="size-3" />
+                    {selectedTeamId 
+                      ? teamMetrics.find(t => t.teamId === selectedTeamId)?.teamName || 'Teams'
+                      : 'Teams'}
+                    <ChevronDown className="size-3 ml-0.5" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-2" align="end">
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+                      <Input
+                        placeholder="Search teams..."
+                        value={teamSearchTerm}
+                        onChange={(e) => setTeamSearchTerm(e.target.value)}
+                        className="h-8 pl-8 text-xs"
+                      />
+                    </div>
+                    <div className="max-h-48 overflow-y-auto space-y-0.5">
+                      <button
+                        onClick={() => {
+                          setSelectedTeamId(null)
+                          setTeamsPopoverOpen(false)
+                          setTeamSearchTerm('')
+                        }}
+                        className={cn(
+                          "w-full text-left px-2 py-1.5 text-xs rounded-md hover:bg-muted flex items-center justify-between",
+                          !selectedTeamId && "bg-primary/10 text-primary"
+                        )}
+                      >
+                        <span>All Teams</span>
+                        {!selectedTeamId && <Check className="size-3" />}
+                      </button>
+                      {dataService.getTeamMetrics()
+                        .filter(team => team.teamName.toLowerCase().includes(teamSearchTerm.toLowerCase()))
+                        .map(team => (
+                          <button
+                            key={team.teamId}
+                            onClick={() => {
+                              setSelectedTeamId(team.teamId)
+                              setTeamsPopoverOpen(false)
+                              setTeamSearchTerm('')
+                            }}
+                            className={cn(
+                              "w-full text-left px-2 py-1.5 text-xs rounded-md hover:bg-muted flex items-center justify-between",
+                              selectedTeamId === team.teamId && "bg-primary/10 text-primary"
+                            )}
+                          >
+                            <span>{team.teamName}</span>
+                            {selectedTeamId === team.teamId && <Check className="size-3" />}
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+              
+              {/* Agents Dropdown */}
+              <Popover open={agentsPopoverOpen} onOpenChange={setAgentsPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    onClick={() => {
+                      setTableView('agents')
+                      setAgentsPopoverOpen(true)
+                    }}
+                    className={cn(
+                      "px-3 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-1.5",
+                      tableView === 'agents' 
+                        ? "bg-background text-foreground shadow-sm" 
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <User className="size-3" />
+                    {selectedAgentId 
+                      ? allAgents.find(a => a.id === selectedAgentId)?.name || 'Agents'
+                      : 'Agents'}
+                    <ChevronDown className="size-3 ml-0.5" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-2" align="end">
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+                      <Input
+                        placeholder="Search agents..."
+                        value={agentSearchTerm}
+                        onChange={(e) => setAgentSearchTerm(e.target.value)}
+                        className="h-8 pl-8 text-xs"
+                      />
+                    </div>
+                    <div className="max-h-48 overflow-y-auto space-y-0.5">
+                      <button
+                        onClick={() => {
+                          setSelectedAgentId(null)
+                          setAgentsPopoverOpen(false)
+                          setAgentSearchTerm('')
+                        }}
+                        className={cn(
+                          "w-full text-left px-2 py-1.5 text-xs rounded-md hover:bg-muted flex items-center justify-between",
+                          !selectedAgentId && "bg-primary/10 text-primary"
+                        )}
+                      >
+                        <span>All Agents</span>
+                        {!selectedAgentId && <Check className="size-3" />}
+                      </button>
+                      {allAgents
+                        .filter(agent => agent.name.toLowerCase().includes(agentSearchTerm.toLowerCase()))
+                        .map(agent => (
+                          <button
+                            key={agent.id}
+                            onClick={() => {
+                              setSelectedAgentId(agent.id)
+                              setAgentsPopoverOpen(false)
+                              setAgentSearchTerm('')
+                            }}
+                            className={cn(
+                              "w-full text-left px-2 py-1.5 text-xs rounded-md hover:bg-muted flex items-center justify-between",
+                              selectedAgentId === agent.id && "bg-primary/10 text-primary"
+                            )}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span>{agent.name}</span>
+                              <span className="text-muted-foreground text-[10px]">{agent.teamName}</span>
+                            </div>
+                            {selectedAgentId === agent.id && <Check className="size-3" />}
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
           )}
           
