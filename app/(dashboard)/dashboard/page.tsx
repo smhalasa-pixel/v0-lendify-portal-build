@@ -2,8 +2,8 @@
 
 import * as React from 'react'
 import { format } from 'date-fns'
-import { CalendarIcon, TrendingUp, TrendingDown, AlertTriangle, Target } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { CalendarIcon, TrendingUp, TrendingDown, AlertTriangle, Target, Users, User } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import { Progress } from '@/components/ui/progress'
@@ -74,7 +74,6 @@ function Metric({
     return new Intl.NumberFormat('en-US').format(value)
   }, [value, fmt])
 
-  // Show tooltip for currency values >= 1000 OR for percentages with numerator/denominator
   const needsTooltip = (fmt === 'currency' && value >= 1000) || (fmt === 'percentage' && numerator !== undefined && denominator !== undefined)
 
   const tooltipContent = React.useMemo(() => {
@@ -131,6 +130,10 @@ export default function DashboardPage() {
   const isSupervisor = user?.role === 'supervisor'
   const isExecutive = user?.role === 'executive'
 
+  // Executive view toggle: 'teams' or 'agents'
+  const [executiveView, setExecutiveView] = React.useState<'teams' | 'agents'>('teams')
+
+  // Get metrics based on role
   const metrics = React.useMemo(() => {
     if (isAgent && user) return dataService.getDashboardMetrics(user.id)
     if (isLeadership && user?.teamId) return dataService.getDashboardMetrics(undefined, user.teamId)
@@ -145,40 +148,64 @@ export default function DashboardPage() {
 
   const volumeData = React.useMemo(() => dataService.getVolumeChartData(30), [])
   const announcements = React.useMemo(() => dataService.getAnnouncements(), [])
-  const teamMetrics = React.useMemo(() => {
-    // All roles can now see team performance
-    return dataService.getTeamMetrics()
-  }, [])
   
-  // Agent performance for team leaders and supervisors
+  // Team metrics - filtered by role
+  const teamMetrics = React.useMemo(() => {
+    const allTeams = dataService.getTeamMetrics()
+    
+    // Leadership only sees their team
+    if (isLeadership && user?.teamId) {
+      return allTeams.filter(t => t.teamId === user.teamId)
+    }
+    
+    // Supervisor sees their assigned teams
+    if (isSupervisor && user?.teamIds) {
+      return allTeams.filter(t => user.teamIds!.includes(t.teamId))
+    }
+    
+    // Executive sees all teams
+    return allTeams
+  }, [isLeadership, isSupervisor, user?.teamId, user?.teamIds])
+  
+  // Agent performance - filtered by role
   const agentPerformance = React.useMemo(() => {
+    // Leadership: their team's agents
     if (isLeadership && user?.teamId) {
       return dataService.getAgentPerformanceByTeam(user.teamId)
     }
+    
+    // Supervisor: agents from all their teams
     if (isSupervisor && user?.teamIds && user.teamIds.length > 0) {
       return dataService.getAgentPerformanceByTeams(user.teamIds)
     }
+    
+    // Executive: all agents (when in agents view)
+    if (isExecutive) {
+      return dataService.getAgentPerformanceByTeams(['team-1', 'team-2'])
+    }
+    
     return []
-  }, [isLeadership, isSupervisor, user?.teamId, user?.teamIds])
+  }, [isLeadership, isSupervisor, isExecutive, user?.teamId, user?.teamIds])
 
-  const dashboardTitle = isAgent 
-    ? 'My Dashboard' 
-    : isLeadership 
-      ? `${user?.teamName || 'Team'} Dashboard` 
-      : isSupervisor 
-        ? 'Supervisor Dashboard' 
-        : 'Executive Dashboard'
+  // Dashboard title based on role
+  const dashboardTitle = React.useMemo(() => {
+    if (isAgent) return 'My Dashboard'
+    if (isLeadership) return `${user?.teamName || 'Team'} Dashboard`
+    if (isSupervisor) {
+      const teamCount = user?.teamIds?.length || 0
+      return `Supervisor Dashboard (${teamCount} Team${teamCount !== 1 ? 's' : ''})`
+    }
+    return 'Executive Dashboard'
+  }, [isAgent, isLeadership, isSupervisor, user?.teamName, user?.teamIds])
 
-  // Date slicer states for each section
+  // Date slicer states
   const [enrollmentDate, setEnrollmentDate] = React.useState('30d')
   const [conversionDate, setConversionDate] = React.useState('30d')
   const [submissionDate, setSubmissionDate] = React.useState('30d')
   
-  // Custom date range state
   const [customRange, setCustomRange] = React.useState<{ from?: Date; to?: Date }>({})
   const [calendarOpen, setCalendarOpen] = React.useState<string | null>(null)
 
-  // Date preset options
   const dateOptions = [
     { value: 'today', label: 'Today' },
     { value: 'yesterday', label: 'Yesterday' },
@@ -196,7 +223,6 @@ export default function DashboardPage() {
     { value: 'custom', label: 'Custom...' },
   ]
 
-  // Reusable date selector component
   const DateSelector = ({ value, onChange, id }: { value: string; onChange: (val: string) => void; id: string }) => (
     <div className="flex items-center gap-1">
       <Select value={value} onValueChange={(val) => val === 'custom' ? setCalendarOpen(id) : onChange(val)}>
@@ -255,7 +281,39 @@ export default function DashboardPage() {
     <div className="p-4 lg:p-5 space-y-4 max-w-[1600px] mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-foreground">{dashboardTitle}</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-lg font-semibold text-foreground">{dashboardTitle}</h1>
+          
+          {/* Executive View Toggle */}
+          {isExecutive && (
+            <div className="flex items-center bg-muted rounded-lg p-1">
+              <button
+                onClick={() => setExecutiveView('teams')}
+                className={cn(
+                  "px-3 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-1.5",
+                  executiveView === 'teams' 
+                    ? "bg-background text-foreground shadow-sm" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Users className="size-3" />
+                Teams
+              </button>
+              <button
+                onClick={() => setExecutiveView('agents')}
+                className={cn(
+                  "px-3 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-1.5",
+                  executiveView === 'agents' 
+                    ? "bg-background text-foreground shadow-sm" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <User className="size-3" />
+                Agents
+              </button>
+            </div>
+          )}
+        </div>
         <span className="text-xs text-muted-foreground">{format(new Date(), 'EEEE, MMMM d, yyyy')}</span>
       </div>
 
@@ -390,25 +448,57 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Agent Performance - visible to team leaders and supervisors */}
-      {(isLeadership || isSupervisor) && agentPerformance.length > 0 && (
+      {/* Role-specific tables section */}
+      
+      {/* Agent: No tables, they see personal metrics only */}
+      
+      {/* Team Lead: Their team's agents only */}
+      {isLeadership && agentPerformance.length > 0 && (
         <AgentPerformanceTable 
           data={agentPerformance}
-          title={isSupervisor ? "My Teams' Agents" : "My Team Agents"}
-          description={isSupervisor 
-            ? "Individual performance breakdown across all your teams" 
-            : "Individual performance breakdown for your team members"}
+          title={`${user?.teamName || 'My Team'} Agents`}
+          description="Individual performance breakdown for your team members"
         />
       )}
-
-      {/* Team Performance - visible to all roles */}
-      {teamMetrics.length > 0 && (
-        <TeamPerformanceTable 
-          data={teamMetrics} 
-          title="Team Performance"
-          description={isAgent ? "See how all teams are performing" : "Performance metrics by team"}
-          highlightTeamId={user?.teamId}
-        />
+      
+      {/* Supervisor: Their teams + agents from all their teams */}
+      {isSupervisor && (
+        <>
+          {teamMetrics.length > 0 && (
+            <TeamPerformanceTable 
+              data={teamMetrics} 
+              title="My Teams"
+              description={`Performance metrics for your ${teamMetrics.length} team${teamMetrics.length !== 1 ? 's' : ''}`}
+            />
+          )}
+          {agentPerformance.length > 0 && (
+            <AgentPerformanceTable 
+              data={agentPerformance}
+              title="All My Agents"
+              description="Individual performance breakdown across all your teams"
+            />
+          )}
+        </>
+      )}
+      
+      {/* Executive: Toggle between Teams view and Agents view */}
+      {isExecutive && (
+        <>
+          {executiveView === 'teams' && teamMetrics.length > 0 && (
+            <TeamPerformanceTable 
+              data={teamMetrics} 
+              title="All Teams"
+              description="Performance metrics for all teams in the organization"
+            />
+          )}
+          {executiveView === 'agents' && agentPerformance.length > 0 && (
+            <AgentPerformanceTable 
+              data={agentPerformance}
+              title="All Agents"
+              description="Individual performance breakdown for all agents in the organization"
+            />
+          )}
+        </>
       )}
     </div>
   )
