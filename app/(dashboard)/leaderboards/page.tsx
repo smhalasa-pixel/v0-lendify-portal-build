@@ -279,13 +279,16 @@ export default function LeaderboardsPage() {
     return `${format(dateRangeInfo.comparisonFrom, 'MMM d')} - ${format(dateRangeInfo.comparisonTo, 'MMM d, yyyy')}`
   }, [dateRangeInfo])
 
-  // Find current user's position (agent view)
-  const userRank = user ? leaderboard.find((entry) => entry.agentId === user.id) : null
+  // Find current user's position (agent view) - reactive to period changes
+  const userRank = React.useMemo(() => {
+    if (!user) return null
+    return leaderboard.find((entry) => entry.agentId === user.id) || null
+  }, [user, leaderboard])
   
-  // Find current user's team position (team view)
+  // Find current user's team position (team view) - reactive to period changes
   const userTeamRank = React.useMemo(() => {
     if (!user?.teamId) return null
-    return teamLeaderboard.find((team) => team.teamId === user.teamId)
+    return teamLeaderboard.find((team) => team.teamId === user.teamId) || null
   }, [user, teamLeaderboard])
 
   // Top 3 for podium
