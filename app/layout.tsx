@@ -9,7 +9,7 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: 'Lendify Portal - Internal Operations',
-  description: 'Lendify internal operations portal for loan officers, team leaders, and executives',
+  description: 'Lendify internal operations portal for sales agents, team leaders, and executives',
   generator: 'v0.app',
   icons: {
     icon: [

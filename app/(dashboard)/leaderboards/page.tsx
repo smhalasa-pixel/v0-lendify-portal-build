@@ -226,7 +226,7 @@ export default function LeaderboardsPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{leaderboard.length}</p>
-                <p className="text-sm text-muted-foreground">Active Agents</p>
+                <p className="text-sm text-muted-foreground">Active Sales Agents</p>
               </div>
             </div>
           </CardContent>
@@ -237,14 +237,14 @@ export default function LeaderboardsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Full Rankings</CardTitle>
-          <CardDescription>All agents ranked by debt load enrolled</CardDescription>
+          <CardDescription>All sales agents ranked by debt load enrolled</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[60px]">Rank</TableHead>
-                <TableHead>Agent</TableHead>
+                <TableHead>Sales Agent</TableHead>
                 <TableHead>Team</TableHead>
                 <TableHead className="text-right">Debt Enrolled</TableHead>
                 <TableHead className="text-right">Units</TableHead>

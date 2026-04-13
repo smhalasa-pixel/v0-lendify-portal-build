@@ -127,9 +127,9 @@ function getRoleLabel(role: UserRole) {
     case 'executive':
       return 'Executive'
     case 'leadership':
-      return 'Leadership'
+      return 'Team Leader'
     default:
-      return 'Agent'
+      return 'Sales Agent'
   }
 }
 
@@ -259,11 +259,11 @@ export function AppSidebar() {
                   Demo: Switch Role
                 </DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => switchRole('agent')}>
-                  <Badge variant="outline" className="mr-2">Agent</Badge>
+                  <Badge variant="outline" className="mr-2">Sales Agent</Badge>
                   Sarah Johnson
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => switchRole('leadership')}>
-                  <Badge variant="secondary" className="mr-2">Leadership</Badge>
+                  <Badge variant="secondary" className="mr-2">Team Leader</Badge>
                   Michael Chen
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => switchRole('executive')}>

@@ -172,8 +172,8 @@ export default function UserManagementPage() {
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="agent">Agent</SelectItem>
-                      <SelectItem value="leadership">Leadership</SelectItem>
+                      <SelectItem value="agent">Sales Agent</SelectItem>
+                      <SelectItem value="leadership">Team Leader & Supervisor</SelectItem>
                       <SelectItem value="executive">Executive</SelectItem>
                     </SelectContent>
                   </Select>
@@ -269,8 +269,8 @@ export default function UserManagementPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Roles</SelectItem>
-                <SelectItem value="agent">Agent</SelectItem>
-                <SelectItem value="leadership">Leadership</SelectItem>
+                <SelectItem value="agent">Sales Agent</SelectItem>
+                <SelectItem value="leadership">Team Leader & Supervisor</SelectItem>
                 <SelectItem value="executive">Executive</SelectItem>
               </SelectContent>
             </Select>
@@ -330,7 +330,7 @@ export default function UserManagementPage() {
                     </TableCell>
                     <TableCell>
                       <Badge variant={getRoleBadgeVariant(agent.role)}>
-                        {agent.role.charAt(0).toUpperCase() + agent.role.slice(1)}
+                        {agent.role === 'agent' ? 'Sales Agent' : agent.role === 'leadership' ? 'Team Leader' : 'Executive'}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
