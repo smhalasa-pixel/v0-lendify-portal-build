@@ -55,18 +55,6 @@ const mainNavItems = [
     roles: ['agent', 'leadership', 'executive'] as UserRole[],
   },
   {
-    title: 'Commissions',
-    href: '/commissions',
-    icon: DollarSign,
-    roles: ['agent', 'leadership', 'executive'] as UserRole[],
-  },
-  {
-    title: 'Clawbacks',
-    href: '/clawbacks',
-    icon: AlertTriangle,
-    roles: ['agent', 'leadership', 'executive'] as UserRole[],
-  },
-  {
     title: 'Announcements',
     href: '/announcements',
     icon: Megaphone,
@@ -94,6 +82,18 @@ const mainNavItems = [
     title: 'Leaderboards',
     href: '/leaderboards',
     icon: Trophy,
+    roles: ['agent', 'leadership', 'executive'] as UserRole[],
+  },
+  {
+    title: 'Commissions',
+    href: '/commissions',
+    icon: DollarSign,
+    roles: ['agent', 'leadership', 'executive'] as UserRole[],
+  },
+  {
+    title: 'Clawbacks',
+    href: '/clawbacks',
+    icon: AlertTriangle,
     roles: ['agent', 'leadership', 'executive'] as UserRole[],
   },
 ]
