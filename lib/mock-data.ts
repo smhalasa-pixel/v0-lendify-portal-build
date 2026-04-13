@@ -1162,9 +1162,9 @@ export const dataService = {
         performanceGrade: leaderboardEntry?.performanceGrade || 'B',
         monthlyTargetUnits,
         monthlyTargetDebtLoad,
-        pacing: Math.min(pacing, 150),
-        pacingUnits: Math.min(pacingUnits, 150),
-        pacingDebtLoad: Math.min(pacingDebtLoad, 150),
+        pacing,
+        pacingUnits,
+        pacingDebtLoad,
         trend: leaderboardEntry?.trend || 'same',
       }
     }).sort((a, b) => b.debtLoadEnrolled - a.debtLoadEnrolled)
