@@ -243,13 +243,12 @@ export default function LeaderboardsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[60px]">Rank</TableHead>
-                <TableHead>Sales Agent</TableHead>
-                <TableHead>Team</TableHead>
-                <TableHead className="text-right">Debt Enrolled</TableHead>
-                <TableHead className="text-right">Units</TableHead>
-                <TableHead className="text-right">Commission</TableHead>
-                <TableHead className="text-center">Trend</TableHead>
+                <TableHead className="w-[60px] text-center">Rank</TableHead>
+                <TableHead>Agent</TableHead>
+                <TableHead className="text-center">Team</TableHead>
+                <TableHead className="text-center">Units Closed</TableHead>
+                <TableHead className="text-center">Debt Enrolled</TableHead>
+                <TableHead className="text-center">Conversion Rate</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -260,8 +259,8 @@ export default function LeaderboardsPage() {
                     user?.id === entry.agentId && 'bg-primary/5'
                   )}
                 >
-                  <TableCell>
-                    <div className="flex items-center justify-center size-8">
+                  <TableCell className="text-center">
+                    <div className="flex items-center justify-center size-8 mx-auto">
                       {getRankIcon(entry.rank)}
                     </div>
                   </TableCell>
@@ -279,23 +278,13 @@ export default function LeaderboardsPage() {
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{entry.teamName}</TableCell>
-                  <TableCell className="text-right font-medium">
+                  <TableCell className="text-center text-muted-foreground">{entry.teamName}</TableCell>
+                  <TableCell className="text-center font-medium">{entry.unitsClosed}</TableCell>
+                  <TableCell className="text-center font-medium">
                     {formatCurrency(entry.debtLoadEnrolled)}
                   </TableCell>
-                  <TableCell className="text-right">{entry.unitsEnrolled}</TableCell>
-                  <TableCell className="text-right text-success font-medium">
-                    {formatCurrency(entry.totalCommissions)}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <div className="flex items-center justify-center gap-1">
-                      {getTrendIcon(entry.trend)}
-                      {entry.previousRank && entry.rank !== entry.previousRank && (
-                        <span className="text-xs text-muted-foreground">
-                          ({entry.previousRank > entry.rank ? '+' : ''}{entry.previousRank - entry.rank})
-                        </span>
-                      )}
-                    </div>
+                  <TableCell className="text-center font-medium">
+                    {entry.conversionRate.toFixed(1)}%
                   </TableCell>
                 </TableRow>
               ))}

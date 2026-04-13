@@ -92,9 +92,12 @@ export interface LeaderboardEntry {
   agentId: string
   agentName: string
   avatar?: string
+  teamId?: string
   teamName?: string
+  unitsClosed: number
   debtLoadEnrolled: number
   unitsEnrolled: number
+  conversionRate: number
   totalCommissions: number
   previousRank?: number
   trend: 'up' | 'down' | 'same'
