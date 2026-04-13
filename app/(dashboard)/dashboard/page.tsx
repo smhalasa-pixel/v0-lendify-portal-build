@@ -13,7 +13,6 @@ import {
   Percent,
   ArrowRightLeft,
 } from 'lucide-react'
-import type { DateRange } from 'react-day-picker'
 
 import { useAuth } from '@/lib/auth-context'
 import { dataService } from '@/lib/mock-data'
@@ -23,11 +22,9 @@ import { PipelineChart } from '@/components/dashboard/pipeline-chart'
 import { PipelineTable } from '@/components/dashboard/pipeline-table'
 import { AnnouncementsList } from '@/components/dashboard/announcements-list'
 import { TeamPerformanceTable } from '@/components/dashboard/team-performance-table'
-import { DateRangePicker } from '@/components/date-range-picker'
 
 export default function DashboardPage() {
   const { user } = useAuth()
-  const [dateRange, setDateRange] = React.useState<DateRange | undefined>(undefined)
 
   // Determine which data to fetch based on role
   const isAgent = user?.role === 'agent'
@@ -80,123 +77,138 @@ export default function DashboardPage() {
   }, [isAgent, isLeadership])
 
   return (
-    <div className="p-6 space-y-8">
+    <div className="p-4 lg:p-6 space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            {dashboardTitle}
-          </h1>
-          <p className="text-muted-foreground mt-1">{dashboardDescription}</p>
+      <div>
+        <h1 className="text-xl font-bold tracking-tight text-foreground">
+          {dashboardTitle}
+        </h1>
+        <p className="text-sm text-muted-foreground">{dashboardDescription}</p>
+      </div>
+
+      {/* Enrolled Metrics Section */}
+      <section>
+        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Enrolled</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <KPICard
+            title="Debt Load"
+            value={metrics.debtLoadEnrolled}
+            change={metrics.debtLoadEnrolledChange}
+            format="currency"
+            icon={<DollarSign className="size-3.5" />}
+            color="purple"
+          />
+          <KPICard
+            title="Units"
+            value={metrics.unitsEnrolled}
+            change={metrics.unitsEnrolledChange}
+            format="number"
+            icon={<FileText className="size-3.5" />}
+            color="blue"
+          />
+          <KPICard
+            title="Commission"
+            value={metrics.totalCommissions}
+            change={metrics.commissionsChange}
+            format="currency"
+            icon={<TrendingUp className="size-3.5" />}
+            color="emerald"
+          />
+          <KPICard
+            title="Clawbacks"
+            value={metrics.totalClawbacks}
+            change={metrics.clawbacksChange}
+            format="currency"
+            icon={<TrendingDown className="size-3.5" />}
+            color="rose"
+          />
         </div>
-        <DateRangePicker
-          dateRange={dateRange}
-          onDateRangeChange={setDateRange}
-        />
-      </div>
+      </section>
 
-      {/* KPI Cards - Row 1: Enrolled & Submitted */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard
-          title="Debt Load Enrolled"
-          value={metrics.debtLoadEnrolled}
-          change={metrics.debtLoadEnrolledChange}
-          format="currency"
-          icon={<DollarSign className="size-4" />}
-        />
-        <KPICard
-          title="Units Enrolled"
-          value={metrics.unitsEnrolled}
-          change={metrics.unitsEnrolledChange}
-          format="number"
-          icon={<FileText className="size-4" />}
-        />
-        <KPICard
-          title="Debt Load Submitted"
-          value={metrics.debtLoadSubmitted}
-          change={metrics.debtLoadSubmittedChange}
-          format="currency"
-          icon={<Briefcase className="size-4" />}
-        />
-        <KPICard
-          title="Units Submitted"
-          value={metrics.unitsSubmitted}
-          change={metrics.unitsSubmittedChange}
-          format="number"
-          icon={<Target className="size-4" />}
-        />
-      </div>
+      {/* Submitted Metrics Section */}
+      <section>
+        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Submitted</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <KPICard
+            title="Debt Load"
+            value={metrics.debtLoadSubmitted}
+            change={metrics.debtLoadSubmittedChange}
+            format="currency"
+            icon={<Briefcase className="size-3.5" />}
+            color="purple"
+          />
+          <KPICard
+            title="Units"
+            value={metrics.unitsSubmitted}
+            change={metrics.unitsSubmittedChange}
+            format="number"
+            icon={<Target className="size-3.5" />}
+            color="blue"
+          />
+          <KPICard
+            title="Conversion Rate"
+            value={metrics.conversionRate}
+            change={metrics.conversionRateChange}
+            format="percentage"
+            icon={<Percent className="size-3.5" />}
+            color="amber"
+          />
+          <KPICard
+            title="Qualified Conv."
+            value={metrics.qualifiedConversionRate}
+            change={metrics.qualifiedConversionRateChange}
+            format="percentage"
+            icon={<ArrowRightLeft className="size-3.5" />}
+            color="emerald"
+          />
+        </div>
+      </section>
 
-      {/* KPI Cards - Row 2: FPC (First Payment Cleared) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard
-          title="Debt Load FPC"
-          value={metrics.debtLoadFPC}
-          change={metrics.debtLoadFPCChange}
-          format="currency"
-          icon={<CheckCircle className="size-4" />}
-        />
-        <KPICard
-          title="Units FPC"
-          value={metrics.unitsFPC}
-          change={metrics.unitsFPCChange}
-          format="number"
-          icon={<CheckCircle className="size-4" />}
-        />
-        <KPICard
-          title="Conversion Rate"
-          value={metrics.conversionRate}
-          change={metrics.conversionRateChange}
-          format="percentage"
-          icon={<Percent className="size-4" />}
-        />
-        <KPICard
-          title="Qualified Conversion"
-          value={metrics.qualifiedConversionRate}
-          change={metrics.qualifiedConversionRateChange}
-          format="percentage"
-          icon={<ArrowRightLeft className="size-4" />}
-        />
-      </div>
-
-      {/* KPI Cards - Row 3: Financial */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard
-          title="Commission"
-          value={metrics.totalCommissions}
-          change={metrics.commissionsChange}
-          format="currency"
-          icon={<TrendingUp className="size-4" />}
-        />
-        <KPICard
-          title="Clawbacks"
-          value={metrics.totalClawbacks}
-          change={metrics.clawbacksChange}
-          format="currency"
-          icon={<TrendingDown className="size-4" />}
-        />
-        {(isLeadership || isExecutive) && (
-          <>
-            <KPICard
-              title="Avg Debt Size"
-              value={metrics.avgLoanSize}
-              change={metrics.avgLoanSizeChange}
-              format="currency"
-              icon={<Target className="size-4" />}
-            />
-            <KPICard
-              title="Closing Rate"
-              value={metrics.closingRate}
-              change={metrics.closingRateChange}
-              format="percentage"
-              icon={<Users className="size-4" />}
-            />
-          </>
-        )}
-      </div>
+      {/* FPC Metrics Section */}
+      <section>
+        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">First Payment Cleared</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <KPICard
+            title="Debt Load FPC"
+            value={metrics.debtLoadFPC}
+            change={metrics.debtLoadFPCChange}
+            format="currency"
+            icon={<CheckCircle className="size-3.5" />}
+            color="emerald"
+          />
+          <KPICard
+            title="Units FPC"
+            value={metrics.unitsFPC}
+            change={metrics.unitsFPCChange}
+            format="number"
+            icon={<CheckCircle className="size-3.5" />}
+            color="blue"
+          />
+          {(isLeadership || isExecutive) && (
+            <>
+              <KPICard
+                title="Avg Debt Size"
+                value={metrics.avgLoanSize}
+                change={metrics.avgLoanSizeChange}
+                format="currency"
+                icon={<Target className="size-3.5" />}
+                color="purple"
+              />
+              <KPICard
+                title="Closing Rate"
+                value={metrics.closingRate}
+                change={metrics.closingRateChange}
+                format="percentage"
+                icon={<Users className="size-3.5" />}
+                color="amber"
+              />
+            </>
+          )}
+        </div>
+      </section>
 
       {/* Charts Row */}
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2">
           <VolumeChart data={volumeData} />
         </div>
@@ -206,7 +218,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Tables and Lists Row */}
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2">
           <PipelineTable
             data={pipeline}
