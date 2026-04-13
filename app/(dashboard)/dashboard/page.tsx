@@ -159,6 +159,10 @@ function MetricTile({
   dateValue: string
   onDateChange: (val: string) => void
 }) {
+  const [showCustom, setShowCustom] = React.useState(false)
+  const [customStart, setCustomStart] = React.useState<Date>()
+  const [customEnd, setCustomEnd] = React.useState<Date>()
+  
   const formatted = React.useMemo(() => {
     if (fmt === 'currency') {
       if (value >= 1000000) return `$${(value / 1000000).toFixed(2)}M`
@@ -170,22 +174,82 @@ function MetricTile({
     return value.toLocaleString()
   }, [value, fmt, decimals])
 
-  const dateLabel = DATE_PRESETS.find(d => d.value === dateValue)?.label || dateValue
+  // Check if current value is a custom date range (format: "YYYY-MM-DD to YYYY-MM-DD")
+  const isCustomValue = dateValue.includes(' to ')
+  const dateLabel = isCustomValue 
+    ? dateValue.split(' to ').map(d => format(new Date(d), 'MMM d')).join(' - ')
+    : DATE_PRESETS.find(d => d.value === dateValue)?.label || dateValue
+
+  const handleSelectChange = (val: string) => {
+    if (val === 'custom') {
+      setShowCustom(true)
+    } else {
+      onDateChange(val)
+    }
+  }
+
+  const handleApplyCustom = () => {
+    if (customStart && customEnd) {
+      const startStr = format(customStart, 'yyyy-MM-dd')
+      const endStr = format(customEnd, 'yyyy-MM-dd')
+      onDateChange(`${startStr} to ${endStr}`)
+      setShowCustom(false)
+    }
+  }
 
   return (
     <div className="bg-card/50 border border-border/30 rounded-lg p-2.5">
       <div className="flex items-center justify-between gap-1 mb-1">
         <span className="text-[10px] text-muted-foreground truncate flex-1">{label}</span>
-        <Select value={dateValue} onValueChange={onDateChange}>
-          <SelectTrigger className="h-5 text-[9px] w-auto min-w-[70px] bg-muted/30 border-border/40 px-1.5 py-0 [&>svg]:size-2.5 [&>svg]:opacity-50">
-            <span className="truncate">{dateLabel}</span>
-          </SelectTrigger>
-          <SelectContent>
-            {DATE_PRESETS.map(d => (
-              <SelectItem key={d.value} value={d.value} className="text-xs">{d.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Popover open={showCustom} onOpenChange={setShowCustom}>
+          <PopoverTrigger asChild>
+            <div>
+              <Select value={isCustomValue ? 'custom' : dateValue} onValueChange={handleSelectChange}>
+                <SelectTrigger className="h-5 text-[9px] w-auto min-w-[70px] bg-muted/30 border-border/40 px-1.5 py-0 [&>svg]:size-2.5 [&>svg]:opacity-50">
+                  <span className="truncate">{dateLabel}</span>
+                </SelectTrigger>
+                <SelectContent>
+                  {DATE_PRESETS.map(d => (
+                    <SelectItem key={d.value} value={d.value} className="text-xs">{d.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-3" align="end">
+            <div className="space-y-3">
+              <div className="text-xs font-medium">Custom Date Range</div>
+              <div className="flex gap-2">
+                <div className="space-y-1">
+                  <span className="text-[10px] text-muted-foreground">Start</span>
+                  <Calendar
+                    mode="single"
+                    selected={customStart}
+                    onSelect={setCustomStart}
+                    className="rounded-md border"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] text-muted-foreground">End</span>
+                  <Calendar
+                    mode="single"
+                    selected={customEnd}
+                    onSelect={setCustomEnd}
+                    className="rounded-md border"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={() => setShowCustom(false)}>
+                  Cancel
+                </Button>
+                <Button size="sm" onClick={handleApplyCustom} disabled={!customStart || !customEnd}>
+                  Apply
+                </Button>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
       <div className="flex items-end justify-between">
         <span className="text-base font-semibold text-foreground tabular-nums">{formatted}</span>
