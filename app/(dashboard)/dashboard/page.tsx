@@ -289,25 +289,23 @@ export default function DashboardPage() {
   const supervisors = React.useMemo(() => dataService.getSupervisors(), [])
   const allTeamIds = React.useMemo(() => dataService.getAllTeamIds(), [])
 
-  // Filter state: 'overall' | 'team-lead' | 'supervisor'
-  const [filterType, setFilterType] = React.useState<'overall' | 'team-lead' | 'supervisor'>('overall')
-  const [selectedTeamLead, setSelectedTeamLead] = React.useState<string>('all')
-  const [selectedSupervisor, setSelectedSupervisor] = React.useState<string>('all')
+  // Filter state - simplified hierarchy-based selection
+  const [selectedTeamLeads, setSelectedTeamLeads] = React.useState<string[]>([]) // empty = all
+  const [selectedSupervisors, setSelectedSupervisors] = React.useState<string[]>([]) // empty = all
+  const [selectedTeams, setSelectedTeams] = React.useState<string[]>([]) // empty = all
+  const [selectedAgents, setSelectedAgents] = React.useState<string[]>([]) // empty = all
+  
+  // Global date slicer - affects all metrics when set
+  const [globalDateFilter, setGlobalDateFilter] = React.useState<string>('this-month')
+  const [useGlobalDate, setUseGlobalDate] = React.useState(true) // When true, global date overrides individual slicers
   
   // View toggle for tables: 'teams' or 'agents'
   const [tableView, setTableView] = React.useState<'teams' | 'agents'>('teams')
   
-  // Selected specific team or agent from dropdown
-  const [selectedTeamId, setSelectedTeamId] = React.useState<string | null>(null)
-  const [selectedAgentId, setSelectedAgentId] = React.useState<string | null>(null)
-  
-  // Search terms for dropdowns
-  const [teamSearchTerm, setTeamSearchTerm] = React.useState('')
-  const [agentSearchTerm, setAgentSearchTerm] = React.useState('')
-  
-  // Popover open states
-  const [teamsPopoverOpen, setTeamsPopoverOpen] = React.useState(false)
-  const [agentsPopoverOpen, setAgentsPopoverOpen] = React.useState(false)
+  // Filter popover states
+  const [filterPopoverOpen, setFilterPopoverOpen] = React.useState(false)
+  const [filterSearchTerm, setFilterSearchTerm] = React.useState('')
+  const [activeFilterTab, setActiveFilterTab] = React.useState<'team-leads' | 'supervisors' | 'teams' | 'agents'>('teams')
   
   // Month selector for Monthly Targets
   const [selectedTargetMonth, setSelectedTargetMonth] = React.useState(() => {
@@ -315,112 +313,98 @@ export default function DashboardPage() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   })
   
-  // Get all agents for the agent dropdown - filtered based on current filter selection
+  // Get all agents for the filter dropdown
   const allAgents = React.useMemo(() => dataService.getAgents(), [])
+  const allTeamsData = React.useMemo(() => dataService.getTeamMetrics(), [])
   
-  // Filtered agents list based on current filter type selection
-  const filteredAgentsForDropdown = React.useMemo(() => {
-    const agents = dataService.getAgents()
+  // Compute active filter summary for display
+  const activeFilterSummary = React.useMemo(() => {
+    const parts: string[] = []
     
-    if (filterType === 'team-lead') {
-      if (selectedTeamLead === 'all') {
-        // Show agents from all team lead teams
-        const teamLeadTeamIds = teamLeads.map(l => l.teamId).filter(Boolean) as string[]
-        return agents.filter(a => teamLeadTeamIds.includes(a.teamId || ''))
-      }
-      const lead = teamLeads.find(l => l.id === selectedTeamLead)
-      if (lead?.teamId) {
-        return agents.filter(a => a.teamId === lead.teamId)
-      }
+    if (selectedTeamLeads.length > 0) {
+      const names = selectedTeamLeads.map(id => teamLeads.find(l => l.id === id)?.name).filter(Boolean)
+      parts.push(`${names.length} Team Lead${names.length > 1 ? 's' : ''}`)
+    }
+    if (selectedSupervisors.length > 0) {
+      const names = selectedSupervisors.map(id => supervisors.find(s => s.id === id)?.name).filter(Boolean)
+      parts.push(`${names.length} Supervisor${names.length > 1 ? 's' : ''}`)
+    }
+    if (selectedTeams.length > 0) {
+      parts.push(`${selectedTeams.length} Team${selectedTeams.length > 1 ? 's' : ''}`)
+    }
+    if (selectedAgents.length > 0) {
+      parts.push(`${selectedAgents.length} Agent${selectedAgents.length > 1 ? 's' : ''}`)
     }
     
-    if (filterType === 'supervisor') {
-      if (selectedSupervisor === 'all') {
-        // Show agents from all supervisor teams
-        const supervisorTeamIds = new Set<string>()
-        supervisors.forEach(s => s.teamIds?.forEach(id => supervisorTeamIds.add(id)))
-        return agents.filter(a => supervisorTeamIds.has(a.teamId || ''))
-      }
-      const supervisor = supervisors.find(s => s.id === selectedSupervisor)
-      if (supervisor?.teamIds) {
-        return agents.filter(a => supervisor.teamIds!.includes(a.teamId || ''))
-      }
-    }
-    
-    // Default: return all agents
-    return agents
-  }, [filterType, selectedTeamLead, selectedSupervisor, teamLeads, supervisors])
+    return parts.length > 0 ? parts.join(', ') : 'All Data'
+  }, [selectedTeamLeads, selectedSupervisors, selectedTeams, selectedAgents, teamLeads, supervisors])
   
-  // Filtered teams list based on current filter type selection
+  // Filtered teams based on hierarchy selections
   const filteredTeamsForDropdown = React.useMemo(() => {
-    const allTeams = dataService.getTeamMetrics()
+    let teams = allTeamsData
     
-    if (filterType === 'team-lead') {
-      if (selectedTeamLead === 'all') {
-        const teamLeadTeamIds = teamLeads.map(l => l.teamId).filter(Boolean) as string[]
-        return allTeams.filter(t => teamLeadTeamIds.includes(t.teamId))
-      }
-      const lead = teamLeads.find(l => l.id === selectedTeamLead)
-      if (lead?.teamId) {
-        return allTeams.filter(t => t.teamId === lead.teamId)
-      }
+    // Filter by selected team leads
+    if (selectedTeamLeads.length > 0) {
+      const leadTeamIds = selectedTeamLeads
+        .map(id => teamLeads.find(l => l.id === id)?.teamId)
+        .filter(Boolean) as string[]
+      teams = teams.filter(t => leadTeamIds.includes(t.teamId))
     }
     
-    if (filterType === 'supervisor') {
-      if (selectedSupervisor === 'all') {
-        const supervisorTeamIds = new Set<string>()
-        supervisors.forEach(s => s.teamIds?.forEach(id => supervisorTeamIds.add(id)))
-        return allTeams.filter(t => supervisorTeamIds.has(t.teamId))
-      }
-      const supervisor = supervisors.find(s => s.id === selectedSupervisor)
-      if (supervisor?.teamIds) {
-        return allTeams.filter(t => supervisor.teamIds!.includes(t.teamId))
-      }
+    // Filter by selected supervisors
+    if (selectedSupervisors.length > 0) {
+      const supTeamIds = new Set<string>()
+      selectedSupervisors.forEach(id => {
+        const sup = supervisors.find(s => s.id === id)
+        sup?.teamIds?.forEach(tid => supTeamIds.add(tid))
+      })
+      teams = teams.filter(t => supTeamIds.has(t.teamId))
     }
     
-    return allTeams
-  }, [filterType, selectedTeamLead, selectedSupervisor, teamLeads, supervisors])
+    return teams
+  }, [allTeamsData, selectedTeamLeads, selectedSupervisors, teamLeads, supervisors])
+  
+  // Filtered agents based on hierarchy selections
+  const filteredAgentsForDropdown = React.useMemo(() => {
+    let agents = allAgents
+    
+    // Filter by selected teams (from filtered teams)
+    if (selectedTeams.length > 0) {
+      agents = agents.filter(a => selectedTeams.includes(a.teamId || ''))
+    } else if (selectedTeamLeads.length > 0 || selectedSupervisors.length > 0) {
+      // If teams not explicitly selected but team leads/supervisors are, filter by their teams
+      const teamIds = filteredTeamsForDropdown.map(t => t.teamId)
+      agents = agents.filter(a => teamIds.includes(a.teamId || ''))
+    }
+    
+    return agents
+  }, [allAgents, selectedTeams, selectedTeamLeads, selectedSupervisors, filteredTeamsForDropdown])
 
-  // Get filtered metrics based on filter selection AND dropdown selections
+  // Get filtered metrics based on hierarchical selection
   const metrics = React.useMemo(() => {
     // Agent always sees their own metrics
     if (isAgent && user) return dataService.getDashboardMetrics(user.id)
     
-    // If a specific agent is selected from the Agents dropdown, show that agent's metrics
-    if (selectedAgentId) {
-      return dataService.getDashboardMetrics(selectedAgentId)
+    // If specific agents are selected, show first agent's metrics (or aggregate)
+    if (selectedAgents.length === 1) {
+      return dataService.getDashboardMetrics(selectedAgents[0])
     }
     
-    // If a specific team is selected from the Teams dropdown, show that team's metrics
-    if (selectedTeamId) {
-      return dataService.getDashboardMetrics(undefined, selectedTeamId)
+    // If specific teams are selected, show first team's metrics
+    if (selectedTeams.length === 1) {
+      return dataService.getDashboardMetrics(undefined, selectedTeams[0])
     }
     
-    // For other roles, apply main filter
-    if (filterType === 'team-lead') {
-      if (selectedTeamLead === 'all') {
-        // All team leads = all teams
-        return dataService.getDashboardMetrics()
-      }
-      const lead = teamLeads.find(l => l.id === selectedTeamLead)
-      if (lead?.teamId) {
-        return dataService.getDashboardMetrics(undefined, lead.teamId)
-      }
-    }
-    
-    if (filterType === 'supervisor') {
-      if (selectedSupervisor === 'all') {
-        return dataService.getDashboardMetrics()
-      }
-      const supervisor = supervisors.find(s => s.id === selectedSupervisor)
-      // For supervisor, we'd aggregate their teams - for now show global
+    // If teams/supervisors/leads selected, show aggregated
+    if (selectedTeams.length > 0 || selectedSupervisors.length > 0 || selectedTeamLeads.length > 0) {
+      // For now, show global (would need to aggregate in real implementation)
       return dataService.getDashboardMetrics()
     }
     
     // Default: leadership sees their team, others see global
     if (isLeadership && user?.teamId) return dataService.getDashboardMetrics(undefined, user.teamId)
     return dataService.getDashboardMetrics()
-  }, [user, isAgent, isLeadership, filterType, selectedTeamLead, selectedSupervisor, teamLeads, supervisors, selectedTeamId, selectedAgentId])
+  }, [user, isAgent, isLeadership, selectedAgents, selectedTeams, selectedSupervisors, selectedTeamLeads])
 
   const pipeline = React.useMemo(() => {
     if (isAgent && user) return dataService.getPipeline(user.id)
@@ -445,124 +429,97 @@ export default function DashboardPage() {
   const volumeData = React.useMemo(() => dataService.getVolumeChartData(30), [])
   const announcements = React.useMemo(() => dataService.getAnnouncements(), [])
   
-  // Team metrics - filtered by selection
+  // Team metrics - filtered by hierarchical selection
   const teamMetrics = React.useMemo(() => {
-    const allTeams = dataService.getTeamMetrics()
-    
-    // If a specific team is selected from dropdown, filter to that team only
-    if (selectedTeamId) {
-      return allTeams.filter(t => t.teamId === selectedTeamId)
+    // If specific teams selected, show those
+    if (selectedTeams.length > 0) {
+      return allTeamsData.filter(t => selectedTeams.includes(t.teamId))
     }
     
-    if (filterType === 'team-lead') {
-      if (selectedTeamLead === 'all') {
-        return allTeams
-      }
-      const lead = teamLeads.find(l => l.id === selectedTeamLead)
-      if (lead?.teamId) {
-        return allTeams.filter(t => t.teamId === lead.teamId)
-      }
-    }
-    
-    if (filterType === 'supervisor') {
-      if (selectedSupervisor === 'all') {
-        return allTeams
-      }
-      const supervisor = supervisors.find(s => s.id === selectedSupervisor)
-      if (supervisor?.teamIds) {
-        return allTeams.filter(t => supervisor.teamIds!.includes(t.teamId))
-      }
+    // Use the hierarchically filtered teams
+    if (selectedTeamLeads.length > 0 || selectedSupervisors.length > 0) {
+      return filteredTeamsForDropdown
     }
     
     // Default behavior by role
     if (isLeadership && user?.teamId) {
-      return allTeams.filter(t => t.teamId === user.teamId)
+      return allTeamsData.filter(t => t.teamId === user.teamId)
     }
     if (isSupervisor && user?.teamIds) {
-      return allTeams.filter(t => user.teamIds!.includes(t.teamId))
+      return allTeamsData.filter(t => user.teamIds!.includes(t.teamId))
     }
     
-    return allTeams
-  }, [filterType, selectedTeamLead, selectedSupervisor, teamLeads, supervisors, isLeadership, isSupervisor, user?.teamId, user?.teamIds, selectedTeamId])
+    return allTeamsData
+  }, [selectedTeams, selectedTeamLeads, selectedSupervisors, filteredTeamsForDropdown, allTeamsData, isLeadership, isSupervisor, user?.teamId, user?.teamIds])
   
-  // Agent performance - filtered by selection
+  // Agent performance - filtered by hierarchical selection
   const agentPerformance = React.useMemo(() => {
-    let agents = [] as ReturnType<typeof dataService.getAgentPerformanceByTeams>
-    
-    if (filterType === 'team-lead') {
-      if (selectedTeamLead === 'all') {
-        const teamLeadTeamIds = teamLeads.map(l => l.teamId).filter(Boolean) as string[]
-        agents = dataService.getAgentPerformanceByTeams(teamLeadTeamIds.length > 0 ? teamLeadTeamIds : allTeamIds)
-      } else {
-        const lead = teamLeads.find(l => l.id === selectedTeamLead)
-        if (lead?.teamId) {
-          agents = dataService.getAgentPerformanceByTeam(lead.teamId)
-        }
-      }
-    } else if (filterType === 'supervisor') {
-      if (selectedSupervisor === 'all') {
-        const supervisorTeamIds = new Set<string>()
-        supervisors.forEach(s => s.teamIds?.forEach(id => supervisorTeamIds.add(id)))
-        agents = dataService.getAgentPerformanceByTeams(supervisorTeamIds.size > 0 ? Array.from(supervisorTeamIds) : allTeamIds)
-      } else {
-        const supervisor = supervisors.find(s => s.id === selectedSupervisor)
-        if (supervisor?.teamIds) {
-          agents = dataService.getAgentPerformanceByTeams(supervisor.teamIds)
-        }
-      }
-    } else {
-      // Default behavior by role
-      if (isLeadership && user?.teamId) {
-        agents = dataService.getAgentPerformanceByTeam(user.teamId)
-      } else if (isSupervisor && user?.teamIds && user.teamIds.length > 0) {
-        agents = dataService.getAgentPerformanceByTeams(user.teamIds)
-} else if (hasExecutiveView) {
-    agents = dataService.getAgentPerformanceByTeams(allTeamIds)
-      }
+    // If specific agents selected, show those
+    if (selectedAgents.length > 0) {
+      const allAgentPerf = dataService.getAgentPerformanceByTeams(allTeamIds)
+      return allAgentPerf.filter(a => selectedAgents.includes(a.agentId))
     }
     
-    // If a specific agent is selected from dropdown, filter to that agent only
-    if (selectedAgentId) {
-      return agents.filter(a => a.agentId === selectedAgentId)
+    // Get team IDs to filter by
+    const teamIdsToUse = selectedTeams.length > 0 
+      ? selectedTeams 
+      : filteredTeamsForDropdown.map(t => t.teamId)
+    
+    if (teamIdsToUse.length > 0 && (selectedTeams.length > 0 || selectedTeamLeads.length > 0 || selectedSupervisors.length > 0)) {
+      return dataService.getAgentPerformanceByTeams(teamIdsToUse)
     }
     
-    return agents
-  }, [filterType, selectedTeamLead, selectedSupervisor, teamLeads, supervisors, allTeamIds, isLeadership, isSupervisor, hasExecutiveView, user?.teamId, user?.teamIds, selectedAgentId])
+    // Default behavior by role
+    if (isLeadership && user?.teamId) {
+      return dataService.getAgentPerformanceByTeam(user.teamId)
+    }
+    if (isSupervisor && user?.teamIds && user.teamIds.length > 0) {
+      return dataService.getAgentPerformanceByTeams(user.teamIds)
+    }
+    if (hasExecutiveView) {
+      return dataService.getAgentPerformanceByTeams(allTeamIds)
+    }
+    
+    return []
+  }, [selectedAgents, selectedTeams, selectedTeamLeads, selectedSupervisors, filteredTeamsForDropdown, allTeamIds, isLeadership, isSupervisor, hasExecutiveView, user?.teamId, user?.teamIds])
 
-  // Dashboard title based on filter AND dropdown selections
+  // Dashboard title based on hierarchical selection
   const dashboardTitle = React.useMemo(() => {
     if (isAgent) return 'My Dashboard'
     
-    // If specific agent is selected from dropdown
-    if (selectedAgentId) {
-      const agent = allAgents.find(a => a.id === selectedAgentId)
+    // If specific agent selected
+    if (selectedAgents.length === 1) {
+      const agent = allAgents.find(a => a.id === selectedAgents[0])
       return agent ? `${agent.name}'s Dashboard` : 'Agent Dashboard'
     }
+    if (selectedAgents.length > 1) return `${selectedAgents.length} Agents Dashboard`
     
-    // If specific team is selected from dropdown
-    if (selectedTeamId) {
-      const allTeams = dataService.getTeamMetrics()
-      const team = allTeams.find(t => t.teamId === selectedTeamId)
+    // If specific teams selected
+    if (selectedTeams.length === 1) {
+      const team = allTeamsData.find(t => t.teamId === selectedTeams[0])
       return team ? `${team.teamName} Dashboard` : 'Team Dashboard'
     }
+    if (selectedTeams.length > 1) return `${selectedTeams.length} Teams Dashboard`
     
-    if (filterType === 'team-lead') {
-      if (selectedTeamLead === 'all') return 'All Team Leads'
-      const lead = teamLeads.find(l => l.id === selectedTeamLead)
+    // If supervisors selected
+    if (selectedSupervisors.length === 1) {
+      const sup = supervisors.find(s => s.id === selectedSupervisors[0])
+      return sup ? `${sup.name}'s Teams` : 'Supervisor Dashboard'
+    }
+    if (selectedSupervisors.length > 1) return `${selectedSupervisors.length} Supervisors Dashboard`
+    
+    // If team leads selected
+    if (selectedTeamLeads.length === 1) {
+      const lead = teamLeads.find(l => l.id === selectedTeamLeads[0])
       return lead ? `${lead.name}'s Team` : 'Team Lead Dashboard'
     }
-    
-    if (filterType === 'supervisor') {
-      if (selectedSupervisor === 'all') return 'All Supervisors'
-      const supervisor = supervisors.find(s => s.id === selectedSupervisor)
-      return supervisor ? `${supervisor.name}'s Teams` : 'Supervisor Dashboard'
-    }
+    if (selectedTeamLeads.length > 1) return `${selectedTeamLeads.length} Team Leads Dashboard`
     
     if (isLeadership) return `${user?.teamName || 'Team'} Dashboard`
     if (isSupervisor) return 'Supervisor Dashboard'
     if (isAdmin) return 'Admin Dashboard'
     return 'Executive Dashboard'
-  }, [isAgent, isLeadership, isSupervisor, isAdmin, filterType, selectedTeamLead, selectedSupervisor, teamLeads, supervisors, user?.teamName, selectedAgentId, selectedTeamId, allAgents])
+  }, [isAgent, isLeadership, isSupervisor, isAdmin, selectedAgents, selectedTeams, selectedSupervisors, selectedTeamLeads, allAgents, allTeamsData, supervisors, teamLeads, user?.teamName])
 
   // Date slicer states - each metric has its own
   const [unitsSubmittedDate, setUnitsSubmittedDate] = React.useState('this-month')
@@ -708,32 +665,38 @@ export default function DashboardPage() {
     return `$${val.toLocaleString()}`
   }
 
-  // Reset sub-filter when main filter changes
-  React.useEffect(() => {
-    setSelectedTeamLead('all')
-    setSelectedSupervisor('all')
-    setSelectedTeamId(null)
-    setSelectedAgentId(null)
-  }, [filterType])
-  
-  // Reset team/agent dropdown selections when sub-filter changes
-  React.useEffect(() => {
-    setSelectedTeamId(null)
-    setSelectedAgentId(null)
-  }, [selectedTeamLead, selectedSupervisor])
-  
-  // When selecting a specific team, clear agent selection (and vice versa)
-  React.useEffect(() => {
-    if (selectedTeamId) {
-      setSelectedAgentId(null)
+  // Apply global date to all metric slicers when changed
+  const applyGlobalDate = React.useCallback((date: string) => {
+    setGlobalDateFilter(date)
+    if (useGlobalDate) {
+      setUnitsSubmittedDate(date)
+      setDebtLoadSubmittedDate(date)
+      setConvRateDate(date)
+      setQualConvDate(date)
+      setUnitsEnrolledDate(date)
+      setDebtLoadEnrolledDate(date)
+      setUnitsFpcDate(date)
+      setDebtLoadFpcDate(date)
+      setAncillaryDate(date)
+      setAvgDebtPerFileDate(date)
+      setAvgDailyDebtDate(date)
+      setAvgDailyUnitsDate(date)
+      setClientsEnrolledDate(date)
+      setClientsActiveDate(date)
+      setClientsCancelledDate(date)
+      setCancellationRateDate(date)
+      setEpfsCollectedDate(date)
+      setEpfsScheduledDate(date)
     }
-  }, [selectedTeamId])
+  }, [useGlobalDate])
   
-  React.useEffect(() => {
-    if (selectedAgentId) {
-      setSelectedTeamId(null)
-    }
-  }, [selectedAgentId])
+  // Clear all filters
+  const clearAllFilters = React.useCallback(() => {
+    setSelectedTeamLeads([])
+    setSelectedSupervisors([])
+    setSelectedTeams([])
+    setSelectedAgents([])
+  }, [])
 
   return (
     <div className="p-4 lg:p-5 space-y-4 max-w-[1600px] mx-auto">
@@ -744,6 +707,21 @@ export default function DashboardPage() {
         </div>
         
         <div className="flex items-center gap-2 flex-wrap">
+          {/* Global Date Slicer */}
+          <div className="flex items-center gap-1.5 bg-muted/50 rounded-lg p-1.5">
+            <CalendarIcon className="size-3.5 text-muted-foreground ml-1" />
+            <Select value={globalDateFilter} onValueChange={applyGlobalDate}>
+              <SelectTrigger className="h-7 text-xs w-auto min-w-[100px] bg-background border-0">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {dateOptions.map(opt => (
+                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
           {/* Region Slicer - Only for Executive and Admin */}
           {hasExecutiveView && (
             <div className="flex items-center gap-1.5 bg-muted/50 rounded-lg p-1.5">
@@ -760,212 +738,218 @@ export default function DashboardPage() {
             </div>
           )}
           
-          {/* Data Filter Slicer - Available to all roles except Agent */}
+          {/* Unified Filter - Multi-select with tabs */}
           {!isAgent && (
-            <div className="flex items-center gap-2 bg-muted/50 rounded-lg p-1.5">
-              <Filter className="size-3.5 text-muted-foreground ml-1" />
-              
-              {/* Filter Type */}
-              <Select value={filterType} onValueChange={(val) => setFilterType(val as 'overall' | 'team-lead' | 'supervisor')}>
-                <SelectTrigger className="h-7 text-xs w-auto min-w-[100px] bg-background border-0">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="overall">Overall</SelectItem>
-                  <SelectItem value="team-lead">Per Team Lead</SelectItem>
-                  <SelectItem value="supervisor">Per Supervisor</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              {/* Team Lead Sub-filter */}
-              {filterType === 'team-lead' && (
-                <Select value={selectedTeamLead} onValueChange={setSelectedTeamLead}>
-                  <SelectTrigger className="h-7 text-xs w-auto min-w-[130px] bg-background border-0">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Team Leads</SelectItem>
-                    {teamLeads.map(lead => (
-                      <SelectItem key={lead.id} value={lead.id}>
-                        {lead.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-              
-              {/* Supervisor Sub-filter */}
-              {filterType === 'supervisor' && (
-                <Select value={selectedSupervisor} onValueChange={setSelectedSupervisor}>
-                  <SelectTrigger className="h-7 text-xs w-auto min-w-[130px] bg-background border-0">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Supervisors</SelectItem>
-                    {supervisors.map(sup => (
-                      <SelectItem key={sup.id} value={sup.id}>
-                        {sup.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-          )}
-          
-          {/* View Toggle for tables (Teams/Agents) with searchable dropdowns - not for agents */}
-          {!isAgent && (
-            <div className="flex items-center bg-muted rounded-lg p-1 gap-1">
-              {/* Teams Dropdown */}
-              <Popover open={teamsPopoverOpen} onOpenChange={setTeamsPopoverOpen}>
-                <PopoverTrigger asChild>
-                  <button
-                    onClick={() => {
-                      setTableView('teams')
-                      setTeamsPopoverOpen(true)
-                    }}
-                    className={cn(
-                      "px-3 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-1.5",
-                      tableView === 'teams' 
-                        ? "bg-background text-foreground shadow-sm" 
-                        : "text-muted-foreground hover:text-foreground"
+            <Popover open={filterPopoverOpen} onOpenChange={setFilterPopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className={cn(
+                    "h-8 text-xs gap-1.5 bg-muted/50 border-0",
+                    (selectedTeamLeads.length > 0 || selectedSupervisors.length > 0 || selectedTeams.length > 0 || selectedAgents.length > 0) && "bg-primary/10 text-primary"
+                  )}
+                >
+                  <Filter className="size-3.5" />
+                  <span>{activeFilterSummary}</span>
+                  <ChevronDown className="size-3" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-0" align="end">
+                <div className="p-3 border-b border-border/50">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium">Filter Data</span>
+                    {(selectedTeamLeads.length > 0 || selectedSupervisors.length > 0 || selectedTeams.length > 0 || selectedAgents.length > 0) && (
+                      <Button variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground" onClick={clearAllFilters}>
+                        Clear All
+                      </Button>
                     )}
-                  >
-                    <Users className="size-3" />
-                    {selectedTeamId 
-                      ? teamMetrics.find(t => t.teamId === selectedTeamId)?.teamName || 'Teams'
-                      : 'Teams'}
-                    <ChevronDown className="size-3 ml-0.5" />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-64 p-2" align="end">
-                  <div className="space-y-2">
-                    <div className="relative">
-                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
-                      <Input
-                        placeholder="Search teams..."
-                        value={teamSearchTerm}
-                        onChange={(e) => setTeamSearchTerm(e.target.value)}
-                        className="h-8 pl-8 text-xs"
-                      />
+                  </div>
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+                    <Input
+                      placeholder="Search..."
+                      value={filterSearchTerm}
+                      onChange={(e) => setFilterSearchTerm(e.target.value)}
+                      className="h-8 pl-8 text-xs"
+                    />
+                  </div>
+                </div>
+                
+                {/* Tabs */}
+                <div className="flex border-b border-border/50">
+                  {(['team-leads', 'supervisors', 'teams', 'agents'] as const).map(tab => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveFilterTab(tab)}
+                      className={cn(
+                        "flex-1 px-2 py-2 text-[10px] font-medium transition-colors",
+                        activeFilterTab === tab 
+                          ? "text-primary border-b-2 border-primary" 
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      {tab === 'team-leads' ? 'Leads' : tab === 'supervisors' ? 'Supervisors' : tab === 'teams' ? 'Teams' : 'Agents'}
+                      {tab === 'team-leads' && selectedTeamLeads.length > 0 && (
+                        <Badge variant="secondary" className="ml-1 text-[9px] px-1 py-0">{selectedTeamLeads.length}</Badge>
+                      )}
+                      {tab === 'supervisors' && selectedSupervisors.length > 0 && (
+                        <Badge variant="secondary" className="ml-1 text-[9px] px-1 py-0">{selectedSupervisors.length}</Badge>
+                      )}
+                      {tab === 'teams' && selectedTeams.length > 0 && (
+                        <Badge variant="secondary" className="ml-1 text-[9px] px-1 py-0">{selectedTeams.length}</Badge>
+                      )}
+                      {tab === 'agents' && selectedAgents.length > 0 && (
+                        <Badge variant="secondary" className="ml-1 text-[9px] px-1 py-0">{selectedAgents.length}</Badge>
+                      )}
+                    </button>
+                  ))}
+                </div>
+                
+                {/* Tab Content */}
+                <div className="max-h-64 overflow-y-auto p-2">
+                  {activeFilterTab === 'team-leads' && (
+                    <div className="space-y-0.5">
+                      {teamLeads
+                        .filter(lead => lead.name.toLowerCase().includes(filterSearchTerm.toLowerCase()))
+                        .map(lead => (
+                          <button
+                            key={lead.id}
+                            onClick={() => {
+                              setSelectedTeamLeads(prev => 
+                                prev.includes(lead.id) 
+                                  ? prev.filter(id => id !== lead.id)
+                                  : [...prev, lead.id]
+                              )
+                            }}
+                            className={cn(
+                              "w-full text-left px-2 py-1.5 text-xs rounded-md hover:bg-muted flex items-center justify-between",
+                              selectedTeamLeads.includes(lead.id) && "bg-primary/10 text-primary"
+                            )}
+                          >
+                            <span>{lead.name}</span>
+                            {selectedTeamLeads.includes(lead.id) && <Check className="size-3" />}
+                          </button>
+                        ))}
                     </div>
-                    <div className="max-h-48 overflow-y-auto space-y-0.5">
-                      <button
-                        onClick={() => {
-                          setSelectedTeamId(null)
-                          setTeamsPopoverOpen(false)
-                          setTeamSearchTerm('')
-                        }}
-                        className={cn(
-                          "w-full text-left px-2 py-1.5 text-xs rounded-md hover:bg-muted flex items-center justify-between",
-                          !selectedTeamId && "bg-primary/10 text-primary"
-                        )}
-                      >
-                        <span>All Teams</span>
-                        {!selectedTeamId && <Check className="size-3" />}
-                      </button>
+                  )}
+                  
+                  {activeFilterTab === 'supervisors' && (
+                    <div className="space-y-0.5">
+                      {supervisors
+                        .filter(sup => sup.name.toLowerCase().includes(filterSearchTerm.toLowerCase()))
+                        .map(sup => (
+                          <button
+                            key={sup.id}
+                            onClick={() => {
+                              setSelectedSupervisors(prev => 
+                                prev.includes(sup.id) 
+                                  ? prev.filter(id => id !== sup.id)
+                                  : [...prev, sup.id]
+                              )
+                            }}
+                            className={cn(
+                              "w-full text-left px-2 py-1.5 text-xs rounded-md hover:bg-muted flex items-center justify-between",
+                              selectedSupervisors.includes(sup.id) && "bg-primary/10 text-primary"
+                            )}
+                          >
+                            <span>{sup.name}</span>
+                            {selectedSupervisors.includes(sup.id) && <Check className="size-3" />}
+                          </button>
+                        ))}
+                    </div>
+                  )}
+                  
+                  {activeFilterTab === 'teams' && (
+                    <div className="space-y-0.5">
                       {filteredTeamsForDropdown
-                        .filter(team => team.teamName.toLowerCase().includes(teamSearchTerm.toLowerCase()))
+                        .filter(team => team.teamName.toLowerCase().includes(filterSearchTerm.toLowerCase()))
                         .map(team => (
                           <button
                             key={team.teamId}
                             onClick={() => {
-                              setSelectedTeamId(team.teamId)
-                              setTeamsPopoverOpen(false)
-                              setTeamSearchTerm('')
+                              setSelectedTeams(prev => 
+                                prev.includes(team.teamId) 
+                                  ? prev.filter(id => id !== team.teamId)
+                                  : [...prev, team.teamId]
+                              )
                             }}
                             className={cn(
                               "w-full text-left px-2 py-1.5 text-xs rounded-md hover:bg-muted flex items-center justify-between",
-                              selectedTeamId === team.teamId && "bg-primary/10 text-primary"
+                              selectedTeams.includes(team.teamId) && "bg-primary/10 text-primary"
                             )}
                           >
                             <span>{team.teamName}</span>
-                            {selectedTeamId === team.teamId && <Check className="size-3" />}
+                            {selectedTeams.includes(team.teamId) && <Check className="size-3" />}
                           </button>
                         ))}
                     </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
-              
-              {/* Agents Dropdown */}
-              <Popover open={agentsPopoverOpen} onOpenChange={setAgentsPopoverOpen}>
-                <PopoverTrigger asChild>
-                  <button
-                    onClick={() => {
-                      setTableView('agents')
-                      setAgentsPopoverOpen(true)
-                    }}
-                    className={cn(
-                      "px-3 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-1.5",
-                      tableView === 'agents' 
-                        ? "bg-background text-foreground shadow-sm" 
-                        : "text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    <User className="size-3" />
-                    {selectedAgentId 
-                      ? allAgents.find(a => a.id === selectedAgentId)?.name || 'Agents'
-                      : 'Agents'}
-                    <ChevronDown className="size-3 ml-0.5" />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-64 p-2" align="end">
-                  <div className="space-y-2">
-                    <div className="relative">
-                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
-                      <Input
-                        placeholder="Search agents..."
-                        value={agentSearchTerm}
-                        onChange={(e) => setAgentSearchTerm(e.target.value)}
-                        className="h-8 pl-8 text-xs"
-                      />
-                    </div>
-                    <div className="max-h-48 overflow-y-auto space-y-0.5">
-                      <button
-                        onClick={() => {
-                          setSelectedAgentId(null)
-                          setAgentsPopoverOpen(false)
-                          setAgentSearchTerm('')
-                        }}
-                        className={cn(
-                          "w-full text-left px-2 py-1.5 text-xs rounded-md hover:bg-muted flex items-center justify-between",
-                          !selectedAgentId && "bg-primary/10 text-primary"
-                        )}
-                      >
-                        <span>All Agents</span>
-                        {!selectedAgentId && <Check className="size-3" />}
-                      </button>
+                  )}
+                  
+                  {activeFilterTab === 'agents' && (
+                    <div className="space-y-0.5">
                       {filteredAgentsForDropdown
-                        .filter(agent => agent.name.toLowerCase().includes(agentSearchTerm.toLowerCase()))
+                        .filter(agent => agent.name.toLowerCase().includes(filterSearchTerm.toLowerCase()))
                         .map(agent => (
                           <button
                             key={agent.id}
                             onClick={() => {
-                              setSelectedAgentId(agent.id)
-                              setAgentsPopoverOpen(false)
-                              setAgentSearchTerm('')
+                              setSelectedAgents(prev => 
+                                prev.includes(agent.id) 
+                                  ? prev.filter(id => id !== agent.id)
+                                  : [...prev, agent.id]
+                              )
                             }}
                             className={cn(
                               "w-full text-left px-2 py-1.5 text-xs rounded-md hover:bg-muted flex items-center justify-between",
-                              selectedAgentId === agent.id && "bg-primary/10 text-primary"
+                              selectedAgents.includes(agent.id) && "bg-primary/10 text-primary"
                             )}
                           >
-                            <div className="flex items-center gap-2">
-                              <span>{agent.name}</span>
-                              <span className="text-muted-foreground text-[10px]">{agent.teamName}</span>
-                            </div>
-                            {selectedAgentId === agent.id && <Check className="size-3" />}
+                            <span>{agent.name}</span>
+                            {selectedAgents.includes(agent.id) && <Check className="size-3" />}
                           </button>
                         ))}
                     </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
+          )}
+          
+          {/* View Toggle for tables */}
+          {!isAgent && (
+            <div className="flex items-center bg-muted rounded-lg p-1 gap-1">
+              <button
+                onClick={() => setTableView('teams')}
+                className={cn(
+                  "px-3 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-1.5",
+                  tableView === 'teams' 
+                    ? "bg-background text-foreground shadow-sm" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Users className="size-3" />
+                Teams
+              </button>
+              <button
+                onClick={() => setTableView('agents')}
+                className={cn(
+                  "px-3 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-1.5",
+                  tableView === 'agents' 
+                    ? "bg-background text-foreground shadow-sm" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <User className="size-3" />
+                Agents
+              </button>
             </div>
           )}
           
-          <span className="text-xs text-muted-foreground hidden sm:block">{format(new Date(), 'EEEE, MMMM d, yyyy')}</span>
+          {/* Current Date Display */}
+          <span className="text-xs text-muted-foreground hidden sm:block">
+            {format(new Date(), 'EEEE, MMMM d, yyyy')}
+          </span>
         </div>
       </div>
 
@@ -1152,10 +1136,7 @@ export default function DashboardPage() {
           {tableView === 'teams' && teamMetrics.length > 0 && (
             <TeamPerformanceTable 
               data={teamMetrics} 
-              title={filterType === 'overall' ? 'All Teams' : 
-                     filterType === 'team-lead' ? (selectedTeamLead === 'all' ? 'All Teams' : `${teamLeads.find(l => l.id === selectedTeamLead)?.teamName || 'Team'}`) :
-                     filterType === 'supervisor' ? (selectedSupervisor === 'all' ? 'All Teams' : `${supervisors.find(s => s.id === selectedSupervisor)?.name}'s Teams`) :
-                     'Teams'}
+              title={activeFilterSummary === 'All Data' ? 'All Teams' : `${activeFilterSummary} - Teams`}
               description={`Performance metrics for ${teamMetrics.length} team${teamMetrics.length !== 1 ? 's' : ''}`}
               highlightTeamId={user?.teamId}
             />
@@ -1164,10 +1145,7 @@ export default function DashboardPage() {
           {tableView === 'agents' && agentPerformance.length > 0 && (
             <AgentPerformanceTable 
               data={agentPerformance}
-              title={filterType === 'overall' ? 'All Agents' : 
-                     filterType === 'team-lead' ? (selectedTeamLead === 'all' ? 'All Agents' : `${teamLeads.find(l => l.id === selectedTeamLead)?.teamName || 'Team'} Agents`) :
-                     filterType === 'supervisor' ? (selectedSupervisor === 'all' ? 'All Agents' : `${supervisors.find(s => s.id === selectedSupervisor)?.name}'s Agents`) :
-                     'Agents'}
+              title={activeFilterSummary === 'All Data' ? 'All Agents' : `${activeFilterSummary} - Agents`}
               description={`Individual performance for ${agentPerformance.length} agent${agentPerformance.length !== 1 ? 's' : ''}`}
             />
           )}
