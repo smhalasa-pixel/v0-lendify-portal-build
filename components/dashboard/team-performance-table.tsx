@@ -1,5 +1,6 @@
 'use client'
 
+import * as React from 'react'
 import { Users, Trophy, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -18,9 +19,29 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import { CurrencyDisplay } from '@/components/ui/currency-display'
 import type { TeamMetrics } from '@/lib/types'
+
+const DATE_OPTIONS = [
+  { value: 'today', label: 'Today' },
+  { value: 'yesterday', label: 'Yesterday' },
+  { value: '7d', label: '7 Days' },
+  { value: '14d', label: '14 Days' },
+  { value: '30d', label: '30 Days' },
+  { value: 'mtd', label: 'MTD' },
+  { value: 'last-month', label: 'Last Month' },
+  { value: 'qtd', label: 'QTD' },
+  { value: 'ytd', label: 'YTD' },
+  { value: 'all', label: 'All Time' },
+]
 
 interface TeamPerformanceTableProps {
   data: TeamMetrics[]
@@ -35,6 +56,7 @@ export function TeamPerformanceTable({
   description = 'Performance metrics by team',
   highlightTeamId,
 }: TeamPerformanceTableProps) {
+  const [dateFilter, setDateFilter] = React.useState('mtd')
   // Sort by debt load enrolled to determine rankings
   const sortedData = [...data].sort((a, b) => b.debtLoadEnrolled - a.debtLoadEnrolled)
 
@@ -67,14 +89,26 @@ export function TeamPerformanceTable({
   return (
     <Card className="glass-card overflow-hidden">
       <CardHeader className="border-b border-border/50 pb-3">
-        <div className="flex items-center gap-3">
-          <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center">
-            <Users className="size-4 text-primary" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Users className="size-4 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="text-base font-semibold">{title}</CardTitle>
+              <CardDescription className="text-xs">{description}</CardDescription>
+            </div>
           </div>
-          <div>
-            <CardTitle className="text-base font-semibold">{title}</CardTitle>
-            <CardDescription className="text-xs">{description}</CardDescription>
-          </div>
+          <Select value={dateFilter} onValueChange={setDateFilter}>
+            <SelectTrigger className="h-8 w-[120px] text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {DATE_OPTIONS.map(opt => (
+                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </CardHeader>
       <CardContent className="p-0">

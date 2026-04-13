@@ -20,9 +20,29 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import { CurrencyDisplay } from '@/components/ui/currency-display'
 import type { AgentPerformance } from '@/lib/types'
+
+const DATE_OPTIONS = [
+  { value: 'today', label: 'Today' },
+  { value: 'yesterday', label: 'Yesterday' },
+  { value: '7d', label: '7 Days' },
+  { value: '14d', label: '14 Days' },
+  { value: '30d', label: '30 Days' },
+  { value: 'mtd', label: 'MTD' },
+  { value: 'last-month', label: 'Last Month' },
+  { value: 'qtd', label: 'QTD' },
+  { value: 'ytd', label: 'YTD' },
+  { value: 'all', label: 'All Time' },
+]
 
 interface AgentPerformanceTableProps {
   data: AgentPerformance[]
@@ -35,6 +55,7 @@ export function AgentPerformanceTable({
   title = 'My Team Agents',
   description = 'Individual performance breakdown for your team members',
 }: AgentPerformanceTableProps) {
+  const [dateFilter, setDateFilter] = React.useState('mtd')
 
   const getTrendIcon = (trend: 'up' | 'down' | 'same') => {
     switch (trend) {
@@ -78,8 +99,22 @@ export function AgentPerformanceTable({
   return (
     <Card className="glass-card border-border/40">
       <CardHeader className="pb-3">
-        <CardTitle className="text-base font-semibold">{title}</CardTitle>
-        <CardDescription className="text-xs">{description}</CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-base font-semibold">{title}</CardTitle>
+            <CardDescription className="text-xs">{description}</CardDescription>
+          </div>
+          <Select value={dateFilter} onValueChange={setDateFilter}>
+            <SelectTrigger className="h-8 w-[120px] text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {DATE_OPTIONS.map(opt => (
+                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">

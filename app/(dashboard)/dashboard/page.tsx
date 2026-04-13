@@ -1224,9 +1224,23 @@ export default function DashboardPage() {
       {/* EPF Lead Source Performance - Admin Only */}
       {user?.role === 'admin' && (
         <Card className="mt-6">
-          <CardHeader className="text-center">
-            <CardTitle>EPF Lead Source Performance</CardTitle>
-            <CardDescription>Marketing spend and cost efficiency by lead source</CardDescription>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="text-center flex-1">
+                <CardTitle>EPF Lead Source Performance</CardTitle>
+                <CardDescription>Marketing spend and cost efficiency by lead source</CardDescription>
+              </div>
+              <Select defaultValue="mtd">
+                <SelectTrigger className="h-8 w-[120px] text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {dateOptions.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
