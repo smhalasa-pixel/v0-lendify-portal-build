@@ -97,14 +97,23 @@ export default function DashboardPage() {
 
   const commissionDateLabel = React.useMemo(() => {
     if (commissionDatePreset === 'custom' && commissionCustomRange.from && commissionCustomRange.to) {
-      return `${format(commissionCustomRange.from, 'MMM d')} - ${format(commissionCustomRange.to, 'MMM d')}`
+      return `${format(commissionCustomRange.from, 'MMM d, yyyy')} - ${format(commissionCustomRange.to, 'MMM d, yyyy')}`
     }
     const labels: Record<string, string> = {
+      'today': 'Today',
+      'yesterday': 'Yesterday',
       '7d': 'Last 7 Days',
+      '14d': 'Last 14 Days',
       '30d': 'Last 30 Days',
+      '60d': 'Last 60 Days',
       '90d': 'Last 90 Days',
       'mtd': 'Month to Date',
+      'last-month': 'Last Month',
+      'qtd': 'Quarter to Date',
+      'last-quarter': 'Last Quarter',
       'ytd': 'Year to Date',
+      'last-year': 'Last Year',
+      'all': 'All Time',
     }
     return labels[commissionDatePreset] || 'Last 30 Days'
   }, [commissionDatePreset, commissionCustomRange])
@@ -237,11 +246,20 @@ export default function DashboardPage() {
                       <SelectValue placeholder="Select range" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="today">Today</SelectItem>
+                      <SelectItem value="yesterday">Yesterday</SelectItem>
                       <SelectItem value="7d">Last 7 Days</SelectItem>
+                      <SelectItem value="14d">Last 14 Days</SelectItem>
                       <SelectItem value="30d">Last 30 Days</SelectItem>
+                      <SelectItem value="60d">Last 60 Days</SelectItem>
                       <SelectItem value="90d">Last 90 Days</SelectItem>
                       <SelectItem value="mtd">Month to Date</SelectItem>
+                      <SelectItem value="last-month">Last Month</SelectItem>
+                      <SelectItem value="qtd">Quarter to Date</SelectItem>
+                      <SelectItem value="last-quarter">Last Quarter</SelectItem>
                       <SelectItem value="ytd">Year to Date</SelectItem>
+                      <SelectItem value="last-year">Last Year</SelectItem>
+                      <SelectItem value="all">All Time</SelectItem>
                       <SelectItem value="custom">Custom Range...</SelectItem>
                     </SelectContent>
                   </Select>
