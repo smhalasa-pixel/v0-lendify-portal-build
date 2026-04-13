@@ -128,11 +128,13 @@ export default function DashboardPage() {
 
   const isAgent = user?.role === 'agent'
   const isLeadership = user?.role === 'leadership'
+  const isSupervisor = user?.role === 'supervisor'
   const isExecutive = user?.role === 'executive'
 
   const metrics = React.useMemo(() => {
     if (isAgent && user) return dataService.getDashboardMetrics(user.id)
     if (isLeadership && user?.teamId) return dataService.getDashboardMetrics(undefined, user.teamId)
+    // Supervisors and executives see global metrics
     return dataService.getDashboardMetrics()
   }, [user, isAgent, isLeadership])
 
@@ -148,15 +150,24 @@ export default function DashboardPage() {
     return dataService.getTeamMetrics()
   }, [])
   
-  // Agent performance for team leaders
+  // Agent performance for team leaders and supervisors
   const agentPerformance = React.useMemo(() => {
     if (isLeadership && user?.teamId) {
       return dataService.getAgentPerformanceByTeam(user.teamId)
     }
+    if (isSupervisor && user?.teamIds && user.teamIds.length > 0) {
+      return dataService.getAgentPerformanceByTeams(user.teamIds)
+    }
     return []
-  }, [isLeadership, user?.teamId])
+  }, [isLeadership, isSupervisor, user?.teamId, user?.teamIds])
 
-  const dashboardTitle = isAgent ? 'My Dashboard' : isLeadership ? `${user?.teamName || 'Team'} Dashboard` : 'Executive Dashboard'
+  const dashboardTitle = isAgent 
+    ? 'My Dashboard' 
+    : isLeadership 
+      ? `${user?.teamName || 'Team'} Dashboard` 
+      : isSupervisor 
+        ? 'Supervisor Dashboard' 
+        : 'Executive Dashboard'
 
   // Date slicer states for each section
   const [enrollmentDate, setEnrollmentDate] = React.useState('30d')
@@ -379,12 +390,14 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Agent Performance - visible to team leaders only */}
-      {isLeadership && agentPerformance.length > 0 && (
+      {/* Agent Performance - visible to team leaders and supervisors */}
+      {(isLeadership || isSupervisor) && agentPerformance.length > 0 && (
         <AgentPerformanceTable 
           data={agentPerformance}
-          title="My Team Agents"
-          description="Individual performance breakdown for your team members"
+          title={isSupervisor ? "My Teams' Agents" : "My Team Agents"}
+          description={isSupervisor 
+            ? "Individual performance breakdown across all your teams" 
+            : "Individual performance breakdown for your team members"}
         />
       )}
 

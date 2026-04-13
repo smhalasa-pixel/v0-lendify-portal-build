@@ -95,6 +95,17 @@ export const mockUsers: User[] = [
     hireDate: '2019-04-15',
     status: 'active',
   },
+  {
+    id: 'user-7',
+    email: 'alex.thompson@lendify.com',
+    name: 'Alex Thompson',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex',
+    role: 'supervisor',
+    teamIds: ['team-1', 'team-2'],
+    teamNames: ['West Coast Team', 'East Coast Team'],
+    hireDate: '2019-01-10',
+    status: 'active',
+  },
 ]
 
 // Mock Commissions
@@ -1208,6 +1219,16 @@ export const dataService = {
     }).sort((a, b) => b.debtLoadEnrolled - a.debtLoadEnrolled)
   },
   
+  // Agent Performance by Multiple Teams (for supervisors)
+  getAgentPerformanceByTeams: (teamIds: string[]): AgentPerformance[] => {
+    const allAgents: AgentPerformance[] = []
+    teamIds.forEach(teamId => {
+      const teamAgents = dataService.getAgentPerformanceByTeam(teamId)
+      allAgents.push(...teamAgents)
+    })
+    return allAgents.sort((a, b) => b.debtLoadEnrolled - a.debtLoadEnrolled)
+  },
+  
   getDashboardLayout: (): DashboardLayout => {
     const stored = typeof window !== 'undefined' 
       ? localStorage.getItem('lendify-dashboard-layout') 
@@ -1235,9 +1256,9 @@ export const dataService = {
     const user = mockUsers.find(u => u.id === userId)
     if (!user) return []
     
-    // Role hierarchy: executive > leadership > agent
+    // Role hierarchy: executive > supervisor > leadership > agent
     // Higher roles can see tasks assigned to lower roles in their chain
-    const roleHierarchy = { executive: 3, leadership: 2, agent: 1 }
+    const roleHierarchy: Record<string, number> = { executive: 4, supervisor: 3, leadership: 2, agent: 1 }
     const userRoleLevel = roleHierarchy[user.role] || 1
     
     return mockTasks.filter(task => {
@@ -1248,6 +1269,10 @@ export const dataService = {
       if (task.assignmentType === 'team') {
         // Executives see all team tasks
         if (user.role === 'executive') return true
+        // Supervisors see tasks for their assigned teams
+        if (user.role === 'supervisor' && user.teamIds) {
+          return user.teamIds.includes(task.assignedToTeamId || '')
+        }
         // Leadership/agents only see their own team's tasks
         return task.assignedToTeamId === user.teamId
       }
@@ -1265,6 +1290,11 @@ export const dataService = {
         
         // Executives can see all individual tasks
         if (user.role === 'executive') return true
+        
+        // Supervisors can see tasks for agents/leaders in their assigned teams
+        if (user.role === 'supervisor' && user.teamIds) {
+          return user.teamIds.includes(assignedUser.teamId || '')
+        }
         
         // Leadership can see tasks assigned to agents on their team
         if (user.role === 'leadership' && assignedUser.role === 'agent') {

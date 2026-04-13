@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { Users, Shield, TrendingUp } from 'lucide-react'
+import { Users, Shield, TrendingUp, UserCheck } from 'lucide-react'
 
 import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/button'
@@ -22,9 +22,17 @@ const demoUsers = [
     id: 'user-2',
     name: 'Michael Chen',
     role: 'leadership' as const,
-    description: 'Team leader & supervisor view with team oversight and performance metrics',
+    description: 'Team leader view with single team oversight',
     icon: Users,
-    features: ['Team Dashboard', 'Team Commissions', 'Performance Reports', 'All Sales Agent Features'],
+    features: ['Team Dashboard', 'Team Agent Performance', 'Team Metrics', 'All Agent Features'],
+  },
+  {
+    id: 'user-7',
+    name: 'Alex Thompson',
+    role: 'supervisor' as const,
+    description: 'Supervisor view with multiple teams oversight',
+    icon: UserCheck,
+    features: ['Multi-Team Dashboard', 'All Teams Agent Performance', 'Cross-Team Metrics', 'All Leadership Features'],
   },
   {
     id: 'user-3',
@@ -39,6 +47,8 @@ const demoUsers = [
 function getRoleBadgeVariant(role: string) {
   switch (role) {
     case 'executive':
+      return 'default'
+    case 'supervisor':
       return 'default'
     case 'leadership':
       return 'secondary'

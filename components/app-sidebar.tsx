@@ -52,49 +52,49 @@ const mainNavItems = [
     title: 'Dashboard',
     href: '/dashboard',
     icon: LayoutDashboard,
-    roles: ['agent', 'leadership', 'executive'] as UserRole[],
+    roles: ['agent', 'leadership', 'supervisor', 'executive'] as UserRole[],
   },
   {
     title: 'Announcements',
     href: '/announcements',
     icon: Megaphone,
-    roles: ['agent', 'leadership', 'executive'] as UserRole[],
+    roles: ['agent', 'leadership', 'supervisor', 'executive'] as UserRole[],
   },
   {
     title: 'Knowledge Base',
     href: '/knowledge',
     icon: BookOpen,
-    roles: ['agent', 'leadership', 'executive'] as UserRole[],
+    roles: ['agent', 'leadership', 'supervisor', 'executive'] as UserRole[],
   },
   {
     title: 'Scripts',
     href: '/scripts',
     icon: FileText,
-    roles: ['agent', 'leadership', 'executive'] as UserRole[],
+    roles: ['agent', 'leadership', 'supervisor', 'executive'] as UserRole[],
   },
   {
     title: 'To Do List',
     href: '/tasks',
     icon: ClipboardList,
-    roles: ['agent', 'leadership', 'executive'] as UserRole[],
+    roles: ['agent', 'leadership', 'supervisor', 'executive'] as UserRole[],
   },
   {
     title: 'Leaderboards',
     href: '/leaderboards',
     icon: Trophy,
-    roles: ['agent', 'leadership', 'executive'] as UserRole[],
+    roles: ['agent', 'leadership', 'supervisor', 'executive'] as UserRole[],
   },
   {
     title: 'Commissions',
     href: '/commissions',
     icon: DollarSign,
-    roles: ['agent', 'leadership', 'executive'] as UserRole[],
+    roles: ['agent', 'leadership', 'supervisor', 'executive'] as UserRole[],
   },
   {
     title: 'Clawbacks',
     href: '/clawbacks',
     icon: AlertTriangle,
-    roles: ['agent', 'leadership', 'executive'] as UserRole[],
+    roles: ['agent', 'leadership', 'supervisor', 'executive'] as UserRole[],
   },
 ]
 
@@ -123,6 +123,8 @@ function getRoleBadgeVariant(role: UserRole) {
   switch (role) {
     case 'executive':
       return 'default'
+    case 'supervisor':
+      return 'default'
     case 'leadership':
       return 'secondary'
     default:
@@ -134,6 +136,8 @@ function getRoleLabel(role: UserRole) {
   switch (role) {
     case 'executive':
       return 'Executive'
+    case 'supervisor':
+      return 'Supervisor'
     case 'leadership':
       return 'Team Leader'
     default:
@@ -278,6 +282,10 @@ export function AppSidebar() {
                 <DropdownMenuItem onClick={() => switchRole('leadership')}>
                   <Badge variant="secondary" className="mr-2">Team Leader</Badge>
                   Michael Chen
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => switchRole('supervisor')}>
+                  <Badge variant="default" className="mr-2">Supervisor</Badge>
+                  Alex Thompson
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => switchRole('executive')}>
                   <Badge variant="default" className="mr-2">Executive</Badge>
