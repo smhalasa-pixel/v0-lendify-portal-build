@@ -426,17 +426,16 @@ export function VolumeChart({ data: _initialData }: VolumeChartProps) {
                 </defs>
                 <CartesianGrid 
                   strokeDasharray="3 3" 
-                  stroke="hsl(var(--border))" 
-                  strokeOpacity={0.4}
+                  stroke="rgba(255, 255, 255, 0.1)" 
                   vertical={false} 
                 />
                 <XAxis
                   dataKey="label"
                   tickLine={false}
-                  axisLine={{ stroke: 'hsl(var(--border))', strokeOpacity: 0.5 }}
+                  axisLine={{ stroke: 'rgba(255, 255, 255, 0.2)' }}
                   tickMargin={12}
                   fontSize={10}
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontWeight: 500 }}
+                  tick={{ fill: 'rgba(255, 255, 255, 0.7)', fontWeight: 500 }}
                   interval={viewType !== 'daily' || chartData.length <= 14 ? 0 : chartData.length <= 30 ? 'preserveStartEnd' : 'equidistantPreserveStart'}
                   minTickGap={chartData.length <= 14 ? 30 : 50}
                 />
@@ -445,7 +444,7 @@ export function VolumeChart({ data: _initialData }: VolumeChartProps) {
                   axisLine={false}
                   tickMargin={8}
                   fontSize={10}
-                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                  tick={{ fill: 'rgba(255, 255, 255, 0.7)' }}
                   tickFormatter={(value) => formatTickValue(value, currentMetric.format)}
                   width={55}
                 />
@@ -478,17 +477,16 @@ export function VolumeChart({ data: _initialData }: VolumeChartProps) {
               <BarChart data={chartData} margin={{ top: 16, right: 8, left: -10, bottom: 4 }}>
                 <CartesianGrid 
                   strokeDasharray="3 3" 
-                  stroke="hsl(var(--border))" 
-                  strokeOpacity={0.4}
+                  stroke="rgba(255, 255, 255, 0.1)" 
                   vertical={false} 
                 />
                 <XAxis
                   dataKey="label"
                   tickLine={false}
-                  axisLine={{ stroke: 'hsl(var(--border))', strokeOpacity: 0.5 }}
+                  axisLine={{ stroke: 'rgba(255, 255, 255, 0.2)' }}
                   tickMargin={12}
                   fontSize={10}
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontWeight: 500 }}
+                  tick={{ fill: 'rgba(255, 255, 255, 0.7)', fontWeight: 500 }}
                   interval={viewType !== 'daily' || chartData.length <= 14 ? 0 : chartData.length <= 30 ? 'preserveStartEnd' : 'equidistantPreserveStart'}
                   minTickGap={chartData.length <= 14 ? 30 : 50}
                 />
@@ -497,7 +495,7 @@ export function VolumeChart({ data: _initialData }: VolumeChartProps) {
                   axisLine={false}
                   tickMargin={8}
                   fontSize={10}
-                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                  tick={{ fill: 'rgba(255, 255, 255, 0.7)' }}
                   tickFormatter={(value) => formatTickValue(value, currentMetric.format)}
                   width={55}
                 />

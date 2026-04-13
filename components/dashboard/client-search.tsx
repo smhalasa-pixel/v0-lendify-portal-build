@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -131,6 +132,9 @@ export function ClientSearch({ data }: ClientSearchProps) {
       <DialogContent className="max-w-[95vw] w-[1200px] max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Client Search</DialogTitle>
+          <DialogDescription>
+            Search and view client information including status, debt load, and dates.
+          </DialogDescription>
         </DialogHeader>
         
         <div className="relative mt-2">

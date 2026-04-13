@@ -83,7 +83,7 @@ export function PipelineChart({
               tickLine={false}
               axisLine={false}
               fontSize={12}
-              stroke="rgba(255, 255, 255, 0.4)"
+              tick={{ fill: 'rgba(255, 255, 255, 0.7)' }}
               tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
             />
             <YAxis
@@ -93,7 +93,7 @@ export function PipelineChart({
               axisLine={false}
               fontSize={12}
               width={80}
-              stroke="rgba(255, 255, 255, 0.4)"
+              tick={{ fill: 'rgba(255, 255, 255, 0.7)' }}
             />
             <ChartTooltip
               content={
