@@ -193,17 +193,17 @@ export default function DashboardPage() {
         {/* Left Column - Metrics */}
         <div className="lg:col-span-2 space-y-3">
           
-          {/* Row 1: Enrollments + Conversion */}
+          {/* Row 1: Submissions + Conversion */}
           <div className="grid md:grid-cols-2 gap-3">
             <Card className="glass-card border-border/40">
               <CardContent className="p-3">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Enrollments</span>
-                  <DateSelector value={enrollmentDate} onChange={setEnrollmentDate} id="enrollment" />
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Submissions</span>
+                  <DateSelector value={submissionDate} onChange={setSubmissionDate} id="submission" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <Metric label="Units" value={metrics.unitsEnrolled} change={metrics.unitsEnrolledChange} />
-                  <Metric label="Debt Load" value={metrics.debtLoadEnrolled} change={metrics.debtLoadEnrolledChange} format="currency" />
+                  <Metric label="Units" value={metrics.unitsSubmitted} change={metrics.unitsSubmittedChange} />
+                  <Metric label="Debt Load" value={metrics.debtLoadSubmitted} change={metrics.debtLoadSubmittedChange} format="currency" />
                 </div>
               </CardContent>
             </Card>
@@ -221,16 +221,16 @@ export default function DashboardPage() {
             </Card>
           </div>
 
-          {/* Row 2: Submissions */}
+          {/* Row 2: Enrollments */}
           <Card className="glass-card border-border/40">
             <CardContent className="p-3">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Submissions</span>
-                <DateSelector value={submissionDate} onChange={setSubmissionDate} id="submission" />
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Enrollments</span>
+                <DateSelector value={enrollmentDate} onChange={setEnrollmentDate} id="enrollment" />
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <Metric label="Units" value={metrics.unitsSubmitted} change={metrics.unitsSubmittedChange} />
-                <Metric label="Debt Load" value={metrics.debtLoadSubmitted} change={metrics.debtLoadSubmittedChange} format="currency" />
+                <Metric label="Units" value={metrics.unitsEnrolled} change={metrics.unitsEnrolledChange} />
+                <Metric label="Debt Load" value={metrics.debtLoadEnrolled} change={metrics.debtLoadEnrolledChange} format="currency" />
               </div>
             </CardContent>
           </Card>
