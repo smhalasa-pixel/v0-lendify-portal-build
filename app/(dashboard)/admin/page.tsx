@@ -78,8 +78,8 @@ const adminModules = [
 export default function AdminPage() {
   const { user } = useAuth()
   
-  // Redirect non-executives
-  if (user?.role !== 'executive') {
+  // Redirect non-admins
+  if (user?.role !== 'admin') {
     return (
       <div className="p-6 flex items-center justify-center min-h-[60vh]">
         <Card className="max-w-md w-full">
@@ -87,7 +87,7 @@ export default function AdminPage() {
             <Shield className="size-12 mx-auto text-muted-foreground mb-4" />
             <h2 className="text-xl font-semibold mb-2">Access Restricted</h2>
             <p className="text-muted-foreground">
-              The Admin Panel is only accessible to executives. Please contact your administrator for access.
+              The Admin Panel is only accessible to administrators. Please contact your system administrator for access.
             </p>
           </CardContent>
         </Card>
@@ -131,8 +131,8 @@ export default function AdminPage() {
                 <DollarSign className="size-5 text-success" />
               </div>
               <div>
-                <CurrencyDisplay value={dashboardMetrics.mtdVolume} className="text-2xl font-bold" />
-                <p className="text-sm text-muted-foreground">MTD Volume</p>
+                <CurrencyDisplay value={dashboardMetrics.debtLoadEnrolled} className="text-2xl font-bold" />
+                <p className="text-sm text-muted-foreground">MTD Debt Load</p>
               </div>
             </div>
           </CardContent>
@@ -144,7 +144,7 @@ export default function AdminPage() {
                 <TrendingUp className="size-5 text-chart-1" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{dashboardMetrics.mtdUnits}</p>
+                <p className="text-2xl font-bold">{dashboardMetrics.unitsEnrolled}</p>
                 <p className="text-sm text-muted-foreground">MTD Units</p>
               </div>
             </div>
