@@ -126,6 +126,15 @@ export interface DashboardMetrics {
   commissionsChange: number
   totalClawbacks: number
   clawbacksChange: number
+  // Tier metrics
+  currentTier: number
+  expectedTier: number
+  expectedCommission: number
+  // Monthly targets
+  monthlyTargetUnits: number
+  monthlyTargetDebtLoad: number
+  unitsToTarget: number // progress percentage
+  debtLoadToTarget: number // progress percentage
   // Legacy/additional metrics
   avgLoanSize: number
   avgLoanSizeChange: number
@@ -150,11 +159,13 @@ export interface ChartDataPoint {
 
 export interface PipelineLoan {
   id: string
+  clientId: string
   borrowerName: string
   loanAmount: number
   loanType: string
   status: 'lead' | 'application' | 'processing' | 'underwriting' | 'approved' | 'closing' | 'funded'
   expectedCloseDate: string
+  firstPaymentDate?: string
   agentId: string
   agentName: string
   createdDate: string

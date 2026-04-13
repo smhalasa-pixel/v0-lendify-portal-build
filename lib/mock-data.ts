@@ -550,11 +550,13 @@ export const mockLeaderboard: LeaderboardEntry[] = [
 export const mockPipeline: PipelineLoan[] = [
   {
     id: 'pipe-1',
+    clientId: 'CL-2024-001',
     borrowerName: 'Thomas & Rebecca Moore',
     loanAmount: 525000,
     loanType: 'Conventional',
     status: 'underwriting',
     expectedCloseDate: '2024-03-01',
+    firstPaymentDate: '2024-04-01',
     agentId: 'user-1',
     agentName: 'Sarah Johnson',
     createdDate: '2024-01-20',
@@ -562,11 +564,13 @@ export const mockPipeline: PipelineLoan[] = [
   },
   {
     id: 'pipe-2',
+    clientId: 'CL-2024-002',
     borrowerName: 'Andrew Nelson',
     loanAmount: 380000,
     loanType: 'FHA',
     status: 'processing',
     expectedCloseDate: '2024-03-15',
+    firstPaymentDate: '2024-04-15',
     agentId: 'user-1',
     agentName: 'Sarah Johnson',
     createdDate: '2024-02-01',
@@ -574,11 +578,13 @@ export const mockPipeline: PipelineLoan[] = [
   },
   {
     id: 'pipe-3',
+    clientId: 'CL-2024-003',
     borrowerName: 'Linda & Robert Scott',
     loanAmount: 675000,
     loanType: 'Jumbo',
     status: 'approved',
     expectedCloseDate: '2024-02-28',
+    firstPaymentDate: '2024-03-28',
     agentId: 'user-4',
     agentName: 'David Williams',
     createdDate: '2024-01-15',
@@ -586,11 +592,13 @@ export const mockPipeline: PipelineLoan[] = [
   },
   {
     id: 'pipe-4',
+    clientId: 'CL-2024-004',
     borrowerName: 'Michelle Carter',
     loanAmount: 295000,
     loanType: 'VA',
     status: 'closing',
     expectedCloseDate: '2024-02-20',
+    firstPaymentDate: '2024-03-20',
     agentId: 'user-5',
     agentName: 'Emily Brown',
     createdDate: '2024-01-10',
@@ -598,11 +606,13 @@ export const mockPipeline: PipelineLoan[] = [
   },
   {
     id: 'pipe-5',
+    clientId: 'CL-2024-005',
     borrowerName: 'Jason & Amy Phillips',
     loanAmount: 450000,
     loanType: 'Conventional',
     status: 'application',
     expectedCloseDate: '2024-04-01',
+    firstPaymentDate: '2024-05-01',
     agentId: 'user-1',
     agentName: 'Sarah Johnson',
     createdDate: '2024-02-10',
@@ -610,6 +620,7 @@ export const mockPipeline: PipelineLoan[] = [
   },
   {
     id: 'pipe-6',
+    clientId: 'CL-2024-006',
     borrowerName: 'Daniel White',
     loanAmount: 320000,
     loanType: 'Refinance',
@@ -619,6 +630,34 @@ export const mockPipeline: PipelineLoan[] = [
     agentName: 'David Williams',
     createdDate: '2024-02-12',
     lastActivity: '2024-02-12',
+  },
+  {
+    id: 'pipe-7',
+    clientId: 'CL-2024-007',
+    borrowerName: 'Sarah Mitchell',
+    loanAmount: 420000,
+    loanType: 'Conventional',
+    status: 'funded',
+    expectedCloseDate: '2024-02-10',
+    firstPaymentDate: '2024-03-10',
+    agentId: 'user-1',
+    agentName: 'Sarah Johnson',
+    createdDate: '2024-01-05',
+    lastActivity: '2024-02-10',
+  },
+  {
+    id: 'pipe-8',
+    clientId: 'CL-2024-008',
+    borrowerName: 'Kevin & Lisa Anderson',
+    loanAmount: 560000,
+    loanType: 'Jumbo',
+    status: 'processing',
+    expectedCloseDate: '2024-03-20',
+    firstPaymentDate: '2024-04-20',
+    agentId: 'user-5',
+    agentName: 'Emily Brown',
+    createdDate: '2024-02-05',
+    lastActivity: '2024-02-14',
   },
 ]
 
@@ -717,6 +756,18 @@ export function getDashboardMetrics(userId?: string, teamId?: string): Dashboard
   const qualifiedLeads = qualifiedPipeline.length + unitsEnrolled
   const qualifiedConversionRate = qualifiedLeads > 0 ? (unitsEnrolled / qualifiedLeads) * 100 : 0
 
+  // Tier and expected metrics
+  const currentTier = unitsEnrolled >= 15 ? 3 : unitsEnrolled >= 10 ? 2 : 1
+  const expectedTier = (unitsEnrolled + unitsSubmitted * 0.7) >= 15 ? 3 : (unitsEnrolled + unitsSubmitted * 0.7) >= 10 ? 2 : 1
+  const tierCommissionRates = { 1: 0.0125, 2: 0.015, 3: 0.0175 }
+  const expectedCommission = totalCommissions + (debtLoadSubmitted * tierCommissionRates[expectedTier as 1 | 2 | 3] * 0.7)
+
+  // Monthly targets
+  const monthlyTargetUnits = 15
+  const monthlyTargetDebtLoad = 5000000
+  const unitsToTarget = Math.min((unitsEnrolled / monthlyTargetUnits) * 100, 100)
+  const debtLoadToTarget = Math.min((debtLoadEnrolled / monthlyTargetDebtLoad) * 100, 100)
+
   return {
     debtLoadEnrolled,
     debtLoadEnrolledChange: 12.5,
@@ -738,6 +789,13 @@ export function getDashboardMetrics(userId?: string, teamId?: string): Dashboard
     commissionsChange: 15.2,
     totalClawbacks,
     clawbacksChange: -5.3,
+    currentTier,
+    expectedTier,
+    expectedCommission,
+    monthlyTargetUnits,
+    monthlyTargetDebtLoad,
+    unitsToTarget,
+    debtLoadToTarget,
     avgLoanSize,
     avgLoanSizeChange: 3.8,
     pipelineValue: debtLoadSubmitted,
