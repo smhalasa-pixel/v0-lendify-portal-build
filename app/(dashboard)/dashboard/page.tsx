@@ -479,16 +479,18 @@ export default function DashboardPage() {
   }, [isAgent, isLeadership, isSupervisor, isAdmin, filterType, selectedTeamLead, selectedSupervisor, teamLeads, supervisors, user?.teamName, selectedAgentId, selectedTeamId, allAgents])
 
   // Date slicer states - each metric has its own
+  const [unitsSubmittedDate, setUnitsSubmittedDate] = React.useState('30d')
+  const [debtLoadSubmittedDate, setDebtLoadSubmittedDate] = React.useState('30d')
+  const [convRateDate, setConvRateDate] = React.useState('30d')
+  const [qualConvDate, setQualConvDate] = React.useState('30d')
   const [unitsEnrolledDate, setUnitsEnrolledDate] = React.useState('30d')
   const [debtLoadEnrolledDate, setDebtLoadEnrolledDate] = React.useState('30d')
-  const [conversionDate, setConversionDate] = React.useState('30d')
   const [unitsFpcDate, setUnitsFpcDate] = React.useState('30d')
   const [debtLoadFpcDate, setDebtLoadFpcDate] = React.useState('30d')
   const [ancillaryDate, setAncillaryDate] = React.useState('30d')
   const [avgDebtPerFileDate, setAvgDebtPerFileDate] = React.useState('30d')
   const [avgDailyDebtDate, setAvgDailyDebtDate] = React.useState('30d')
   const [avgDailyUnitsDate, setAvgDailyUnitsDate] = React.useState('30d')
-  const [submissionDate, setSubmissionDate] = React.useState('30d')
   
   const [customRange, setCustomRange] = React.useState<{ from?: Date; to?: Date }>({})
   const [calendarOpen, setCalendarOpen] = React.useState<string | null>(null)
@@ -862,56 +864,20 @@ export default function DashboardPage() {
         {/* Left Column - Metrics */}
         <div className="lg:col-span-2 space-y-3">
           
-          {/* Row 1: Submissions + Conversion */}
-          <div className="grid md:grid-cols-2 gap-3">
-            <Card className="glass-card border-border/40">
-              <CardContent className="p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Submissions</span>
-                  <DateSelector value={submissionDate} onChange={setSubmissionDate} id="submission" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <Metric label="Units" value={metrics.unitsSubmitted} change={metrics.unitsSubmittedChange} />
-                  <Metric label="Debt Load" value={metrics.debtLoadSubmitted} change={metrics.debtLoadSubmittedChange} format="currency" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="glass-card border-border/40">
-              <CardContent className="p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Conversion</span>
-                  <DateSelector value={conversionDate} onChange={setConversionDate} id="conversion" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <Metric 
-                    label="Conv. Rate" 
-                    value={metrics.conversionRate} 
-                    change={metrics.conversionRateChange} 
-                    format="percentage" 
-                    numerator={metrics.conversionClosed}
-                    denominator={metrics.conversionAssigned}
-                  />
-                  <Metric 
-                    label="Qualified Conv." 
-                    value={metrics.qualifiedConversionRate} 
-                    change={metrics.qualifiedConversionRateChange} 
-                    format="percentage"
-                    numerator={metrics.qualifiedClosed}
-                    denominator={metrics.qualifiedAssigned}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
           {/* Compact Metrics Grid */}
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-4 gap-2">
+            {/* Submissions */}
+            <MetricTile label="Units Submitted" value={metrics.unitsSubmitted} change={metrics.unitsSubmittedChange} dateValue={unitsSubmittedDate} onDateChange={setUnitsSubmittedDate} />
+            <MetricTile label="Debt Submitted" value={metrics.debtLoadSubmitted} change={metrics.debtLoadSubmittedChange} format="currency" dateValue={debtLoadSubmittedDate} onDateChange={setDebtLoadSubmittedDate} />
+            {/* Conversions */}
+            <MetricTile label="Conv. Rate" value={metrics.conversionRate} change={metrics.conversionRateChange} format="percentage" dateValue={convRateDate} onDateChange={setConvRateDate} />
+            <MetricTile label="Qual. Conv." value={metrics.qualifiedConversionRate} change={metrics.qualifiedConversionRateChange} format="percentage" dateValue={qualConvDate} onDateChange={setQualConvDate} />
             {/* Enrollments */}
             <MetricTile label="Units Enrolled" value={metrics.unitsEnrolled} change={metrics.unitsEnrolledChange} dateValue={unitsEnrolledDate} onDateChange={setUnitsEnrolledDate} />
-            <MetricTile label="Debt Load" value={metrics.debtLoadEnrolled} change={metrics.debtLoadEnrolledChange} format="currency" dateValue={debtLoadEnrolledDate} onDateChange={setDebtLoadEnrolledDate} />
+            <MetricTile label="Debt Enrolled" value={metrics.debtLoadEnrolled} change={metrics.debtLoadEnrolledChange} format="currency" dateValue={debtLoadEnrolledDate} onDateChange={setDebtLoadEnrolledDate} />
             {/* FPC */}
             <MetricTile label="Units FPC" value={metrics.unitsFPC} change={metrics.unitsFPCChange} dateValue={unitsFpcDate} onDateChange={setUnitsFpcDate} />
-            <MetricTile label="Debt Load FPC" value={metrics.debtLoadFPC} change={metrics.debtLoadFPCChange} format="currency" dateValue={debtLoadFpcDate} onDateChange={setDebtLoadFpcDate} />
+            <MetricTile label="Debt FPC" value={metrics.debtLoadFPC} change={metrics.debtLoadFPCChange} format="currency" dateValue={debtLoadFpcDate} onDateChange={setDebtLoadFpcDate} />
             {/* Ancillary */}
             <MetricTile label="Ancillary Sales" value={metrics.ancillaryCount} change={metrics.ancillaryCountChange} dateValue={ancillaryDate} onDateChange={setAncillaryDate} />
             {/* Averages */}
