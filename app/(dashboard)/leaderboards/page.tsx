@@ -164,13 +164,96 @@ function getDateRangeInfo(period: string, customRange?: { from?: Date; to?: Date
   }
 }
 
+interface TeamLeaderboardEntry {
+  rank: number
+  teamId: string
+  teamName: string
+  agentCount: number
+  unitsClosed: number
+  debtLoadEnrolled: number
+  unitsEnrolled: number
+  avgConversionRate: number
+  performanceGrade: 'A+' | 'A' | 'A-' | 'B+' | 'B' | 'B-' | 'C+' | 'C' | 'C-' | 'D' | 'F'
+  previousRank?: number
+  trend: 'up' | 'down' | 'same'
+}
+
 export default function LeaderboardsPage() {
   const { user } = useAuth()
   const [period, setPeriod] = React.useState('mtd')
+  const [viewType, setViewType] = React.useState<'agent' | 'team'>('agent')
   const [customRange, setCustomRange] = React.useState<{ from?: Date; to?: Date }>({})
   const [calendarOpen, setCalendarOpen] = React.useState(false)
 
   const leaderboard = React.useMemo(() => dataService.getLeaderboard(period as 'mtd' | 'qtd' | 'ytd'), [period])
+  
+  // Aggregate leaderboard data by team
+  const teamLeaderboard = React.useMemo<TeamLeaderboardEntry[]>(() => {
+    const teamMap = new Map<string, {
+      teamId: string
+      teamName: string
+      agents: typeof leaderboard
+    }>()
+    
+    leaderboard.forEach(entry => {
+      const teamId = entry.teamId || 'unknown'
+      const teamName = entry.teamName || 'Unknown Team'
+      
+      if (!teamMap.has(teamId)) {
+        teamMap.set(teamId, { teamId, teamName, agents: [] })
+      }
+      teamMap.get(teamId)!.agents.push(entry)
+    })
+    
+    const teams: TeamLeaderboardEntry[] = Array.from(teamMap.values()).map(team => {
+      const totalUnitsClosed = team.agents.reduce((sum, a) => sum + a.unitsClosed, 0)
+      const totalDebtLoad = team.agents.reduce((sum, a) => sum + a.debtLoadEnrolled, 0)
+      const totalUnitsEnrolled = team.agents.reduce((sum, a) => sum + a.unitsEnrolled, 0)
+      const avgConversion = team.agents.reduce((sum, a) => sum + a.conversionRate, 0) / team.agents.length
+      
+      // Calculate team grade based on average of individual grades
+      const gradeValues: Record<string, number> = {
+        'A+': 12, 'A': 11, 'A-': 10, 'B+': 9, 'B': 8, 'B-': 7, 
+        'C+': 6, 'C': 5, 'C-': 4, 'D': 3, 'F': 1
+      }
+      const gradeFromValue = (v: number): TeamLeaderboardEntry['performanceGrade'] => {
+        if (v >= 11.5) return 'A+'
+        if (v >= 10.5) return 'A'
+        if (v >= 9.5) return 'A-'
+        if (v >= 8.5) return 'B+'
+        if (v >= 7.5) return 'B'
+        if (v >= 6.5) return 'B-'
+        if (v >= 5.5) return 'C+'
+        if (v >= 4.5) return 'C'
+        if (v >= 3.5) return 'C-'
+        if (v >= 2) return 'D'
+        return 'F'
+      }
+      const avgGradeValue = team.agents.reduce((sum, a) => sum + (gradeValues[a.performanceGrade] || 5), 0) / team.agents.length
+      
+      return {
+        rank: 0,
+        teamId: team.teamId,
+        teamName: team.teamName,
+        agentCount: team.agents.length,
+        unitsClosed: totalUnitsClosed,
+        debtLoadEnrolled: totalDebtLoad,
+        unitsEnrolled: totalUnitsEnrolled,
+        avgConversionRate: avgConversion,
+        performanceGrade: gradeFromValue(avgGradeValue),
+        trend: team.agents[0]?.trend || 'same',
+      }
+    })
+    
+    // Sort by debt load enrolled and assign ranks
+    teams.sort((a, b) => b.debtLoadEnrolled - a.debtLoadEnrolled)
+    teams.forEach((team, idx) => {
+      team.rank = idx + 1
+      team.previousRank = idx + 1 + (team.trend === 'up' ? 1 : team.trend === 'down' ? -1 : 0)
+    })
+    
+    return teams
+  }, [leaderboard])
   
   const dateRangeInfo = React.useMemo(() => getDateRangeInfo(period, customRange), [period, customRange])
   
@@ -205,6 +288,32 @@ export default function LeaderboardsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {/* View Toggle */}
+          <div className="flex items-center bg-muted rounded-lg p-1">
+            <button
+              onClick={() => setViewType('agent')}
+              className={cn(
+                "px-3 py-1.5 text-sm font-medium rounded-md transition-all",
+                viewType === 'agent' 
+                  ? "bg-background text-foreground shadow-sm" 
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Agent
+            </button>
+            <button
+              onClick={() => setViewType('team')}
+              className={cn(
+                "px-3 py-1.5 text-sm font-medium rounded-md transition-all",
+                viewType === 'team' 
+                  ? "bg-background text-foreground shadow-sm" 
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Team
+            </button>
+          </div>
+
           <Select value={period} onValueChange={(val) => {
             setPeriod(val)
             if (val === 'custom' && !customRange.from) {
@@ -288,68 +397,130 @@ export default function LeaderboardsPage() {
       )}
 
       {/* Top 3 Podium */}
-      <div className="grid md:grid-cols-3 gap-4">
-        {topThree.map((entry, index) => (
-          <Card
-            key={entry.agentId}
-            className={cn(
-              'relative overflow-hidden',
-              index === 0 && 'md:order-2 bg-gradient-to-b from-yellow-500/10 to-transparent border-yellow-500/20',
-              index === 1 && 'md:order-1 bg-gradient-to-b from-gray-400/10 to-transparent border-gray-400/20',
-              index === 2 && 'md:order-3 bg-gradient-to-b from-amber-600/10 to-transparent border-amber-600/20'
-            )}
-          >
-            <CardContent className="pt-6 text-center">
-              {/* Rank Badge */}
-              <div className="absolute top-3 right-3">
-                {getRankIcon(entry.rank)}
-              </div>
-
-              {/* Avatar */}
-              <Avatar className="size-20 mx-auto mb-4 ring-4 ring-background">
-                <AvatarImage src={entry.avatar} alt={entry.agentName} />
-                <AvatarFallback className="text-xl bg-primary/10 text-primary">
-                  {entry.agentName.split(' ').map(n => n[0]).join('')}
-                </AvatarFallback>
-              </Avatar>
-
-              {/* Name */}
-              <h3 className="font-semibold text-lg">{entry.agentName}</h3>
-              <p className="text-sm text-muted-foreground mb-4">{entry.teamName}</p>
-
-              {/* Stats */}
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div>
-                  <p className="text-lg font-bold text-primary">
-                    {formatCurrency(entry.debtLoadEnrolled / 1000000)}M
-                  </p>
-                  <p className="text-xs text-muted-foreground">Enrolled</p>
+      {viewType === 'agent' ? (
+        <div className="grid md:grid-cols-3 gap-4">
+          {topThree.map((entry, index) => (
+            <Card
+              key={entry.agentId}
+              className={cn(
+                'relative overflow-hidden',
+                index === 0 && 'md:order-2 bg-gradient-to-b from-yellow-500/10 to-transparent border-yellow-500/20',
+                index === 1 && 'md:order-1 bg-gradient-to-b from-gray-400/10 to-transparent border-gray-400/20',
+                index === 2 && 'md:order-3 bg-gradient-to-b from-amber-600/10 to-transparent border-amber-600/20'
+              )}
+            >
+              <CardContent className="pt-6 text-center">
+                {/* Rank Badge */}
+                <div className="absolute top-3 right-3">
+                  {getRankIcon(entry.rank)}
                 </div>
-                <div>
-                  <p className="text-lg font-bold">{entry.unitsEnrolled}</p>
-                  <p className="text-xs text-muted-foreground">Units</p>
-                </div>
-                <div>
-                  <p className="text-lg font-bold text-success">
-                    {formatCurrency(entry.totalCommissions / 1000)}K
-                  </p>
-                  <p className="text-xs text-muted-foreground">Earned</p>
-                </div>
-              </div>
 
-              {/* Trend */}
-              <div className="flex items-center justify-center gap-1 mt-4 text-sm">
-                {getTrendIcon(entry.trend)}
-                <span className="text-muted-foreground">
-                  {entry.trend === 'up' && 'Moving up'}
-                  {entry.trend === 'down' && 'Dropped'}
-                  {entry.trend === 'same' && 'Holding steady'}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                {/* Avatar */}
+                <Avatar className="size-20 mx-auto mb-4 ring-4 ring-background">
+                  <AvatarImage src={entry.avatar} alt={entry.agentName} />
+                  <AvatarFallback className="text-xl bg-primary/10 text-primary">
+                    {entry.agentName.split(' ').map(n => n[0]).join('')}
+                  </AvatarFallback>
+                </Avatar>
+
+                {/* Name */}
+                <h3 className="font-semibold text-lg">{entry.agentName}</h3>
+                <p className="text-sm text-muted-foreground mb-4">{entry.teamName}</p>
+
+                {/* Stats */}
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div>
+                    <p className="text-lg font-bold text-primary">
+                      {formatCurrency(entry.debtLoadEnrolled / 1000000)}M
+                    </p>
+                    <p className="text-xs text-muted-foreground">Enrolled</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold">{entry.unitsEnrolled}</p>
+                    <p className="text-xs text-muted-foreground">Units</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-success">
+                      {formatCurrency(entry.totalCommissions / 1000)}K
+                    </p>
+                    <p className="text-xs text-muted-foreground">Earned</p>
+                  </div>
+                </div>
+
+                {/* Trend */}
+                <div className="flex items-center justify-center gap-1 mt-4 text-sm">
+                  {getTrendIcon(entry.trend)}
+                  <span className="text-muted-foreground">
+                    {entry.trend === 'up' && 'Moving up'}
+                    {entry.trend === 'down' && 'Dropped'}
+                    {entry.trend === 'same' && 'Holding steady'}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="grid md:grid-cols-3 gap-4">
+          {teamLeaderboard.slice(0, 3).map((team, index) => (
+            <Card
+              key={team.teamId}
+              className={cn(
+                'relative overflow-hidden',
+                index === 0 && 'md:order-2 bg-gradient-to-b from-yellow-500/10 to-transparent border-yellow-500/20',
+                index === 1 && 'md:order-1 bg-gradient-to-b from-gray-400/10 to-transparent border-gray-400/20',
+                index === 2 && 'md:order-3 bg-gradient-to-b from-amber-600/10 to-transparent border-amber-600/20'
+              )}
+            >
+              <CardContent className="pt-6 text-center">
+                {/* Rank Badge */}
+                <div className="absolute top-3 right-3">
+                  {getRankIcon(team.rank)}
+                </div>
+
+                {/* Team Icon */}
+                <div className="size-20 mx-auto mb-4 ring-4 ring-background rounded-full bg-primary/10 flex items-center justify-center">
+                  <Users className="size-10 text-primary" />
+                </div>
+
+                {/* Name */}
+                <h3 className="font-semibold text-lg">{team.teamName}</h3>
+                <p className="text-sm text-muted-foreground mb-4">{team.agentCount} agents</p>
+
+                {/* Stats */}
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div>
+                    <p className="text-lg font-bold text-primary">
+                      {formatCurrency(team.debtLoadEnrolled / 1000000)}M
+                    </p>
+                    <p className="text-xs text-muted-foreground">Enrolled</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold">{team.unitsClosed}</p>
+                    <p className="text-xs text-muted-foreground">Closed</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-success">
+                      {team.avgConversionRate.toFixed(1)}%
+                    </p>
+                    <p className="text-xs text-muted-foreground">Conv.</p>
+                  </div>
+                </div>
+
+                {/* Trend */}
+                <div className="flex items-center justify-center gap-1 mt-4 text-sm">
+                  {getTrendIcon(team.trend)}
+                  <span className="text-muted-foreground">
+                    {team.trend === 'up' && 'Moving up'}
+                    {team.trend === 'down' && 'Dropped'}
+                    {team.trend === 'same' && 'Holding steady'}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Stats Summary */}
       <div className="grid sm:grid-cols-3 gap-4">
@@ -376,9 +547,13 @@ export default function LeaderboardsPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">
-                  {leaderboard.reduce((sum, e) => sum + e.unitsEnrolled, 0)}
+                  {viewType === 'agent' 
+                    ? leaderboard.reduce((sum, e) => sum + e.unitsEnrolled, 0)
+                    : teamLeaderboard.reduce((sum, t) => sum + t.unitsClosed, 0)}
                 </p>
-                <p className="text-sm text-muted-foreground">Total Units Enrolled</p>
+                <p className="text-sm text-muted-foreground">
+                  {viewType === 'agent' ? 'Total Units Enrolled' : 'Total Units Closed'}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -390,8 +565,12 @@ export default function LeaderboardsPage() {
                 <Users className="size-6 text-chart-2" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{leaderboard.length}</p>
-                <p className="text-sm text-muted-foreground">Active Sales Agents</p>
+                <p className="text-2xl font-bold">
+                  {viewType === 'agent' ? leaderboard.length : teamLeaderboard.length}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {viewType === 'agent' ? 'Active Sales Agents' : 'Active Teams'}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -402,104 +581,195 @@ export default function LeaderboardsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Full Rankings</CardTitle>
-          <CardDescription>All sales agents ranked by debt load enrolled</CardDescription>
+          <CardDescription>
+            {viewType === 'agent' 
+              ? 'All sales agents ranked by debt load enrolled'
+              : 'All teams ranked by total debt load enrolled'}
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[60px] text-center">Rank</TableHead>
-                <TableHead>Agent</TableHead>
-                <TableHead className="text-center">Team</TableHead>
-                <TableHead className="text-center">Units Closed</TableHead>
-                <TableHead className="text-center">Debt Enrolled</TableHead>
-                <TableHead className="text-center">Conversion Rate</TableHead>
-                <TableHead className="text-center">Performance Grade</TableHead>
-                <TableHead className="text-center">Trend</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {leaderboard.map((entry) => (
-                <TableRow
-                  key={entry.agentId}
-                  className={cn(
-                    user?.id === entry.agentId && 'bg-primary/5'
-                  )}
-                >
-                  <TableCell className="text-center">
-                    <div className="flex items-center justify-center size-8 mx-auto">
-                      {getRankIcon(entry.rank)}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="size-8">
-                        <AvatarImage src={entry.avatar} alt={entry.agentName} />
-                        <AvatarFallback className="text-xs">
-                          {entry.agentName.split(' ').map(n => n[0]).join('')}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="font-medium">{entry.agentName}</span>
-                      {user?.id === entry.agentId && (
-                        <Badge variant="secondary" className="text-xs">You</Badge>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-center text-muted-foreground">{entry.teamName}</TableCell>
-                  <TableCell className="text-center font-medium">{entry.unitsClosed}</TableCell>
-                  <TableCell className="text-center font-medium">
-                    {formatCurrency(entry.debtLoadEnrolled)}
-                  </TableCell>
-                  <TableCell className="text-center font-medium">
-                    {entry.conversionRate.toFixed(1)}%
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <TooltipProvider delayDuration={100}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Badge 
-                            variant="outline" 
-                            className={cn(
-                              "font-semibold cursor-help",
-                              entry.performanceGrade.startsWith('A') && "border-emerald-500 text-emerald-500 bg-emerald-500/10",
-                              entry.performanceGrade.startsWith('B') && "border-blue-500 text-blue-500 bg-blue-500/10",
-                              entry.performanceGrade.startsWith('C') && "border-amber-500 text-amber-500 bg-amber-500/10",
-                              entry.performanceGrade.startsWith('D') && "border-orange-500 text-orange-500 bg-orange-500/10",
-                              entry.performanceGrade === 'F' && "border-red-500 text-red-500 bg-red-500/10"
-                            )}
-                          >
-                            {entry.performanceGrade}
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent side="top" className="max-w-[200px] text-center">
-                          <p className="text-xs">Based on weighted performance metrics and pacing towards monthly target</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <TooltipProvider delayDuration={100}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="flex items-center justify-center gap-1 cursor-help">
-                            {getTrendIcon(entry.trend)}
-                            {entry.previousRank && entry.rank !== entry.previousRank && (
-                              <span className="text-xs text-muted-foreground">
-                                ({entry.previousRank > entry.rank ? '+' : ''}{entry.previousRank - entry.rank})
-                              </span>
-                            )}
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent side="top">
-                          <p className="text-xs">vs {comparisonPeriodLabel}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </TableCell>
+          {viewType === 'agent' ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[60px] text-center">Rank</TableHead>
+                  <TableHead>Agent</TableHead>
+                  <TableHead className="text-center">Team</TableHead>
+                  <TableHead className="text-center">Units Closed</TableHead>
+                  <TableHead className="text-center">Debt Enrolled</TableHead>
+                  <TableHead className="text-center">Conversion Rate</TableHead>
+                  <TableHead className="text-center">Performance Grade</TableHead>
+                  <TableHead className="text-center">Trend</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {leaderboard.map((entry) => (
+                  <TableRow
+                    key={entry.agentId}
+                    className={cn(
+                      user?.id === entry.agentId && 'bg-primary/5'
+                    )}
+                  >
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center size-8 mx-auto">
+                        {getRankIcon(entry.rank)}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="size-8">
+                          <AvatarImage src={entry.avatar} alt={entry.agentName} />
+                          <AvatarFallback className="text-xs">
+                            {entry.agentName.split(' ').map(n => n[0]).join('')}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="font-medium">{entry.agentName}</span>
+                        {user?.id === entry.agentId && (
+                          <Badge variant="secondary" className="text-xs">You</Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center text-muted-foreground">{entry.teamName}</TableCell>
+                    <TableCell className="text-center font-medium">{entry.unitsClosed}</TableCell>
+                    <TableCell className="text-center font-medium">
+                      {formatCurrency(entry.debtLoadEnrolled)}
+                    </TableCell>
+                    <TableCell className="text-center font-medium">
+                      {entry.conversionRate.toFixed(1)}%
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <TooltipProvider delayDuration={100}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge 
+                              variant="outline" 
+                              className={cn(
+                                "font-semibold cursor-help",
+                                entry.performanceGrade.startsWith('A') && "border-emerald-500 text-emerald-500 bg-emerald-500/10",
+                                entry.performanceGrade.startsWith('B') && "border-blue-500 text-blue-500 bg-blue-500/10",
+                                entry.performanceGrade.startsWith('C') && "border-amber-500 text-amber-500 bg-amber-500/10",
+                                entry.performanceGrade.startsWith('D') && "border-orange-500 text-orange-500 bg-orange-500/10",
+                                entry.performanceGrade === 'F' && "border-red-500 text-red-500 bg-red-500/10"
+                              )}
+                            >
+                              {entry.performanceGrade}
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-[200px] text-center">
+                            <p className="text-xs">Based on weighted performance metrics and pacing towards monthly target</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <TooltipProvider delayDuration={100}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="flex items-center justify-center gap-1 cursor-help">
+                              {getTrendIcon(entry.trend)}
+                              {entry.previousRank && entry.rank !== entry.previousRank && (
+                                <span className="text-xs text-muted-foreground">
+                                  ({entry.previousRank > entry.rank ? '+' : ''}{entry.previousRank - entry.rank})
+                                </span>
+                              )}
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">
+                            <p className="text-xs">vs {comparisonPeriodLabel}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[60px] text-center">Rank</TableHead>
+                  <TableHead>Team</TableHead>
+                  <TableHead className="text-center">Agents</TableHead>
+                  <TableHead className="text-center">Units Closed</TableHead>
+                  <TableHead className="text-center">Debt Enrolled</TableHead>
+                  <TableHead className="text-center">Avg Conversion</TableHead>
+                  <TableHead className="text-center">Performance Grade</TableHead>
+                  <TableHead className="text-center">Trend</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {teamLeaderboard.map((team) => (
+                  <TableRow key={team.teamId}>
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center size-8 mx-auto">
+                        {getRankIcon(team.rank)}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center">
+                          <Users className="size-4 text-primary" />
+                        </div>
+                        <span className="font-medium">{team.teamName}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center text-muted-foreground">{team.agentCount}</TableCell>
+                    <TableCell className="text-center font-medium">{team.unitsClosed}</TableCell>
+                    <TableCell className="text-center font-medium">
+                      {formatCurrency(team.debtLoadEnrolled)}
+                    </TableCell>
+                    <TableCell className="text-center font-medium">
+                      {team.avgConversionRate.toFixed(1)}%
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <TooltipProvider delayDuration={100}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge 
+                              variant="outline" 
+                              className={cn(
+                                "font-semibold cursor-help",
+                                team.performanceGrade.startsWith('A') && "border-emerald-500 text-emerald-500 bg-emerald-500/10",
+                                team.performanceGrade.startsWith('B') && "border-blue-500 text-blue-500 bg-blue-500/10",
+                                team.performanceGrade.startsWith('C') && "border-amber-500 text-amber-500 bg-amber-500/10",
+                                team.performanceGrade.startsWith('D') && "border-orange-500 text-orange-500 bg-orange-500/10",
+                                team.performanceGrade === 'F' && "border-red-500 text-red-500 bg-red-500/10"
+                              )}
+                            >
+                              {team.performanceGrade}
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-[200px] text-center">
+                            <p className="text-xs">Average of team members weighted performance and pacing towards target</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <TooltipProvider delayDuration={100}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="flex items-center justify-center gap-1 cursor-help">
+                              {getTrendIcon(team.trend)}
+                              {team.previousRank && team.rank !== team.previousRank && (
+                                <span className="text-xs text-muted-foreground">
+                                  ({team.previousRank > team.rank ? '+' : ''}{team.previousRank - team.rank})
+                                </span>
+                              )}
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">
+                            <p className="text-xs">vs {comparisonPeriodLabel}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>
