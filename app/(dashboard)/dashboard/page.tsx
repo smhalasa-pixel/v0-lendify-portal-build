@@ -95,7 +95,7 @@ export default function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="px-3 pb-3">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <KPICard
                   title="Units Enrolled"
                   value={metrics.unitsEnrolled}
@@ -114,6 +114,19 @@ export default function DashboardPage() {
                   color="purple"
                   compact
                 />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* CONVERSION Section */}
+          <Card className="glass-card border-border/50">
+            <CardHeader className="pb-2 pt-3 px-3">
+              <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Conversion
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-3 pb-3">
+              <div className="grid grid-cols-2 gap-2">
                 <KPICard
                   title="Conversion Rate"
                   value={metrics.conversionRate}
@@ -124,7 +137,7 @@ export default function DashboardPage() {
                   compact
                 />
                 <KPICard
-                  title="Qualified Conv."
+                  title="Qualified Conversion"
                   value={metrics.qualifiedConversionRate}
                   change={metrics.qualifiedConversionRateChange}
                   format="percentage"
