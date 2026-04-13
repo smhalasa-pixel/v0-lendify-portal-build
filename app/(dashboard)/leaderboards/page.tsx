@@ -180,8 +180,19 @@ interface TeamLeaderboardEntry {
 
 export default function LeaderboardsPage() {
   const { user } = useAuth()
+  
+  // Role checks
+  const isAgent = user?.role === 'agent'
+  const isLeadership = user?.role === 'leadership'
+  const isSupervisor = user?.role === 'supervisor'
+  const isExecutive = user?.role === 'executive'
+  
+  // Determine if user can toggle between views
+  // Agent and Executive can see both views, Leadership and Supervisor see Team only
+  const canToggleView = isAgent || isExecutive
+  
   const [period, setPeriod] = React.useState('mtd')
-  const [viewType, setViewType] = React.useState<'agent' | 'team'>('agent')
+  const [viewType, setViewType] = React.useState<'agent' | 'team'>(canToggleView ? 'agent' : 'team')
   const [customRange, setCustomRange] = React.useState<{ from?: Date; to?: Date }>({})
   const [calendarOpen, setCalendarOpen] = React.useState(false)
 
@@ -294,31 +305,33 @@ export default function LeaderboardsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {/* View Toggle */}
-          <div className="flex items-center bg-muted rounded-lg p-1">
-            <button
-              onClick={() => setViewType('agent')}
-              className={cn(
-                "px-3 py-1.5 text-sm font-medium rounded-md transition-all",
-                viewType === 'agent' 
-                  ? "bg-background text-foreground shadow-sm" 
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Agent
-            </button>
-            <button
-              onClick={() => setViewType('team')}
-              className={cn(
-                "px-3 py-1.5 text-sm font-medium rounded-md transition-all",
-                viewType === 'team' 
-                  ? "bg-background text-foreground shadow-sm" 
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Team
-            </button>
-          </div>
+          {/* View Toggle - only for Agent and Executive */}
+          {canToggleView && (
+            <div className="flex items-center bg-muted rounded-lg p-1">
+              <button
+                onClick={() => setViewType('agent')}
+                className={cn(
+                  "px-3 py-1.5 text-sm font-medium rounded-md transition-all",
+                  viewType === 'agent' 
+                    ? "bg-background text-foreground shadow-sm" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Agent
+              </button>
+              <button
+                onClick={() => setViewType('team')}
+                className={cn(
+                  "px-3 py-1.5 text-sm font-medium rounded-md transition-all",
+                  viewType === 'team' 
+                    ? "bg-background text-foreground shadow-sm" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Team
+              </button>
+            </div>
+          )}
 
           <Select value={period} onValueChange={(val) => {
             setPeriod(val)
@@ -366,8 +379,8 @@ export default function LeaderboardsPage() {
         </div>
       </div>
 
-      {/* Your Position Card (if applicable) */}
-      {viewType === 'agent' && userRank && (
+      {/* Your Position Card - Agent view for agents only */}
+      {viewType === 'agent' && isAgent && userRank && (
         <Card className="bg-primary/5 border-primary/20">
           <CardContent className="py-4">
             <div className="flex items-center gap-4">
@@ -402,7 +415,8 @@ export default function LeaderboardsPage() {
         </Card>
       )}
       
-      {viewType === 'team' && userTeamRank && (
+      {/* Team Position Card - for agents in team view, and team leads */}
+      {viewType === 'team' && (isAgent || isLeadership) && userTeamRank && (
         <Card className="bg-primary/5 border-primary/20">
           <CardContent className="py-4">
             <div className="flex items-center gap-4">
