@@ -797,54 +797,91 @@ export default function DashboardPage() {
         {/* Right Column */}
         <div className="space-y-3">
           
-          {/* Monthly Targets */}
-          <Card className={cn("glass-card border-border/40", isPIPRisk && "border-rose-500/30")}>
-            <CardContent className="p-3">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-1.5">
-                  <Target className="size-3.5 text-primary" />
-                  <span className="text-xs font-semibold text-foreground">Monthly Targets</span>
+          {/* Monthly Targets - Featured Card */}
+          <Card className={cn(
+            "relative overflow-hidden border-2",
+            isPIPRisk 
+              ? "border-rose-500/50 bg-gradient-to-br from-rose-500/10 via-background to-rose-500/5" 
+              : "border-primary/40 bg-gradient-to-br from-primary/10 via-background to-primary/5"
+          )}>
+            {/* Glow effect */}
+            <div className={cn(
+              "absolute -top-12 -right-12 size-32 rounded-full blur-3xl opacity-30",
+              isPIPRisk ? "bg-rose-500" : "bg-primary"
+            )} />
+            <CardContent className="p-4 relative">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className={cn(
+                    "size-8 rounded-lg flex items-center justify-center",
+                    isPIPRisk ? "bg-rose-500/20" : "bg-primary/20"
+                  )}>
+                    <Target className={cn("size-4", isPIPRisk ? "text-rose-400" : "text-primary")} />
+                  </div>
+                  <div>
+                    <span className="text-sm font-bold text-foreground">Monthly Targets</span>
+                    <p className="text-[10px] text-muted-foreground">Track your progress</p>
+                  </div>
                 </div>
                 {isPIPRisk && (
-                  <Badge variant="destructive" className="text-[9px] px-1.5 py-0 h-4 gap-0.5 bg-rose-500/20 text-rose-400 border-rose-500/30">
-                    <AlertTriangle className="size-2.5" />
-                    PIP
+                  <Badge variant="destructive" className="text-[10px] px-2 py-0.5 h-5 gap-1 bg-rose-500/20 text-rose-400 border-rose-500/40 animate-pulse">
+                    <AlertTriangle className="size-3" />
+                    PIP Risk
                   </Badge>
                 )}
               </div>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {/* Units */}
-                <div className="space-y-1">
-                  <div className="flex justify-between text-[11px]">
-                    <span className={cn("text-muted-foreground", unitsBehind && "text-rose-400")}>
-                      Units {unitsBehind && <AlertTriangle className="inline size-2.5 ml-0.5" />}
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className={cn("text-xs font-medium", unitsBehind ? "text-rose-400" : "text-muted-foreground")}>
+                      Units Enrolled {unitsBehind && <AlertTriangle className="inline size-3 ml-1" />}
                     </span>
-                    <span className="font-medium">{metrics.unitsEnrolled} / {metrics.monthlyTargetUnits}</span>
+                    <span className="text-sm font-bold text-foreground">{metrics.unitsEnrolled} <span className="text-muted-foreground font-normal">/ {metrics.monthlyTargetUnits}</span></span>
                   </div>
-                  <div className="relative">
-                    <div className="absolute top-0 bottom-0 w-px bg-muted-foreground/50 z-10" style={{ left: `${expectedProgress}%` }} />
-                    <Progress value={unitsProgress} className={cn("h-1.5", unitsBehind && "[&>div]:bg-rose-500")} />
+                  <div className="relative h-3 bg-muted/50 rounded-full overflow-hidden">
+                    <div className="absolute top-0 bottom-0 w-0.5 bg-white/60 z-10 rounded-full" style={{ left: `${expectedProgress}%` }} />
+                    <div 
+                      className={cn(
+                        "h-full rounded-full transition-all duration-500",
+                        unitsBehind ? "bg-gradient-to-r from-rose-600 to-rose-400" : "bg-gradient-to-r from-primary to-primary/70"
+                      )} 
+                      style={{ width: `${unitsProgress}%` }}
+                    />
                   </div>
-                  <div className="flex justify-between text-[9px] text-muted-foreground">
-                    <span>{unitsProgress.toFixed(0)}%</span>
-                    <span>{metrics.monthlyTargetUnits - metrics.unitsEnrolled} left</span>
+                  <div className="flex justify-between text-[10px]">
+                    <span className={cn("font-semibold", unitsBehind ? "text-rose-400" : "text-primary")}>{unitsProgress.toFixed(0)}% complete</span>
+                    <span className="text-muted-foreground">{Math.max(0, metrics.monthlyTargetUnits - metrics.unitsEnrolled)} remaining</span>
                   </div>
                 </div>
                 {/* Debt Load */}
-                <div className="space-y-1">
-                  <div className="flex justify-between text-[11px]">
-                    <span className={cn("text-muted-foreground", debtBehind && "text-rose-400")}>
-                      Debt Load {debtBehind && <AlertTriangle className="inline size-2.5 ml-0.5" />}
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className={cn("text-xs font-medium", debtBehind ? "text-rose-400" : "text-muted-foreground")}>
+                      Debt Load {debtBehind && <AlertTriangle className="inline size-3 ml-1" />}
                     </span>
-                    <span className="font-medium">{formatCurrency(metrics.debtLoadEnrolled)} / {formatCurrency(metrics.monthlyTargetDebtLoad)}</span>
+                    <span className="text-sm font-bold text-foreground">{formatCurrency(metrics.debtLoadEnrolled)} <span className="text-muted-foreground font-normal">/ {formatCurrency(metrics.monthlyTargetDebtLoad)}</span></span>
                   </div>
-                  <div className="relative">
-                    <div className="absolute top-0 bottom-0 w-px bg-muted-foreground/50 z-10" style={{ left: `${expectedProgress}%` }} />
-                    <Progress value={debtProgress} className={cn("h-1.5", debtBehind && "[&>div]:bg-rose-500")} />
+                  <div className="relative h-3 bg-muted/50 rounded-full overflow-hidden">
+                    <div className="absolute top-0 bottom-0 w-0.5 bg-white/60 z-10 rounded-full" style={{ left: `${expectedProgress}%` }} />
+                    <div 
+                      className={cn(
+                        "h-full rounded-full transition-all duration-500",
+                        debtBehind ? "bg-gradient-to-r from-rose-600 to-rose-400" : "bg-gradient-to-r from-emerald-600 to-emerald-400"
+                      )} 
+                      style={{ width: `${debtProgress}%` }}
+                    />
                   </div>
-                  <div className="flex justify-between text-[9px] text-muted-foreground">
-                    <span>{debtProgress.toFixed(0)}%</span>
-                    <span>{formatCurrency(metrics.monthlyTargetDebtLoad - metrics.debtLoadEnrolled)} left</span>
+                  <div className="flex justify-between text-[10px]">
+                    <span className={cn("font-semibold", debtBehind ? "text-rose-400" : "text-emerald-400")}>{debtProgress.toFixed(0)}% complete</span>
+                    <span className="text-muted-foreground">{formatCurrency(Math.max(0, metrics.monthlyTargetDebtLoad - metrics.debtLoadEnrolled))} remaining</span>
+                  </div>
+                </div>
+                {/* Expected Progress Indicator */}
+                <div className="pt-2 border-t border-border/30">
+                  <div className="flex items-center justify-between text-[10px]">
+                    <span className="text-muted-foreground">Expected progress for today</span>
+                    <span className="font-semibold text-foreground">{expectedProgress.toFixed(0)}%</span>
                   </div>
                 </div>
               </div>
