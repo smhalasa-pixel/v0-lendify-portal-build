@@ -47,6 +47,7 @@ import {
 } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { CurrencyDisplay } from '@/components/ui/currency-display'
 
 const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
   pending: { label: 'Pending', variant: 'outline' },
@@ -283,7 +284,7 @@ export default function ClawbacksPage() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-center font-mono">
-                          {formatCurrency(clawback.originalAmount)}
+                          <CurrencyDisplay value={clawback.originalAmount} />
                         </TableCell>
                         <TableCell className="text-center">
                           <Badge className={getTierBadgeColor(tierInfo.tier)}>
@@ -294,7 +295,7 @@ export default function ClawbacksPage() {
                           {((clawback.clawbackAmount / clawback.originalAmount) * 100).toFixed(2)}%
                         </TableCell>
                         <TableCell className="text-center font-mono font-medium text-rose-400">
-                          -{formatCurrency(clawback.clawbackAmount)}
+                          -<CurrencyDisplay value={clawback.clawbackAmount} />
                         </TableCell>
                         <TableCell className="text-center">
                           {isDeducted ? (
@@ -346,7 +347,7 @@ export default function ClawbacksPage() {
                                     <div className="rounded-lg bg-muted p-3 text-sm space-y-1">
                                       <p>
                                         <span className="text-muted-foreground">Amount:</span>{' '}
-                                        {formatCurrency(clawback.clawbackAmount)}
+                                        <CurrencyDisplay value={clawback.clawbackAmount} />
                                       </p>
                                       <p>
                                         <span className="text-muted-foreground">Reason:</span>{' '}

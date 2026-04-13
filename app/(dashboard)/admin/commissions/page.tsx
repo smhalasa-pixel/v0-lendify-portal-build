@@ -39,6 +39,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Switch } from '@/components/ui/switch'
+import { CurrencyDisplay } from '@/components/ui/currency-display'
 
 interface CommissionPlan {
   id: string
@@ -314,7 +315,7 @@ export default function AdminCommissionsPage() {
                   <TableCell>{plan.loanType}</TableCell>
                   <TableCell>{plan.baseRate}%</TableCell>
                   <TableCell>{plan.bonusRate}%</TableCell>
-                  <TableCell>{formatCurrency(plan.volumeThreshold)}</TableCell>
+                  <TableCell><CurrencyDisplay value={plan.volumeThreshold} /></TableCell>
                   <TableCell>
                     <Badge variant={plan.isActive ? 'default' : 'secondary'}>
                       {plan.isActive ? 'Active' : 'Inactive'}

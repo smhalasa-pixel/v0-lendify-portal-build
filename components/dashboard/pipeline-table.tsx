@@ -10,6 +10,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
+import { CurrencyDisplay } from '@/components/ui/currency-display'
 import type { PipelineLoan } from '@/lib/types'
 
 interface PipelineTableProps {
@@ -99,7 +100,7 @@ export function PipelineTable({
                         {loan.borrowerName}
                       </TableCell>
                       <TableCell className="text-foreground/80 font-mono text-sm">
-                        {formatCurrency(loan.loanAmount)}
+                        <CurrencyDisplay value={loan.loanAmount} />
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {loan.loanType}

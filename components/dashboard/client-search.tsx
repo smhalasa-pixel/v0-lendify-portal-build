@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/table'
 import type { Client } from '@/lib/types'
 import { cn } from '@/lib/utils'
+import { CurrencyDisplay } from '@/components/ui/currency-display'
 
 interface ClientSearchProps {
   data: Client[]
@@ -38,15 +39,6 @@ const statusConfig: Record<Client['status'], { label: string; variant: 'default'
   active: { label: 'Active', variant: 'default' },
   cancelled: { label: 'Cancelled', variant: 'destructive' },
   completed: { label: 'Completed', variant: 'default' },
-}
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value)
 }
 
 function formatDate(dateString: string | undefined): string {
@@ -217,7 +209,7 @@ export function ClientSearch({ data }: ClientSearchProps) {
                         </Badge>
                       </TableCell>
                       <TableCell className="font-medium">
-                        {formatCurrency(client.debtLoad)}
+                        <CurrencyDisplay value={client.debtLoad} />
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {formatDate(client.submittedDate)}

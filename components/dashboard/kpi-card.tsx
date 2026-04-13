@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/popover'
 import { Calendar as CalendarComponent } from '@/components/ui/calendar'
 import { Button } from '@/components/ui/button'
+import { CurrencyDisplay, formatCurrencyAbbreviated } from '@/components/ui/currency-display'
 import type { DateRange } from 'react-day-picker'
 
 interface KPICardProps {
@@ -65,18 +66,7 @@ function formatValue(value: string | number, formatType?: 'currency' | 'number' 
   
   switch (formatType) {
     case 'currency':
-      if (value >= 1000000) {
-        return `$${(value / 1000000).toFixed(2)}M`
-      }
-      if (value >= 1000) {
-        return `$${(value / 1000).toFixed(1)}K`
-      }
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(value)
+      return formatCurrencyAbbreviated(value)
     case 'percentage':
       return `${value.toFixed(1)}%`
     case 'number':
@@ -136,9 +126,13 @@ export function KPICard({
         <span className="text-[9px] font-medium text-muted-foreground uppercase truncate w-full">
           {title}
         </span>
-        <span className={cn("text-sm font-bold tabular-nums", colorMap[color])}>
-          {formatValue(value, formatType)}
-        </span>
+        {formatType === 'currency' && typeof value === 'number' ? (
+          <CurrencyDisplay value={value} className={cn("text-sm font-bold", colorMap[color])} />
+        ) : (
+          <span className={cn("text-sm font-bold tabular-nums", colorMap[color])}>
+            {formatValue(value, formatType)}
+          </span>
+        )}
       </div>
     )
   }
@@ -216,12 +210,19 @@ export function KPICard({
       
       {/* Value and Change */}
       <div className="flex items-end justify-between gap-2">
-        <span className={cn(
-          "font-bold text-foreground tabular-nums leading-none",
-          compact ? "text-lg" : "text-xl"
-        )}>
-          {formatValue(value, formatType)}
-        </span>
+        {formatType === 'currency' && typeof value === 'number' ? (
+          <CurrencyDisplay value={value} className={cn(
+            "font-bold text-foreground leading-none",
+            compact ? "text-lg" : "text-xl"
+          )} />
+        ) : (
+          <span className={cn(
+            "font-bold text-foreground tabular-nums leading-none",
+            compact ? "text-lg" : "text-xl"
+          )}>
+            {formatValue(value, formatType)}
+          </span>
+        )}
         
         {change !== undefined && (
           <div className={cn(

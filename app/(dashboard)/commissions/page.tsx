@@ -38,6 +38,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { CurrencyDisplay } from '@/components/ui/currency-display'
 
 const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
   pending: { label: 'Pending', variant: 'outline' },
@@ -265,7 +266,7 @@ export default function CommissionsPage() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-center font-mono">
-                          {formatCurrency(commission.loanAmount)}
+                          <CurrencyDisplay value={commission.loanAmount} />
                         </TableCell>
                         <TableCell className="text-center">
                           <Badge className={getTierBadgeColor(tierInfo.tier)}>
@@ -276,7 +277,7 @@ export default function CommissionsPage() {
                           {(commission.commissionRate * 100).toFixed(2)}%
                         </TableCell>
                         <TableCell className="text-center font-mono font-medium text-emerald-400">
-                          {formatCurrency(commission.commissionAmount)}
+                          <CurrencyDisplay value={commission.commissionAmount} />
                         </TableCell>
                         <TableCell className="text-center">
                           {isPaid ? (

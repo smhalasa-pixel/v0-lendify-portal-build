@@ -21,15 +21,7 @@ import { useAuth } from '@/lib/auth-context'
 import { dataService } from '@/lib/mock-data'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value)
-}
+import { CurrencyDisplay } from '@/components/ui/currency-display'
 
 const adminModules = [
   {
@@ -139,7 +131,7 @@ export default function AdminPage() {
                 <DollarSign className="size-5 text-success" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{formatCurrency(dashboardMetrics.mtdVolume)}</p>
+                <CurrencyDisplay value={dashboardMetrics.mtdVolume} className="text-2xl font-bold" />
                 <p className="text-sm text-muted-foreground">MTD Volume</p>
               </div>
             </div>

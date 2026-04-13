@@ -19,6 +19,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
+import { CurrencyDisplay } from '@/components/ui/currency-display'
 import type { TeamMetrics } from '@/lib/types'
 
 interface TeamPerformanceTableProps {
@@ -26,16 +27,6 @@ interface TeamPerformanceTableProps {
   title?: string
   description?: string
   highlightTeamId?: string
-}
-
-function formatCurrency(value: number): string {
-  if (value >= 1000000) return `$${(value / 1000000).toFixed(2)}M`
-  if (value >= 1000) return `$${(value / 1000).toFixed(0)}K`
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-  }).format(value)
 }
 
 export function TeamPerformanceTable({
@@ -152,8 +143,8 @@ export function TeamPerformanceTable({
                       </TableCell>
                       <TableCell className="text-center">
                         <div className="flex flex-col items-center gap-1">
-                          <span className="text-sm font-medium">{formatCurrency(team.debtLoadEnrolled)}</span>
-                          <span className="text-[10px] text-muted-foreground">/ {formatCurrency(team.monthlyTargetDebtLoad * team.memberCount)}</span>
+                          <CurrencyDisplay value={team.debtLoadEnrolled} className="text-sm font-medium" />
+                          <span className="text-[10px] text-muted-foreground">/ <CurrencyDisplay value={team.monthlyTargetDebtLoad * team.memberCount} className="text-[10px]" /></span>
                         </div>
                       </TableCell>
                       <TableCell className="text-center">
