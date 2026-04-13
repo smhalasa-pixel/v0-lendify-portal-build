@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { CurrencyDisplay } from '@/components/ui/currency-display'
 import type { Commission, Clawback } from '@/lib/types'
 
 interface CommissionsTableProps {
@@ -189,18 +190,18 @@ export function CommissionsTable({ commissions, clawbacks }: CommissionsTablePro
                         {getStatusBadge(item.status)}
                       </TableCell>
                       <TableCell className="text-xs font-mono text-right text-foreground py-2">
-                        {formatCurrency(item.debtLoad)}
+                        <CurrencyDisplay value={item.debtLoad} className="text-xs" />
                       </TableCell>
                       <TableCell className="text-center py-2">
                         {getTierBadge(item.payableTier)}
                       </TableCell>
                       <TableCell className="text-xs font-mono text-right py-2">
                         <span className={item.status === 'clawback' ? 'text-rose-400' : 'text-emerald-400'}>
-                          {item.status === 'clawback' ? '-' : ''}{formatCurrency(item.commission)}
+                          {item.status === 'clawback' ? '-' : ''}<CurrencyDisplay value={item.commission} className="text-xs" />
                         </span>
                         {item.clawbackAmount && (
                           <span className="block text-[10px] text-rose-400/70">
-                            (-{formatCurrency(item.clawbackAmount)})
+                            (-<CurrencyDisplay value={item.clawbackAmount} className="text-[10px]" />)
                           </span>
                         )}
                       </TableCell>

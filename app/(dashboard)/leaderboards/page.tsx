@@ -50,16 +50,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { cn } from '@/lib/utils'
+import { CurrencyDisplay } from '@/components/ui/currency-display'
 import type { LeaderboardEntry } from '@/lib/types'
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value)
-}
 
 function getRankIcon(rank: number) {
   if (rank === 1) return <Crown className="size-5 text-yellow-500" />
@@ -392,9 +384,9 @@ export default function LeaderboardsPage() {
               </div>
               <div className="flex-1">
                 <p className="font-medium">Your Current Ranking</p>
-                <p className="text-sm text-muted-foreground">
-                  {formatCurrency(userRank.debtLoadEnrolled)} enrolled | {userRank.unitsEnrolled} units
-                </p>
+<p className="text-sm text-muted-foreground">
+                        <CurrencyDisplay value={userRank.debtLoadEnrolled} className="text-sm" /> enrolled | {userRank.unitsEnrolled} units
+                      </p>
               </div>
               <TooltipProvider delayDuration={100}>
                 <Tooltip>
@@ -428,9 +420,9 @@ export default function LeaderboardsPage() {
               </div>
               <div className="flex-1">
                 <p className="font-medium">Your Team&apos;s Current Ranking</p>
-                <p className="text-sm text-muted-foreground">
-                  {userTeamRank.teamName} | {formatCurrency(userTeamRank.debtLoadEnrolled)} enrolled | {userTeamRank.unitsClosed} units closed
-                </p>
+<p className="text-sm text-muted-foreground">
+                        {userTeamRank.teamName} | <CurrencyDisplay value={userTeamRank.debtLoadEnrolled} className="text-sm" /> enrolled | {userTeamRank.unitsClosed} units closed
+                      </p>
               </div>
               <TooltipProvider delayDuration={100}>
                 <Tooltip>
@@ -488,9 +480,9 @@ export default function LeaderboardsPage() {
                 {/* Stats */}
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div>
-                    <p className="text-lg font-bold text-primary">
-                      {formatCurrency(entry.debtLoadEnrolled / 1000000)}M
-                    </p>
+<p className="text-lg font-bold text-primary">
+                              <CurrencyDisplay value={entry.debtLoadEnrolled} className="text-lg" />
+                            </p>
                     <p className="text-xs text-muted-foreground">Enrolled</p>
                   </div>
                   <div>
@@ -548,9 +540,9 @@ export default function LeaderboardsPage() {
                 {/* Stats */}
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div>
-                    <p className="text-lg font-bold text-primary">
-                      {formatCurrency(team.debtLoadEnrolled / 1000000)}M
-                    </p>
+<p className="text-lg font-bold text-primary">
+                              <CurrencyDisplay value={team.debtLoadEnrolled} className="text-lg" />
+                            </p>
                     <p className="text-xs text-muted-foreground">Enrolled</p>
                   </div>
                   <div>
@@ -589,9 +581,9 @@ export default function LeaderboardsPage() {
                 <DollarSign className="size-6 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold">
-                  {formatCurrency(leaderboard.reduce((sum, e) => sum + e.debtLoadEnrolled, 0))}
-                </p>
+<p className="text-2xl font-bold">
+                      <CurrencyDisplay value={leaderboard.reduce((sum, e) => sum + e.debtLoadEnrolled, 0)} className="text-2xl" />
+                    </p>
                 <p className="text-sm text-muted-foreground">Total Debt Load Enrolled</p>
               </div>
             </div>
@@ -689,9 +681,9 @@ export default function LeaderboardsPage() {
                     </TableCell>
                     <TableCell className="text-center text-muted-foreground">{entry.teamName}</TableCell>
                     <TableCell className="text-center font-medium">{entry.unitsClosed}</TableCell>
-                    <TableCell className="text-center font-medium">
-                      {formatCurrency(entry.debtLoadEnrolled)}
-                    </TableCell>
+<TableCell className="text-center font-medium">
+                            <CurrencyDisplay value={entry.debtLoadEnrolled} />
+                          </TableCell>
                     <TableCell className="text-center font-medium">
                       {entry.conversionRate.toFixed(1)}%
                     </TableCell>
@@ -774,9 +766,9 @@ export default function LeaderboardsPage() {
                     </TableCell>
                     <TableCell className="text-center text-muted-foreground">{team.agentCount}</TableCell>
                     <TableCell className="text-center font-medium">{team.unitsClosed}</TableCell>
-                    <TableCell className="text-center font-medium">
-                      {formatCurrency(team.debtLoadEnrolled)}
-                    </TableCell>
+<TableCell className="text-center font-medium">
+                            <CurrencyDisplay value={team.debtLoadEnrolled} />
+                          </TableCell>
                     <TableCell className="text-center font-medium">
                       {team.avgConversionRate.toFixed(1)}%
                     </TableCell>

@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { CurrencyDisplay, formatCurrencyAbbreviated } from '@/components/ui/currency-display'
 
 // Calculate days passed in current month as a percentage
 function getExpectedProgress(): number {
@@ -29,18 +30,7 @@ interface ProgressCardProps {
 
 function formatValue(value: number, format: 'currency' | 'number' = 'number'): string {
   if (format === 'currency') {
-    if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(2)}M`
-    }
-    if (value >= 1000) {
-      return `$${(value / 1000).toFixed(0)}K`
-    }
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value)
+    return formatCurrencyAbbreviated(value)
   }
   return value.toLocaleString()
 }
@@ -89,7 +79,11 @@ export function ProgressCard({ title, items, showPIPFlag = true, pipThreshold = 
                   )}
                 </div>
                 <span className="font-medium text-foreground">
-                  {formatValue(item.current, item.format)} / {formatValue(item.target, item.format)}
+                  {item.format === 'currency' ? (
+                    <><CurrencyDisplay value={item.current} className="text-xs" /> / <CurrencyDisplay value={item.target} className="text-xs" /></>
+                  ) : (
+                    <>{formatValue(item.current, item.format)} / {formatValue(item.target, item.format)}</>
+                  )}
                 </span>
               </div>
               <div className="relative">
@@ -117,7 +111,11 @@ export function ProgressCard({ title, items, showPIPFlag = true, pipThreshold = 
                 </span>
                 {!isComplete && (
                   <span className="text-muted-foreground">
-                    {formatValue(item.target - item.current, item.format)} remaining
+                    {item.format === 'currency' ? (
+                      <><CurrencyDisplay value={item.target - item.current} className="text-[10px]" /> remaining</>
+                    ) : (
+                      <>{formatValue(item.target - item.current, item.format)} remaining</>
+                    )}
                   </span>
                 )}
               </div>

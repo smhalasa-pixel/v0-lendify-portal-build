@@ -21,6 +21,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
+import { CurrencyDisplay } from '@/components/ui/currency-display'
 import type { AgentPerformance } from '@/lib/types'
 
 interface AgentPerformanceTableProps {
@@ -34,11 +35,6 @@ export function AgentPerformanceTable({
   title = 'My Team Agents',
   description = 'Individual performance breakdown for your team members',
 }: AgentPerformanceTableProps) {
-  const formatCurrency = (val: number) => {
-    if (val >= 1000000) return `$${(val / 1000000).toFixed(2)}M`
-    if (val >= 1000) return `$${(val / 1000).toFixed(0)}K`
-    return `$${val.toLocaleString()}`
-  }
 
   const getTrendIcon = (trend: 'up' | 'down' | 'same') => {
     switch (trend) {
@@ -124,8 +120,8 @@ export function AgentPerformanceTable({
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="flex flex-col items-center gap-1">
-                        <span className="text-sm font-medium">{formatCurrency(agent.debtLoadEnrolled)}</span>
-                        <span className="text-[10px] text-muted-foreground">/ {formatCurrency(agent.monthlyTargetDebtLoad)}</span>
+                        <CurrencyDisplay value={agent.debtLoadEnrolled} className="text-sm font-medium" />
+                        <span className="text-[10px] text-muted-foreground">/ <CurrencyDisplay value={agent.monthlyTargetDebtLoad} className="text-[10px]" /></span>
                       </div>
                     </TableCell>
                     <TableCell className="text-center">

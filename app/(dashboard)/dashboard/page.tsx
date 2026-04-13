@@ -172,6 +172,9 @@ function MetricTile({
     if (decimals !== undefined) return value.toFixed(decimals)
     return value.toLocaleString()
   }, [value, fmt, decimals])
+  
+  // Full unabbreviated value for tooltip on currency
+  const fullValue = fmt === 'currency' ? `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : null
 
   // Check if current value is a custom date range (format: "YYYY-MM-DD to YYYY-MM-DD")
   const isCustomValue = dateValue.includes(' to ')
@@ -242,7 +245,20 @@ function MetricTile({
         </Popover>
       </div>
       <div className="flex items-end justify-between">
-        <span className="text-base font-semibold text-foreground tabular-nums">{formatted}</span>
+        {fullValue ? (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="text-base font-semibold text-foreground tabular-nums cursor-help">{formatted}</span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <span className="text-sm font-medium">{fullValue}</span>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : (
+          <span className="text-base font-semibold text-foreground tabular-nums">{formatted}</span>
+        )}
         {change !== undefined && (
           <span className={cn(
             "text-[9px] font-medium flex items-center gap-0.5",
