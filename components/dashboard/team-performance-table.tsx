@@ -35,17 +35,15 @@ export function TeamPerformanceTable({
   const sortedData = [...data].sort((a, b) => b.debtLoadEnrolled - a.debtLoadEnrolled)
 
   return (
-    <Card className="glass-card border-purple-500/20 overflow-hidden">
-      <CardHeader className="border-b border-purple-500/10 bg-gradient-to-r from-purple-500/5 to-transparent">
+    <Card className="glass-card overflow-hidden">
+      <CardHeader className="border-b border-border/50">
         <div className="flex items-center gap-3">
-          <div className="size-8 rounded-lg bg-gradient-to-br from-purple-500/30 to-blue-500/20 flex items-center justify-center">
-            <Users className="size-4 text-purple-300" />
+          <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center">
+            <Users className="size-4 text-primary" />
           </div>
           <div>
-            <CardTitle className="bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">
-              {title}
-            </CardTitle>
-            <CardDescription className="text-purple-300/60">{description}</CardDescription>
+            <CardTitle className="text-foreground">{title}</CardTitle>
+            <CardDescription>{description}</CardDescription>
           </div>
         </div>
       </CardHeader>
@@ -53,56 +51,46 @@ export function TeamPerformanceTable({
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="border-purple-500/10 hover:bg-transparent">
-                <TableHead className="text-purple-300/70 font-medium w-12">#</TableHead>
-                <TableHead className="text-purple-300/70 font-medium">Team</TableHead>
-                <TableHead className="text-purple-300/70 font-medium text-right">Members</TableHead>
-                <TableHead className="text-purple-300/70 font-medium text-right">Debt Enrolled</TableHead>
-                <TableHead className="text-purple-300/70 font-medium text-right">Units</TableHead>
-                <TableHead className="text-purple-300/70 font-medium text-right">Commission</TableHead>
-                <TableHead className="text-purple-300/70 font-medium">Top Performer</TableHead>
+              <TableRow className="border-border/50 hover:bg-transparent">
+                <TableHead className="text-muted-foreground font-medium w-12">#</TableHead>
+                <TableHead className="text-muted-foreground font-medium">Team</TableHead>
+                <TableHead className="text-muted-foreground font-medium text-right">Members</TableHead>
+                <TableHead className="text-muted-foreground font-medium text-right">Debt Enrolled</TableHead>
+                <TableHead className="text-muted-foreground font-medium text-right">Units</TableHead>
+                <TableHead className="text-muted-foreground font-medium text-right">Commission</TableHead>
+                <TableHead className="text-muted-foreground font-medium">Top Performer</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {sortedData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-purple-300/50 py-12">
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="size-12 rounded-full bg-purple-500/10 flex items-center justify-center">
-                        <Users className="size-5 opacity-50" />
-                      </div>
-                      <span>No team data available</span>
-                    </div>
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-12">
+                    No team data available
                   </TableCell>
                 </TableRow>
               ) : (
                 sortedData.map((team, index) => (
                   <TableRow 
                     key={team.teamId} 
-                    className={`
-                      border-purple-500/10 hover:bg-purple-500/10 transition-all duration-200 cursor-pointer group
-                      ${index === 0 ? 'bg-gradient-to-r from-yellow-500/10 to-transparent' : ''}
-                      ${index === 1 ? 'bg-gradient-to-r from-slate-400/10 to-transparent' : ''}
-                      ${index === 2 ? 'bg-gradient-to-r from-orange-600/10 to-transparent' : ''}
-                    `}
+                    className="border-border/50 hover:bg-muted/30"
                   >
                     <TableCell className="font-medium">
                       {index < 3 ? (
                         <div className={`
                           size-6 rounded-full flex items-center justify-center text-xs font-bold
-                          ${index === 0 ? 'bg-yellow-500/30 text-yellow-300 shadow-lg shadow-yellow-500/20' : ''}
-                          ${index === 1 ? 'bg-slate-400/30 text-slate-300' : ''}
-                          ${index === 2 ? 'bg-orange-600/30 text-orange-300' : ''}
+                          ${index === 0 ? 'bg-yellow-500/20 text-yellow-400' : ''}
+                          ${index === 1 ? 'bg-slate-400/20 text-slate-300' : ''}
+                          ${index === 2 ? 'bg-orange-600/20 text-orange-400' : ''}
                         `}>
                           {index + 1}
                         </div>
                       ) : (
-                        <span className="text-purple-300/50 text-sm">{index + 1}</span>
+                        <span className="text-muted-foreground text-sm">{index + 1}</span>
                       )}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-white group-hover:text-purple-200 transition-colors">
+                        <span className="font-medium text-foreground">
                           {team.teamName}
                         </span>
                         {index === 0 && (
@@ -110,24 +98,24 @@ export function TeamPerformanceTable({
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="text-right text-purple-200/70">
+                    <TableCell className="text-right text-muted-foreground">
                       {team.memberCount}
                     </TableCell>
-                    <TableCell className="text-right font-mono text-sm text-purple-100/80">
+                    <TableCell className="text-right font-mono text-sm text-foreground/80">
                       {formatCurrency(team.debtLoadEnrolled)}
                     </TableCell>
-                    <TableCell className="text-right text-purple-200/70">
+                    <TableCell className="text-right text-muted-foreground">
                       {team.unitsEnrolled}
                     </TableCell>
-                    <TableCell className="text-right font-mono text-sm text-emerald-400/80">
+                    <TableCell className="text-right font-mono text-sm text-emerald-400">
                       {formatCurrency(team.totalCommissions)}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <div className="size-6 rounded-full bg-gradient-to-br from-purple-500/30 to-pink-500/20 flex items-center justify-center text-[10px] font-medium text-purple-200">
+                        <div className="size-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-medium text-primary">
                           {team.topPerformer.charAt(0)}
                         </div>
-                        <span className="text-purple-200/70 text-sm">{team.topPerformer}</span>
+                        <span className="text-muted-foreground text-sm">{team.topPerformer}</span>
                       </div>
                     </TableCell>
                   </TableRow>

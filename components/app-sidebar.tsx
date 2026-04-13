@@ -160,14 +160,13 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link href="/dashboard" className="group">
-                <div className="relative flex items-center justify-center size-8 rounded-lg bg-gradient-to-br from-purple-600 to-pink-500 text-white shadow-lg shadow-purple-500/25 group-hover:shadow-purple-500/40 transition-shadow">
+              <Link href="/dashboard">
+                <div className="flex items-center justify-center size-8 rounded-lg bg-primary text-primary-foreground">
                   <DollarSign className="size-4" />
-                  <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-purple-400/20 to-transparent" />
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-bold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">Lendify</span>
-                  <span className="text-xs text-purple-300/70">Portal</span>
+                  <span className="font-bold text-foreground">Lendify</span>
+                  <span className="text-xs text-muted-foreground">Portal</span>
                 </div>
               </Link>
             </SidebarMenuButton>

@@ -19,14 +19,14 @@ interface PipelineTableProps {
   showAgent?: boolean
 }
 
-const statusConfig: Record<string, { bg: string; text: string; glow: string }> = {
-  lead: { bg: 'bg-slate-500/20', text: 'text-slate-300', glow: 'shadow-slate-500/20' },
-  application: { bg: 'bg-blue-500/20', text: 'text-blue-300', glow: 'shadow-blue-500/20' },
-  processing: { bg: 'bg-yellow-500/20', text: 'text-yellow-300', glow: 'shadow-yellow-500/20' },
-  underwriting: { bg: 'bg-orange-500/20', text: 'text-orange-300', glow: 'shadow-orange-500/20' },
-  approved: { bg: 'bg-purple-500/20', text: 'text-purple-300', glow: 'shadow-purple-500/20' },
-  closing: { bg: 'bg-emerald-500/20', text: 'text-emerald-300', glow: 'shadow-emerald-500/20' },
-  funded: { bg: 'bg-green-500/20', text: 'text-green-300', glow: 'shadow-green-500/20' },
+const statusConfig: Record<string, { bg: string; text: string }> = {
+  lead: { bg: 'bg-slate-500/20', text: 'text-slate-300' },
+  application: { bg: 'bg-blue-500/20', text: 'text-blue-300' },
+  processing: { bg: 'bg-yellow-500/20', text: 'text-yellow-300' },
+  underwriting: { bg: 'bg-orange-500/20', text: 'text-orange-300' },
+  approved: { bg: 'bg-purple-500/20', text: 'text-purple-300' },
+  closing: { bg: 'bg-emerald-500/20', text: 'text-emerald-300' },
+  funded: { bg: 'bg-green-500/20', text: 'text-green-300' },
 }
 
 const statusLabels: Record<string, string> = {
@@ -62,69 +62,61 @@ export function PipelineTable({
   showAgent = false,
 }: PipelineTableProps) {
   return (
-    <Card className="glass-card border-purple-500/20 overflow-hidden">
-      <CardHeader className="border-b border-purple-500/10 bg-gradient-to-r from-purple-500/5 to-transparent">
-        <CardTitle className="bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">
-          {title}
-        </CardTitle>
-        <CardDescription className="text-purple-300/60">{description}</CardDescription>
+    <Card className="glass-card overflow-hidden">
+      <CardHeader className="border-b border-border/50">
+        <CardTitle className="text-foreground">{title}</CardTitle>
+        <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent className="p-0">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="border-purple-500/10 hover:bg-transparent">
-                <TableHead className="text-purple-300/70 font-medium">Borrower</TableHead>
-                <TableHead className="text-purple-300/70 font-medium">Amount</TableHead>
-                <TableHead className="text-purple-300/70 font-medium">Type</TableHead>
-                <TableHead className="text-purple-300/70 font-medium">Status</TableHead>
-                <TableHead className="text-purple-300/70 font-medium">Expected Close</TableHead>
-                {showAgent && <TableHead className="text-purple-300/70 font-medium">Agent</TableHead>}
+              <TableRow className="border-border/50 hover:bg-transparent">
+                <TableHead className="text-muted-foreground font-medium">Borrower</TableHead>
+                <TableHead className="text-muted-foreground font-medium">Amount</TableHead>
+                <TableHead className="text-muted-foreground font-medium">Type</TableHead>
+                <TableHead className="text-muted-foreground font-medium">Status</TableHead>
+                <TableHead className="text-muted-foreground font-medium">Expected Close</TableHead>
+                {showAgent && <TableHead className="text-muted-foreground font-medium">Agent</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
               {data.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={showAgent ? 6 : 5} className="text-center text-purple-300/50 py-12">
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="size-12 rounded-full bg-purple-500/10 flex items-center justify-center">
-                        <span className="text-2xl opacity-50">0</span>
-                      </div>
-                      <span>No loans in pipeline</span>
-                    </div>
+                  <TableCell colSpan={showAgent ? 6 : 5} className="text-center text-muted-foreground py-12">
+                    No loans in pipeline
                   </TableCell>
                 </TableRow>
               ) : (
-                data.map((loan, index) => {
+                data.map((loan) => {
                   const config = statusConfig[loan.status] || statusConfig.lead
                   return (
                     <TableRow 
                       key={loan.id} 
-                      className="border-purple-500/10 hover:bg-purple-500/10 transition-all duration-200 cursor-pointer group"
-                      style={{ animationDelay: `${index * 30}ms` }}
+                      className="border-border/50 hover:bg-muted/30"
                     >
-                      <TableCell className="font-medium text-white group-hover:text-purple-200 transition-colors">
+                      <TableCell className="font-medium text-foreground">
                         {loan.borrowerName}
                       </TableCell>
-                      <TableCell className="text-purple-100/80 font-mono text-sm">
+                      <TableCell className="text-foreground/80 font-mono text-sm">
                         {formatCurrency(loan.loanAmount)}
                       </TableCell>
-                      <TableCell className="text-purple-200/70">
+                      <TableCell className="text-muted-foreground">
                         {loan.loanType}
                       </TableCell>
                       <TableCell>
                         <Badge 
                           variant="outline" 
-                          className={`${config.bg} ${config.text} border-current/30 shadow-sm ${config.glow}`}
+                          className={`${config.bg} ${config.text} border-current/30`}
                         >
                           {statusLabels[loan.status]}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-purple-200/70 text-sm">
+                      <TableCell className="text-muted-foreground text-sm">
                         {formatDate(loan.expectedCloseDate)}
                       </TableCell>
                       {showAgent && (
-                        <TableCell className="text-purple-200/70">
+                        <TableCell className="text-muted-foreground">
                           {loan.agentName}
                         </TableCell>
                       )}

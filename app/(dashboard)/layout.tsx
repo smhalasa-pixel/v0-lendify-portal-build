@@ -58,16 +58,8 @@ export default function DashboardLayout({
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset className="relative">
-        {/* Animated gradient background */}
-        <div className="fixed inset-0 gradient-bg -z-10" />
-        
-        {/* Ambient glow orbs */}
-        <div className="fixed top-20 left-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="fixed bottom-20 right-1/4 w-80 h-80 bg-pink-500/8 rounded-full blur-3xl pointer-events-none" />
-        <div className="fixed top-1/2 right-10 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
-        
-        <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-2 border-b border-border/50 px-4 backdrop-blur-xl bg-background/60">
+      <SidebarInset>
+        <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-2 border-b border-border/50 px-4 backdrop-blur-xl bg-background/80">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4" />
           <Breadcrumb>
@@ -87,7 +79,7 @@ export default function DashboardLayout({
             </BreadcrumbList>
           </Breadcrumb>
         </header>
-        <main className="relative flex-1 overflow-auto">
+        <main className="flex-1 overflow-auto">
           {children}
         </main>
       </SidebarInset>
