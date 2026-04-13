@@ -1114,6 +1114,15 @@ export function getDashboardMetrics(userId?: string, teamId?: string): Dashboard
     avgDailyEnrolledDebtChange: 6.5,
     avgDailyEnrolledUnits: Math.round((unitsEnrolled / 20) * 10) / 10, // One decimal
     avgDailyEnrolledUnitsChange: 5.8,
+    // Client metrics
+    clientsEnrolled: unitsEnrolled, // Each unit = 1 client
+    clientsEnrolledChange: 8.2,
+    clientsActive: Math.round(unitsEnrolled * 0.85), // 85% still active
+    clientsActiveChange: 4.5,
+    clientsCancelled: Math.round(unitsEnrolled * 0.15), // 15% cancelled
+    clientsCancelledChange: -2.3,
+    cancellationRate: 15.0, // 15% cancellation rate
+    cancellationRateChange: -1.8,
     conversionRate,
     conversionRateChange: 3.5,
     conversionClosed: unitsEnrolled,

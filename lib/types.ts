@@ -135,6 +135,15 @@ export interface DashboardMetrics {
   avgDailyEnrolledDebtChange: number
   avgDailyEnrolledUnits: number
   avgDailyEnrolledUnitsChange: number
+  // Client metrics
+  clientsEnrolled: number
+  clientsEnrolledChange: number
+  clientsActive: number
+  clientsActiveChange: number
+  clientsCancelled: number
+  clientsCancelledChange: number
+  cancellationRate: number
+  cancellationRateChange: number
   // Conversion metrics
   conversionRate: number
   conversionRateChange: number

@@ -491,6 +491,10 @@ export default function DashboardPage() {
   const [avgDebtPerFileDate, setAvgDebtPerFileDate] = React.useState('30d')
   const [avgDailyDebtDate, setAvgDailyDebtDate] = React.useState('30d')
   const [avgDailyUnitsDate, setAvgDailyUnitsDate] = React.useState('30d')
+  const [clientsEnrolledDate, setClientsEnrolledDate] = React.useState('30d')
+  const [clientsActiveDate, setClientsActiveDate] = React.useState('30d')
+  const [clientsCancelledDate, setClientsCancelledDate] = React.useState('30d')
+  const [cancellationRateDate, setCancellationRateDate] = React.useState('30d')
   
   const [customRange, setCustomRange] = React.useState<{ from?: Date; to?: Date }>({})
   const [calendarOpen, setCalendarOpen] = React.useState<string | null>(null)
@@ -884,6 +888,11 @@ export default function DashboardPage() {
             <MetricTile label="Avg Debt/File" value={metrics.avgDebtLoadPerFile} change={metrics.avgDebtLoadPerFileChange} format="currency" dateValue={avgDebtPerFileDate} onDateChange={setAvgDebtPerFileDate} />
             <MetricTile label="Avg Daily Debt" value={metrics.avgDailyEnrolledDebt} change={metrics.avgDailyEnrolledDebtChange} format="currency" dateValue={avgDailyDebtDate} onDateChange={setAvgDailyDebtDate} />
             <MetricTile label="Avg Daily Units" value={metrics.avgDailyEnrolledUnits} change={metrics.avgDailyEnrolledUnitsChange} decimals={1} dateValue={avgDailyUnitsDate} onDateChange={setAvgDailyUnitsDate} />
+            {/* Clients */}
+            <MetricTile label="Clients Enrolled" value={metrics.clientsEnrolled} change={metrics.clientsEnrolledChange} dateValue={clientsEnrolledDate} onDateChange={setClientsEnrolledDate} />
+            <MetricTile label="Clients Active" value={metrics.clientsActive} change={metrics.clientsActiveChange} dateValue={clientsActiveDate} onDateChange={setClientsActiveDate} />
+            <MetricTile label="Clients Cancelled" value={metrics.clientsCancelled} change={metrics.clientsCancelledChange} dateValue={clientsCancelledDate} onDateChange={setClientsCancelledDate} />
+            <MetricTile label="Cancellation %" value={metrics.cancellationRate} change={metrics.cancellationRateChange} format="percentage" dateValue={cancellationRateDate} onDateChange={setCancellationRateDate} />
           </div>
 
           {/* Chart */}
