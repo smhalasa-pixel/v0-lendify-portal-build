@@ -143,9 +143,9 @@ export default function DashboardPage() {
   const volumeData = React.useMemo(() => dataService.getVolumeChartData(30), [])
   const announcements = React.useMemo(() => dataService.getAnnouncements(), [])
   const teamMetrics = React.useMemo(() => {
-    if (isLeadership || isExecutive) return dataService.getTeamMetrics()
-    return []
-  }, [isLeadership, isExecutive])
+    // All roles can now see team performance
+    return dataService.getTeamMetrics()
+  }, [])
 
   const dashboardTitle = isAgent ? 'My Dashboard' : isLeadership ? `${user?.teamName || 'Team'} Dashboard` : 'Executive Dashboard'
 
@@ -399,9 +399,14 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* Team Performance */}
-      {(isLeadership || isExecutive) && teamMetrics.length > 0 && (
-        <TeamPerformanceTable data={teamMetrics} />
+      {/* Team Performance - visible to all roles */}
+      {teamMetrics.length > 0 && (
+        <TeamPerformanceTable 
+          data={teamMetrics} 
+          title="Team Performance"
+          description={isAgent ? "See how all teams are performing" : "Performance metrics by team"}
+          highlightTeamId={user?.teamId}
+        />
       )}
     </div>
   )

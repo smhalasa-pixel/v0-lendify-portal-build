@@ -16,6 +16,7 @@ interface TeamPerformanceTableProps {
   data: TeamMetrics[]
   title?: string
   description?: string
+  highlightTeamId?: string
 }
 
 function formatCurrency(value: number): string {
@@ -26,10 +27,13 @@ function formatCurrency(value: number): string {
   }).format(value)
 }
 
+import { Badge } from '@/components/ui/badge'
+
 export function TeamPerformanceTable({
   data,
   title = 'Team Performance',
   description = 'Performance metrics by team',
+  highlightTeamId,
 }: TeamPerformanceTableProps) {
   // Sort by debt load enrolled to determine rankings
   const sortedData = [...data].sort((a, b) => b.debtLoadEnrolled - a.debtLoadEnrolled)
@@ -69,10 +73,12 @@ export function TeamPerformanceTable({
                   </TableCell>
                 </TableRow>
               ) : (
-                sortedData.map((team, index) => (
+                sortedData.map((team, index) => {
+                  const isUserTeam = highlightTeamId && team.teamId === highlightTeamId
+                  return (
                   <TableRow 
                     key={team.teamId} 
-                    className="border-border/50 hover:bg-muted/30"
+                    className={`border-border/50 hover:bg-muted/30 ${isUserTeam ? 'bg-primary/5' : ''}`}
                   >
                     <TableCell className="font-medium">
                       {index < 3 ? (
@@ -95,6 +101,9 @@ export function TeamPerformanceTable({
                         </span>
                         {index === 0 && (
                           <Trophy className="size-4 text-yellow-400" />
+                        )}
+                        {isUserTeam && (
+                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Your Team</Badge>
                         )}
                       </div>
                     </TableCell>
@@ -119,7 +128,7 @@ export function TeamPerformanceTable({
                       </div>
                     </TableCell>
                   </TableRow>
-                ))
+                )})
               )}
             </TableBody>
           </Table>
