@@ -847,6 +847,32 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
+          {/* Row 3: FPC (First Payment Cleared) */}
+          <Card className="glass-card border-border/40">
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">First Payment Cleared (FPC)</span>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <Metric label="Units FPC" value={metrics.unitsFPC} change={metrics.unitsFPCChange} />
+                <Metric label="Debt Load FPC" value={metrics.debtLoadFPC} change={metrics.debtLoadFPCChange} format="currency" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Row 4: Ancillary & Average Debt Load */}
+          <Card className="glass-card border-border/40">
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Ancillary & Averages</span>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <Metric label="Ancillary" value={metrics.ancillaryRevenue} change={metrics.ancillaryRevenueChange} format="currency" />
+                <Metric label="Avg Debt Load" value={metrics.avgDebtLoad} change={metrics.avgDebtLoadChange} format="currency" />
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Chart */}
           <VolumeChart data={volumeData} />
         </div>

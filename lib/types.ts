@@ -122,6 +122,14 @@ export interface DashboardMetrics {
   debtLoadFPCChange: number
   unitsFPC: number
   unitsFPCChange: number
+  // Ancillary metrics
+  ancillaryRevenue: number
+  ancillaryRevenueChange: number
+  ancillaryCount: number
+  ancillaryCountChange: number
+  // Average metrics
+  avgDebtLoad: number
+  avgDebtLoadChange: number
   // Conversion metrics
   conversionRate: number
   conversionRateChange: number

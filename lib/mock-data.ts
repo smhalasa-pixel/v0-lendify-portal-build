@@ -1101,6 +1101,14 @@ export function getDashboardMetrics(userId?: string, teamId?: string): Dashboard
     debtLoadFPCChange: 9.8,
     unitsFPC,
     unitsFPCChange: 7.2,
+    // Ancillary metrics - mock data for services sold alongside main product
+    ancillaryRevenue: Math.round(unitsEnrolled * 450), // Avg $450 per unit in ancillary
+    ancillaryRevenueChange: 11.2,
+    ancillaryCount: Math.round(unitsEnrolled * 0.65), // 65% of enrolled have ancillary
+    ancillaryCountChange: 8.7,
+    // Average debt load
+    avgDebtLoad: unitsEnrolled > 0 ? Math.round(debtLoadEnrolled / unitsEnrolled) : 0,
+    avgDebtLoadChange: 4.2,
     conversionRate,
     conversionRateChange: 3.5,
     conversionClosed: unitsEnrolled,
