@@ -35,6 +35,7 @@ import { AnnouncementsList } from '@/components/dashboard/announcements-list'
 import { TeamPerformanceTable } from '@/components/dashboard/team-performance-table'
 import { AgentPerformanceTable } from '@/components/dashboard/agent-performance-table'
 import { cn } from '@/lib/utils'
+import type { DateRange } from 'react-day-picker'
 
 // Compact metric display with hover tooltip for full value
 function Metric({ 
@@ -297,6 +298,8 @@ export default function DashboardPage() {
   
   // Global date slicer - affects all metrics when set
   const [globalDateFilter, setGlobalDateFilter] = React.useState<string>('this-month')
+  const [globalCustomDateRange, setGlobalCustomDateRange] = React.useState<DateRange | undefined>(undefined)
+  const [showGlobalCustomPicker, setShowGlobalCustomPicker] = React.useState(false)
   const [useGlobalDate, setUseGlobalDate] = React.useState(true) // When true, global date overrides individual slicers
   
   // View toggle for tables: 'teams' or 'agents'
@@ -667,7 +670,14 @@ export default function DashboardPage() {
 
   // Apply global date to all metric slicers when changed
   const applyGlobalDate = React.useCallback((date: string) => {
+    if (date === 'custom') {
+      // Open the custom date picker instead of applying immediately
+      setShowGlobalCustomPicker(true)
+      return
+    }
+    
     setGlobalDateFilter(date)
+    setGlobalCustomDateRange(undefined) // Clear custom range when selecting preset
     if (useGlobalDate) {
       setUnitsSubmittedDate(date)
       setDebtLoadSubmittedDate(date)
@@ -690,6 +700,37 @@ export default function DashboardPage() {
     }
   }, [useGlobalDate])
   
+  // Apply global custom date range to all metrics
+  const applyGlobalCustomDateRange = React.useCallback(() => {
+    if (!globalCustomDateRange?.from || !globalCustomDateRange?.to) return
+    
+    setGlobalDateFilter('custom')
+    setShowGlobalCustomPicker(false)
+    
+    // For custom dates, we set all slicers to 'custom' 
+    // The individual MetricTile components will need to use the global custom range
+    if (useGlobalDate) {
+      setUnitsSubmittedDate('custom')
+      setDebtLoadSubmittedDate('custom')
+      setConvRateDate('custom')
+      setQualConvDate('custom')
+      setUnitsEnrolledDate('custom')
+      setDebtLoadEnrolledDate('custom')
+      setUnitsFpcDate('custom')
+      setDebtLoadFpcDate('custom')
+      setAncillaryDate('custom')
+      setAvgDebtPerFileDate('custom')
+      setAvgDailyDebtDate('custom')
+      setAvgDailyUnitsDate('custom')
+      setClientsEnrolledDate('custom')
+      setClientsActiveDate('custom')
+      setClientsCancelledDate('custom')
+      setCancellationRateDate('custom')
+      setEpfsCollectedDate('custom')
+      setEpfsScheduledDate('custom')
+    }
+  }, [globalCustomDateRange, useGlobalDate])
+  
   // Clear all filters
   const clearAllFilters = React.useCallback(() => {
     setSelectedTeamLeads([])
@@ -708,19 +749,58 @@ export default function DashboardPage() {
         
         <div className="flex items-center gap-2 flex-wrap">
           {/* Global Date Slicer */}
-          <div className="flex items-center gap-1.5 bg-muted/50 rounded-lg p-1.5">
-            <CalendarIcon className="size-3.5 text-muted-foreground ml-1" />
-            <Select value={globalDateFilter} onValueChange={applyGlobalDate}>
-              <SelectTrigger className="h-7 text-xs w-auto min-w-[100px] bg-background border-0">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {dateOptions.map(opt => (
-                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <Popover open={showGlobalCustomPicker} onOpenChange={setShowGlobalCustomPicker}>
+            <div className="flex items-center gap-1.5 bg-muted/50 rounded-lg p-1.5">
+              <CalendarIcon className="size-3.5 text-muted-foreground ml-1" />
+              <Select value={globalDateFilter} onValueChange={applyGlobalDate}>
+                <SelectTrigger className="h-7 text-xs w-auto min-w-[100px] bg-background border-0">
+                  <SelectValue>
+                    {globalDateFilter === 'custom' && globalCustomDateRange?.from && globalCustomDateRange?.to
+                      ? `${format(globalCustomDateRange.from, 'MMM d')} - ${format(globalCustomDateRange.to, 'MMM d')}`
+                      : dateOptions.find(o => o.value === globalDateFilter)?.label
+                    }
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {dateOptions.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {globalDateFilter === 'custom' && (
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-6 px-1.5 text-xs">
+                    <CalendarIcon className="size-3" />
+                  </Button>
+                </PopoverTrigger>
+              )}
+            </div>
+            <PopoverContent className="w-auto p-3" align="end">
+              <div className="space-y-3">
+                <div className="text-sm font-medium">Select Date Range</div>
+                <Calendar
+                  mode="range"
+                  selected={globalCustomDateRange}
+                  onSelect={setGlobalCustomDateRange}
+                  numberOfMonths={2}
+                  className="rounded-md border"
+                />
+                <div className="text-xs text-muted-foreground">
+                  {globalCustomDateRange?.from ? format(globalCustomDateRange.from, 'MMM d, yyyy') : 'Select start'} 
+                  {' - '} 
+                  {globalCustomDateRange?.to ? format(globalCustomDateRange.to, 'MMM d, yyyy') : 'Select end'}
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setShowGlobalCustomPicker(false)}>
+                    Cancel
+                  </Button>
+                  <Button size="sm" onClick={applyGlobalCustomDateRange} disabled={!globalCustomDateRange?.from || !globalCustomDateRange?.to}>
+                    Apply to All
+                  </Button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
           
           {/* Region Slicer - Only for Executive and Admin */}
           {hasExecutiveView && (
