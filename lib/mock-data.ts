@@ -1167,6 +1167,28 @@ export const dataService = {
   getDashboardMetrics,
   getTeamMetrics,
   
+  // Dynamic user/team helpers - these update automatically when users change
+  getAllTeamIds: (): string[] => {
+    const teamIds = new Set<string>()
+    mockUsers.forEach(u => {
+      if (u.teamId) teamIds.add(u.teamId)
+      if (u.teamIds) u.teamIds.forEach(id => teamIds.add(id))
+    })
+    return Array.from(teamIds)
+  },
+  
+  getTeamLeads: (): User[] => {
+    return mockUsers.filter(u => u.role === 'leadership')
+  },
+  
+  getSupervisors: (): User[] => {
+    return mockUsers.filter(u => u.role === 'supervisor')
+  },
+  
+  getAgents: (): User[] => {
+    return mockUsers.filter(u => u.role === 'agent')
+  },
+  
   // Agent Performance by Team (for team leaders)
   getAgentPerformanceByTeam: (teamId: string): AgentPerformance[] => {
     const teamAgents = mockUsers.filter(u => u.teamId === teamId && u.role === 'agent')

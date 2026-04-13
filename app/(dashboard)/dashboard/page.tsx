@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useAuth } from '@/lib/auth-context'
-import { dataService, mockUsers } from '@/lib/mock-data'
+import { dataService } from '@/lib/mock-data'
 import { VolumeChart } from '@/components/dashboard/volume-chart'
 import { ClientSearch } from '@/components/dashboard/client-search'
 import { AnnouncementsList } from '@/components/dashboard/announcements-list'
@@ -130,14 +130,10 @@ export default function DashboardPage() {
   const isSupervisor = user?.role === 'supervisor'
   const isExecutive = user?.role === 'executive'
 
-  // Get all team leads and supervisors for filter options
-  const teamLeads = React.useMemo(() => 
-    mockUsers.filter(u => u.role === 'leadership'), 
-  [])
-  
-  const supervisors = React.useMemo(() => 
-    mockUsers.filter(u => u.role === 'supervisor'), 
-  [])
+  // Get all team leads and supervisors for filter options - dynamically from dataService
+  const teamLeads = React.useMemo(() => dataService.getTeamLeads(), [])
+  const supervisors = React.useMemo(() => dataService.getSupervisors(), [])
+  const allTeamIds = React.useMemo(() => dataService.getAllTeamIds(), [])
 
   // Filter state: 'overall' | 'team-lead' | 'supervisor'
   const [filterType, setFilterType] = React.useState<'overall' | 'team-lead' | 'supervisor'>('overall')
@@ -225,7 +221,9 @@ export default function DashboardPage() {
   const agentPerformance = React.useMemo(() => {
     if (filterType === 'team-lead') {
       if (selectedTeamLead === 'all') {
-        return dataService.getAgentPerformanceByTeams(['team-1', 'team-2'])
+        // Get all team IDs that have a team lead
+        const teamLeadTeamIds = teamLeads.map(l => l.teamId).filter(Boolean) as string[]
+        return dataService.getAgentPerformanceByTeams(teamLeadTeamIds.length > 0 ? teamLeadTeamIds : allTeamIds)
       }
       const lead = teamLeads.find(l => l.id === selectedTeamLead)
       if (lead?.teamId) {
@@ -235,7 +233,10 @@ export default function DashboardPage() {
     
     if (filterType === 'supervisor') {
       if (selectedSupervisor === 'all') {
-        return dataService.getAgentPerformanceByTeams(['team-1', 'team-2'])
+        // Get all team IDs across all supervisors
+        const supervisorTeamIds = new Set<string>()
+        supervisors.forEach(s => s.teamIds?.forEach(id => supervisorTeamIds.add(id)))
+        return dataService.getAgentPerformanceByTeams(supervisorTeamIds.size > 0 ? Array.from(supervisorTeamIds) : allTeamIds)
       }
       const supervisor = supervisors.find(s => s.id === selectedSupervisor)
       if (supervisor?.teamIds) {
@@ -251,11 +252,11 @@ export default function DashboardPage() {
       return dataService.getAgentPerformanceByTeams(user.teamIds)
     }
     if (isExecutive) {
-      return dataService.getAgentPerformanceByTeams(['team-1', 'team-2'])
+      return dataService.getAgentPerformanceByTeams(allTeamIds)
     }
     
     return []
-  }, [filterType, selectedTeamLead, selectedSupervisor, teamLeads, supervisors, isLeadership, isSupervisor, isExecutive, user?.teamId, user?.teamIds])
+  }, [filterType, selectedTeamLead, selectedSupervisor, teamLeads, supervisors, allTeamIds, isLeadership, isSupervisor, isExecutive, user?.teamId, user?.teamIds])
 
   // Dashboard title based on filter
   const dashboardTitle = React.useMemo(() => {
