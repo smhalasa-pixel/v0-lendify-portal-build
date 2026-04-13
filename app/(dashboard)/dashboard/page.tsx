@@ -417,12 +417,16 @@ export default function DashboardPage() {
     return 'Executive Dashboard'
   }, [isAgent, isLeadership, isSupervisor, isAdmin, filterType, selectedTeamLead, selectedSupervisor, teamLeads, supervisors, user?.teamName, selectedAgentId, selectedTeamId, allAgents])
 
-  // Date slicer states
-  const [enrollmentDate, setEnrollmentDate] = React.useState('30d')
+  // Date slicer states - each metric has its own
+  const [unitsEnrolledDate, setUnitsEnrolledDate] = React.useState('30d')
+  const [debtLoadEnrolledDate, setDebtLoadEnrolledDate] = React.useState('30d')
   const [conversionDate, setConversionDate] = React.useState('30d')
-  const [fpcDate, setFpcDate] = React.useState('30d')
+  const [unitsFpcDate, setUnitsFpcDate] = React.useState('30d')
+  const [debtLoadFpcDate, setDebtLoadFpcDate] = React.useState('30d')
   const [ancillaryDate, setAncillaryDate] = React.useState('30d')
-  const [dailyAvgDate, setDailyAvgDate] = React.useState('30d')
+  const [avgDebtPerFileDate, setAvgDebtPerFileDate] = React.useState('30d')
+  const [avgDailyDebtDate, setAvgDailyDebtDate] = React.useState('30d')
+  const [avgDailyUnitsDate, setAvgDailyUnitsDate] = React.useState('30d')
   const [submissionDate, setSubmissionDate] = React.useState('30d')
   
   const [customRange, setCustomRange] = React.useState<{ from?: Date; to?: Date }>({})
@@ -839,58 +843,95 @@ export default function DashboardPage() {
             </Card>
           </div>
 
-          {/* Row 2: Enrollments */}
+          {/* Row 2: Enrollments - Each metric has its own date slicer */}
           <Card className="glass-card border-border/40">
             <CardContent className="p-3">
-              <div className="flex items-center justify-between mb-2">
+              <div className="mb-2">
                 <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Enrollments</span>
-                <DateSelector value={enrollmentDate} onChange={setEnrollmentDate} id="enrollment" />
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <Metric label="Units" value={metrics.unitsEnrolled} change={metrics.unitsEnrolledChange} />
-                <Metric label="Debt Load" value={metrics.debtLoadEnrolled} change={metrics.debtLoadEnrolledChange} format="currency" />
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] text-muted-foreground">Units Enrolled</span>
+                    <DateSelector value={unitsEnrolledDate} onChange={setUnitsEnrolledDate} id="units-enrolled" />
+                  </div>
+                  <Metric label="" value={metrics.unitsEnrolled} change={metrics.unitsEnrolledChange} />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] text-muted-foreground">Debt Load</span>
+                    <DateSelector value={debtLoadEnrolledDate} onChange={setDebtLoadEnrolledDate} id="debt-enrolled" />
+                  </div>
+                  <Metric label="" value={metrics.debtLoadEnrolled} change={metrics.debtLoadEnrolledChange} format="currency" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Row 3: FPC (First Payment Cleared) */}
+          {/* Row 3: FPC (First Payment Cleared) - Each metric has its own date slicer */}
           <Card className="glass-card border-border/40">
             <CardContent className="p-3">
-              <div className="flex items-center justify-between mb-2">
+              <div className="mb-2">
                 <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">First Payment Cleared (FPC)</span>
-                <DateSelector value={fpcDate} onChange={setFpcDate} id="fpc" />
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <Metric label="Units FPC" value={metrics.unitsFPC} change={metrics.unitsFPCChange} />
-                <Metric label="Debt Load FPC" value={metrics.debtLoadFPC} change={metrics.debtLoadFPCChange} format="currency" />
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] text-muted-foreground">Units FPC</span>
+                    <DateSelector value={unitsFpcDate} onChange={setUnitsFpcDate} id="units-fpc" />
+                  </div>
+                  <Metric label="" value={metrics.unitsFPC} change={metrics.unitsFPCChange} />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] text-muted-foreground">Debt Load FPC</span>
+                    <DateSelector value={debtLoadFpcDate} onChange={setDebtLoadFpcDate} id="debt-fpc" />
+                  </div>
+                  <Metric label="" value={metrics.debtLoadFPC} change={metrics.debtLoadFPCChange} format="currency" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Row 4: Ancillary & Average Debt Load Per File */}
+          {/* Row 4: Ancillary - Standalone */}
           <Card className="glass-card border-border/40">
             <CardContent className="p-3">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Ancillary & Averages</span>
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Ancillary Sales</span>
                 <DateSelector value={ancillaryDate} onChange={setAncillaryDate} id="ancillary" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <Metric label="Ancillary Sales" value={metrics.ancillaryCount} change={metrics.ancillaryCountChange} />
-                <Metric label="Avg Debt Load Per File" value={metrics.avgDebtLoadPerFile} change={metrics.avgDebtLoadPerFileChange} format="currency" />
-              </div>
+              <Metric label="" value={metrics.ancillaryCount} change={metrics.ancillaryCountChange} />
             </CardContent>
           </Card>
 
-          {/* Row 5: Daily Averages */}
+          {/* Row 5: All Averages - Each metric has its own date slicer */}
           <Card className="glass-card border-border/40">
             <CardContent className="p-3">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Daily Averages</span>
-                <DateSelector value={dailyAvgDate} onChange={setDailyAvgDate} id="dailyavg" />
+              <div className="mb-2">
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Averages</span>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <Metric label="Avg Daily Enrolled Debt" value={metrics.avgDailyEnrolledDebt} change={metrics.avgDailyEnrolledDebtChange} format="currency" />
-                <Metric label="Avg Daily Enrolled Units" value={metrics.avgDailyEnrolledUnits} change={metrics.avgDailyEnrolledUnitsChange} decimals={1} />
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] text-muted-foreground">Avg Debt Load Per File</span>
+                    <DateSelector value={avgDebtPerFileDate} onChange={setAvgDebtPerFileDate} id="avg-debt-file" />
+                  </div>
+                  <Metric label="" value={metrics.avgDebtLoadPerFile} change={metrics.avgDebtLoadPerFileChange} format="currency" />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] text-muted-foreground">Avg Daily Enrolled Debt</span>
+                    <DateSelector value={avgDailyDebtDate} onChange={setAvgDailyDebtDate} id="avg-daily-debt" />
+                  </div>
+                  <Metric label="" value={metrics.avgDailyEnrolledDebt} change={metrics.avgDailyEnrolledDebtChange} format="currency" />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] text-muted-foreground">Avg Daily Enrolled Units</span>
+                    <DateSelector value={avgDailyUnitsDate} onChange={setAvgDailyUnitsDate} id="avg-daily-units" />
+                  </div>
+                  <Metric label="" value={metrics.avgDailyEnrolledUnits} change={metrics.avgDailyEnrolledUnitsChange} decimals={1} />
+                </div>
               </div>
             </CardContent>
           </Card>
