@@ -46,11 +46,11 @@ const presetOptions: { value: DateRangePreset; label: string }[] = [
   { value: 'yesterday', label: 'Yesterday' },
   { value: 'last7days', label: 'Last 7 Days' },
   { value: 'last30days', label: 'Last 30 Days' },
-  { value: 'thisMonth', label: 'This Month' },
+  { value: 'thisMonth', label: 'MTD' },
   { value: 'lastMonth', label: 'Last Month' },
   { value: 'last3months', label: 'Last 3 Months' },
   { value: 'last6months', label: 'Last 6 Months' },
-  { value: 'thisYear', label: 'This Year' },
+  { value: 'thisYear', label: 'YTD' },
   { value: 'custom', label: 'Custom Range' },
 ]
 

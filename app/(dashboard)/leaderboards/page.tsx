@@ -72,11 +72,11 @@ const periodOptions = [
   { value: 'last7', label: 'Last 7 Days' },
   { value: 'last14', label: 'Last 14 Days' },
   { value: 'last30', label: 'Last 30 Days' },
-  { value: 'mtd', label: 'Month to Date' },
+  { value: 'mtd', label: 'MTD' },
   { value: 'lastMonth', label: 'Last Month' },
-  { value: 'qtd', label: 'Quarter to Date' },
+  { value: 'qtd', label: 'QTD' },
   { value: 'lastQuarter', label: 'Last Quarter' },
-  { value: 'ytd', label: 'Year to Date' },
+  { value: 'ytd', label: 'YTD' },
   { value: 'lastYear', label: 'Last Year' },
   { value: 'custom', label: 'Custom Range' },
 ]
@@ -264,7 +264,7 @@ export default function LeaderboardsPage() {
     if (period === 'custom' && customRange.from && customRange.to) {
       return `${format(customRange.from, 'MMM d')} - ${format(customRange.to, 'MMM d, yyyy')}`
     }
-    return periodOptions.find(p => p.value === period)?.label || 'Month to Date'
+    return periodOptions.find(p => p.value === period)?.label || 'MTD'
   }, [period, customRange])
   
   const comparisonPeriodLabel = React.useMemo(() => {

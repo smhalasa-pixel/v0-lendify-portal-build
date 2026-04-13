@@ -39,9 +39,9 @@ const presetRanges = [
   { label: 'Last 7 Days', value: '7d', short: '7D' },
   { label: 'Last 30 Days', value: '30d', short: '30D' },
   { label: 'Last 90 Days', value: '90d', short: '90D' },
-  { label: 'This Month', value: 'mtd', short: 'MTD' },
+  { label: 'MTD', value: 'mtd', short: 'MTD' },
   { label: 'Last Month', value: 'last_month', short: 'Last Mo' },
-  { label: 'Year to Date', value: 'ytd', short: 'YTD' },
+  { label: 'YTD', value: 'ytd', short: 'YTD' },
   { label: 'Last Year', value: '1y', short: '1Y' },
 ]
 
