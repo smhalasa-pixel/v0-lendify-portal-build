@@ -9,6 +9,12 @@ import { Calendar } from '@/components/ui/calendar'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -28,7 +34,7 @@ import { AnnouncementsList } from '@/components/dashboard/announcements-list'
 import { TeamPerformanceTable } from '@/components/dashboard/team-performance-table'
 import { cn } from '@/lib/utils'
 
-// Compact metric display
+// Compact metric display with hover tooltip for full value
 function Metric({ 
   label, 
   value, 
@@ -50,11 +56,41 @@ function Metric({
     return value.toLocaleString()
   }, [value, fmt])
 
+  const fullValue = React.useMemo(() => {
+    if (fmt === 'currency') {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(value)
+    }
+    if (fmt === 'percentage') return `${value.toFixed(2)}%`
+    return new Intl.NumberFormat('en-US').format(value)
+  }, [value, fmt])
+
+  const needsTooltip = fmt === 'currency' && value >= 1000
+
   return (
     <div className="flex flex-col gap-0.5">
       <span className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</span>
       <div className="flex items-baseline gap-1.5">
-        <span className="text-base font-semibold text-foreground tabular-nums">{formatted}</span>
+        {needsTooltip ? (
+          <TooltipProvider delayDuration={100}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="text-base font-semibold text-foreground tabular-nums cursor-help border-b border-dotted border-muted-foreground/30">
+                  {formatted}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="font-mono text-sm">
+                {fullValue}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : (
+          <span className="text-base font-semibold text-foreground tabular-nums">{formatted}</span>
+        )}
         {change !== undefined && (
           <span className={cn(
             "text-[10px] font-medium flex items-center gap-0.5",
