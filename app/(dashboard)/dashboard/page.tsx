@@ -1099,25 +1099,14 @@ export default function DashboardPage() {
         <div className="space-y-3">
           
           {/* Monthly Targets - Featured Card */}
-          <Card className={cn(
-            "relative overflow-hidden border-2",
-            isPIPRisk 
-              ? "border-amber-500/30 bg-gradient-to-br from-amber-500/5 via-background to-amber-500/5" 
-              : "border-primary/40 bg-gradient-to-br from-primary/10 via-background to-primary/5"
-          )}>
+          <Card className="relative overflow-hidden border-2 border-primary/40 bg-gradient-to-br from-primary/10 via-background to-primary/5">
             {/* Glow effect */}
-            <div className={cn(
-              "absolute -top-12 -right-12 size-32 rounded-full blur-3xl opacity-20",
-              isPIPRisk ? "bg-amber-500" : "bg-primary"
-            )} />
+            <div className="absolute -top-12 -right-12 size-32 rounded-full blur-3xl opacity-20 bg-primary" />
             <CardContent className="p-4 relative">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <div className={cn(
-                    "size-8 rounded-lg flex items-center justify-center",
-                    isPIPRisk ? "bg-amber-500/20" : "bg-primary/20"
-                  )}>
-                    <Target className={cn("size-4", isPIPRisk ? "text-amber-400" : "text-primary")} />
+                  <div className="size-8 rounded-lg flex items-center justify-center bg-primary/20">
+                    <Target className="size-4 text-primary" />
                   </div>
                   <div>
                     <span className="text-sm font-bold text-foreground">Monthly Targets</span>
@@ -1125,12 +1114,6 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  {isPIPRisk && (
-                    <Badge variant="outline" className="text-[10px] px-2 py-0.5 h-5 gap-1 bg-amber-500/10 text-amber-400 border-amber-500/30">
-                      <AlertTriangle className="size-3" />
-                      Behind
-                    </Badge>
-                  )}
                   <div className="flex items-center">
                     <Select value={selectedMonth} onValueChange={handleMonthChange}>
                       <SelectTrigger className="w-auto h-7 text-xs bg-background/50 border-border/50 rounded-r-none border-r-0 [&>svg]:hidden px-2.5">
