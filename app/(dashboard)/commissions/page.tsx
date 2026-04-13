@@ -226,13 +226,13 @@ export default function CommissionsPage() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/30">
-                  <TableHead className="font-semibold">ID</TableHead>
-                  <TableHead className="font-semibold">Client Name</TableHead>
-                  <TableHead className="font-semibold">Status</TableHead>
-                  <TableHead className="font-semibold text-right">Debt Load</TableHead>
+                  <TableHead className="font-semibold text-center">ID</TableHead>
+                  <TableHead className="font-semibold text-center">Client Name</TableHead>
+                  <TableHead className="font-semibold text-center">Status</TableHead>
+                  <TableHead className="font-semibold text-center">Debt Load</TableHead>
                   <TableHead className="font-semibold text-center">Tier</TableHead>
                   <TableHead className="font-semibold text-center">Tier %</TableHead>
-                  <TableHead className="font-semibold text-right">Commission</TableHead>
+                  <TableHead className="font-semibold text-center">Commission</TableHead>
                   <TableHead className="font-semibold text-center">Paid</TableHead>
                 </TableRow>
               </TableHeader>

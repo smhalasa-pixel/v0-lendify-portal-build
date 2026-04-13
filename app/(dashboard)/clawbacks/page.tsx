@@ -243,15 +243,15 @@ export default function ClawbacksPage() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/30">
-                  <TableHead className="font-semibold">ID</TableHead>
-                  <TableHead className="font-semibold">Client Name</TableHead>
-                  <TableHead className="font-semibold">Status</TableHead>
-                  <TableHead className="font-semibold text-right">Debt Load</TableHead>
+                  <TableHead className="font-semibold text-center">ID</TableHead>
+                  <TableHead className="font-semibold text-center">Client Name</TableHead>
+                  <TableHead className="font-semibold text-center">Status</TableHead>
+                  <TableHead className="font-semibold text-center">Debt Load</TableHead>
                   <TableHead className="font-semibold text-center">Tier</TableHead>
                   <TableHead className="font-semibold text-center">Tier %</TableHead>
-                  <TableHead className="font-semibold text-right">Clawback</TableHead>
+                  <TableHead className="font-semibold text-center">Clawback</TableHead>
                   <TableHead className="font-semibold text-center">Deducted</TableHead>
-                  <TableHead className="font-semibold">Actions</TableHead>
+                  <TableHead className="font-semibold text-center">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
