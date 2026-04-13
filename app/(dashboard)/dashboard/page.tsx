@@ -126,6 +126,69 @@ function Metric({
   )
 }
 
+// Table row for metrics display
+function MetricRow({ 
+  label, 
+  value, 
+  change, 
+  format: fmt = 'number',
+  decimals,
+  dateValue,
+  onDateChange,
+  dateId,
+}: { 
+  label: string
+  value: number
+  change?: number
+  format?: 'currency' | 'number' | 'percentage'
+  decimals?: number
+  dateValue: string
+  onDateChange: (val: string) => void
+  dateId: string
+}) {
+  const formatted = React.useMemo(() => {
+    if (fmt === 'currency') {
+      if (value >= 1000000) return `$${(value / 1000000).toFixed(2)}M`
+      if (value >= 1000) return `$${(value / 1000).toFixed(1)}K`
+      return `$${value.toLocaleString()}`
+    }
+    if (fmt === 'percentage') return `${value.toFixed(1)}%`
+    if (decimals !== undefined) return value.toFixed(decimals)
+    return value.toLocaleString()
+  }, [value, fmt, decimals])
+
+  return (
+    <div className="grid grid-cols-[1fr,auto,auto,auto] gap-2 px-4 py-2 items-center hover:bg-muted/10 transition-colors">
+      <span className="text-xs text-foreground">{label}</span>
+      <span className="text-sm font-semibold text-foreground tabular-nums text-right w-20">{formatted}</span>
+      <span className={cn(
+        "text-[10px] font-medium flex items-center justify-end gap-0.5 w-16",
+        change !== undefined && change > 0 ? "text-emerald-400" : change !== undefined && change < 0 ? "text-rose-400" : "text-muted-foreground"
+      )}>
+        {change !== undefined && (
+          <>
+            {change > 0 ? <TrendingUp className="size-2.5" /> : change < 0 ? <TrendingDown className="size-2.5" /> : null}
+            {change > 0 && '+'}{change.toFixed(1)}%
+          </>
+        )}
+      </span>
+      <div className="w-20 flex justify-end">
+        <Select value={dateValue} onValueChange={onDateChange}>
+          <SelectTrigger className="h-5 text-[9px] w-auto min-w-[60px] bg-transparent border-0 px-1.5 text-muted-foreground hover:text-foreground">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="7d">7 Days</SelectItem>
+            <SelectItem value="30d">30 Days</SelectItem>
+            <SelectItem value="90d">90 Days</SelectItem>
+            <SelectItem value="ytd">YTD</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  )
+}
+
 export default function DashboardPage() {
   const { user } = useAuth()
 
@@ -843,94 +906,117 @@ export default function DashboardPage() {
             </Card>
           </div>
 
-          {/* Row 2: Enrollments - Each metric has its own date slicer */}
+          {/* Performance Metrics Table */}
           <Card className="glass-card border-border/40">
-            <CardContent className="p-3">
-              <div className="mb-2">
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Enrollments</span>
+            <CardContent className="p-0">
+              {/* Table Header */}
+              <div className="grid grid-cols-[1fr,auto,auto,auto] gap-2 px-4 py-2.5 border-b border-border/30 bg-muted/20">
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Metric</span>
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right w-20">Value</span>
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right w-16">Change</span>
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right w-20">Period</span>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[9px] text-muted-foreground">Units Enrolled</span>
-                    <DateSelector value={unitsEnrolledDate} onChange={setUnitsEnrolledDate} id="units-enrolled" />
-                  </div>
-                  <Metric label="" value={metrics.unitsEnrolled} change={metrics.unitsEnrolledChange} />
+              
+              {/* Enrollments Section */}
+              <div className="border-b border-border/20">
+                <div className="px-4 py-1.5 bg-muted/10">
+                  <span className="text-[9px] font-semibold text-primary uppercase tracking-wider">Enrollments</span>
                 </div>
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[9px] text-muted-foreground">Debt Load</span>
-                    <DateSelector value={debtLoadEnrolledDate} onChange={setDebtLoadEnrolledDate} id="debt-enrolled" />
-                  </div>
-                  <Metric label="" value={metrics.debtLoadEnrolled} change={metrics.debtLoadEnrolledChange} format="currency" />
+                <div className="divide-y divide-border/10">
+                  <MetricRow 
+                    label="Units Enrolled" 
+                    value={metrics.unitsEnrolled} 
+                    change={metrics.unitsEnrolledChange}
+                    dateValue={unitsEnrolledDate}
+                    onDateChange={setUnitsEnrolledDate}
+                    dateId="units-enrolled"
+                  />
+                  <MetricRow 
+                    label="Debt Load Enrolled" 
+                    value={metrics.debtLoadEnrolled} 
+                    change={metrics.debtLoadEnrolledChange}
+                    format="currency"
+                    dateValue={debtLoadEnrolledDate}
+                    onDateChange={setDebtLoadEnrolledDate}
+                    dateId="debt-enrolled"
+                  />
                 </div>
               </div>
-            </CardContent>
-          </Card>
 
-          {/* Row 3: FPC (First Payment Cleared) - Each metric has its own date slicer */}
-          <Card className="glass-card border-border/40">
-            <CardContent className="p-3">
-              <div className="mb-2">
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">First Payment Cleared (FPC)</span>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[9px] text-muted-foreground">Units FPC</span>
-                    <DateSelector value={unitsFpcDate} onChange={setUnitsFpcDate} id="units-fpc" />
-                  </div>
-                  <Metric label="" value={metrics.unitsFPC} change={metrics.unitsFPCChange} />
+              {/* FPC Section */}
+              <div className="border-b border-border/20">
+                <div className="px-4 py-1.5 bg-muted/10">
+                  <span className="text-[9px] font-semibold text-primary uppercase tracking-wider">First Payment Cleared</span>
                 </div>
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[9px] text-muted-foreground">Debt Load FPC</span>
-                    <DateSelector value={debtLoadFpcDate} onChange={setDebtLoadFpcDate} id="debt-fpc" />
-                  </div>
-                  <Metric label="" value={metrics.debtLoadFPC} change={metrics.debtLoadFPCChange} format="currency" />
+                <div className="divide-y divide-border/10">
+                  <MetricRow 
+                    label="Units FPC" 
+                    value={metrics.unitsFPC} 
+                    change={metrics.unitsFPCChange}
+                    dateValue={unitsFpcDate}
+                    onDateChange={setUnitsFpcDate}
+                    dateId="units-fpc"
+                  />
+                  <MetricRow 
+                    label="Debt Load FPC" 
+                    value={metrics.debtLoadFPC} 
+                    change={metrics.debtLoadFPCChange}
+                    format="currency"
+                    dateValue={debtLoadFpcDate}
+                    onDateChange={setDebtLoadFpcDate}
+                    dateId="debt-fpc"
+                  />
                 </div>
               </div>
-            </CardContent>
-          </Card>
 
-          {/* Row 4: Ancillary - Standalone */}
-          <Card className="glass-card border-border/40">
-            <CardContent className="p-3">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Ancillary Sales</span>
-                <DateSelector value={ancillaryDate} onChange={setAncillaryDate} id="ancillary" />
+              {/* Ancillary Section */}
+              <div className="border-b border-border/20">
+                <div className="px-4 py-1.5 bg-muted/10">
+                  <span className="text-[9px] font-semibold text-primary uppercase tracking-wider">Ancillary</span>
+                </div>
+                <MetricRow 
+                  label="Ancillary Sales" 
+                  value={metrics.ancillaryCount} 
+                  change={metrics.ancillaryCountChange}
+                  dateValue={ancillaryDate}
+                  onDateChange={setAncillaryDate}
+                  dateId="ancillary"
+                />
               </div>
-              <Metric label="" value={metrics.ancillaryCount} change={metrics.ancillaryCountChange} />
-            </CardContent>
-          </Card>
 
-          {/* Row 5: All Averages - Each metric has its own date slicer */}
-          <Card className="glass-card border-border/40">
-            <CardContent className="p-3">
-              <div className="mb-2">
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Averages</span>
-              </div>
-              <div className="space-y-3">
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[9px] text-muted-foreground">Avg Debt Load Per File</span>
-                    <DateSelector value={avgDebtPerFileDate} onChange={setAvgDebtPerFileDate} id="avg-debt-file" />
-                  </div>
-                  <Metric label="" value={metrics.avgDebtLoadPerFile} change={metrics.avgDebtLoadPerFileChange} format="currency" />
+              {/* Averages Section */}
+              <div>
+                <div className="px-4 py-1.5 bg-muted/10">
+                  <span className="text-[9px] font-semibold text-primary uppercase tracking-wider">Averages</span>
                 </div>
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[9px] text-muted-foreground">Avg Daily Enrolled Debt</span>
-                    <DateSelector value={avgDailyDebtDate} onChange={setAvgDailyDebtDate} id="avg-daily-debt" />
-                  </div>
-                  <Metric label="" value={metrics.avgDailyEnrolledDebt} change={metrics.avgDailyEnrolledDebtChange} format="currency" />
-                </div>
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[9px] text-muted-foreground">Avg Daily Enrolled Units</span>
-                    <DateSelector value={avgDailyUnitsDate} onChange={setAvgDailyUnitsDate} id="avg-daily-units" />
-                  </div>
-                  <Metric label="" value={metrics.avgDailyEnrolledUnits} change={metrics.avgDailyEnrolledUnitsChange} decimals={1} />
+                <div className="divide-y divide-border/10">
+                  <MetricRow 
+                    label="Avg Debt Per File" 
+                    value={metrics.avgDebtLoadPerFile} 
+                    change={metrics.avgDebtLoadPerFileChange}
+                    format="currency"
+                    dateValue={avgDebtPerFileDate}
+                    onDateChange={setAvgDebtPerFileDate}
+                    dateId="avg-debt-file"
+                  />
+                  <MetricRow 
+                    label="Avg Daily Enrolled Debt" 
+                    value={metrics.avgDailyEnrolledDebt} 
+                    change={metrics.avgDailyEnrolledDebtChange}
+                    format="currency"
+                    dateValue={avgDailyDebtDate}
+                    onDateChange={setAvgDailyDebtDate}
+                    dateId="avg-daily-debt"
+                  />
+                  <MetricRow 
+                    label="Avg Daily Enrolled Units" 
+                    value={metrics.avgDailyEnrolledUnits} 
+                    change={metrics.avgDailyEnrolledUnitsChange}
+                    decimals={1}
+                    dateValue={avgDailyUnitsDate}
+                    onDateChange={setAvgDailyUnitsDate}
+                    dateId="avg-daily-units"
+                  />
                 </div>
               </div>
             </CardContent>
