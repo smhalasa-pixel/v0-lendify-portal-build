@@ -1,6 +1,6 @@
 // Lendify Portal Types
 
-export type UserRole = 'agent' | 'leadership' | 'supervisor' | 'executive'
+export type UserRole = 'agent' | 'leadership' | 'supervisor' | 'executive' | 'admin'
 
 export interface User {
   id: string

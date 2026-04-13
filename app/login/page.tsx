@@ -20,6 +20,8 @@ const demoCredentials: Record<string, { password: string; userId: string }> = {
   // Additional agents
   'david.williams': { password: 'agent123', userId: 'user-4' },
   'emily.brown': { password: 'agent123', userId: 'user-5' },
+  // Admin
+  'admin': { password: 'admin123', userId: 'user-admin' },
 }
 
 export default function LoginPage() {
@@ -174,6 +176,11 @@ export default function LoginPage() {
                     <p className="text-muted-foreground">jennifer.martinez</p>
                     <p className="text-muted-foreground">exec123</p>
                   </div>
+                </div>
+                <div className="mt-2 p-2 rounded-md bg-destructive/10 border border-destructive/30">
+                  <p className="font-medium text-destructive">Admin</p>
+                  <p className="text-muted-foreground">admin</p>
+                  <p className="text-muted-foreground">admin123</p>
                 </div>
               </div>
             </CardContent>

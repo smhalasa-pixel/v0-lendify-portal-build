@@ -52,49 +52,49 @@ const mainNavItems = [
     title: 'Dashboard',
     href: '/dashboard',
     icon: LayoutDashboard,
-    roles: ['agent', 'leadership', 'supervisor', 'executive'] as UserRole[],
+    roles: ['agent', 'leadership', 'supervisor', 'executive', 'admin'] as UserRole[],
   },
   {
     title: 'Announcements',
     href: '/announcements',
     icon: Megaphone,
-    roles: ['agent', 'leadership', 'supervisor', 'executive'] as UserRole[],
+    roles: ['agent', 'leadership', 'supervisor', 'executive', 'admin'] as UserRole[],
   },
   {
     title: 'Knowledge Base',
     href: '/knowledge',
     icon: BookOpen,
-    roles: ['agent', 'leadership', 'supervisor', 'executive'] as UserRole[],
+    roles: ['agent', 'leadership', 'supervisor', 'executive', 'admin'] as UserRole[],
   },
   {
     title: 'Scripts',
     href: '/scripts',
     icon: FileText,
-    roles: ['agent', 'leadership', 'supervisor', 'executive'] as UserRole[],
+    roles: ['agent', 'leadership', 'supervisor', 'executive', 'admin'] as UserRole[],
   },
   {
     title: 'To Do List',
     href: '/tasks',
     icon: ClipboardList,
-    roles: ['agent', 'leadership', 'supervisor', 'executive'] as UserRole[],
+    roles: ['agent', 'leadership', 'supervisor', 'executive', 'admin'] as UserRole[],
   },
   {
     title: 'Leaderboards',
     href: '/leaderboards',
     icon: Trophy,
-    roles: ['agent', 'leadership', 'supervisor', 'executive'] as UserRole[],
+    roles: ['agent', 'leadership', 'supervisor', 'executive', 'admin'] as UserRole[],
   },
   {
     title: 'Commissions',
     href: '/commissions',
     icon: DollarSign,
-    roles: ['agent', 'leadership', 'supervisor', 'executive'] as UserRole[],
+    roles: ['agent', 'leadership', 'supervisor', 'executive', 'admin'] as UserRole[],
   },
   {
     title: 'Clawbacks',
     href: '/clawbacks',
     icon: AlertTriangle,
-    roles: ['agent', 'leadership', 'supervisor', 'executive'] as UserRole[],
+    roles: ['agent', 'leadership', 'supervisor', 'executive', 'admin'] as UserRole[],
   },
 ]
 
@@ -103,24 +103,26 @@ const adminNavItems = [
     title: 'Admin Panel',
     href: '/admin',
     icon: Shield,
-    roles: ['executive'] as UserRole[],
+    roles: ['admin'] as UserRole[],
   },
   {
     title: 'User Management',
     href: '/admin/users',
     icon: Users,
-    roles: ['executive'] as UserRole[],
+    roles: ['admin'] as UserRole[],
   },
   {
     title: 'System Settings',
     href: '/admin/settings',
     icon: Settings,
-    roles: ['executive'] as UserRole[],
+    roles: ['admin'] as UserRole[],
   },
 ]
 
 function getRoleBadgeVariant(role: UserRole) {
   switch (role) {
+    case 'admin':
+      return 'destructive'
     case 'executive':
       return 'default'
     case 'supervisor':
@@ -134,6 +136,8 @@ function getRoleBadgeVariant(role: UserRole) {
 
 function getRoleLabel(role: UserRole) {
   switch (role) {
+    case 'admin':
+      return 'Administrator'
     case 'executive':
       return 'Executive'
     case 'supervisor':
@@ -148,7 +152,7 @@ function getRoleLabel(role: UserRole) {
 export function AppSidebar() {
   const pathname = usePathname()
   const { user, logout, switchRole } = useAuth()
-  const hasAdminAccess = useHasAccess(['executive'])
+  const hasAdminAccess = useHasAccess(['admin'])
 
   const filteredMainNav = mainNavItems.filter(item => {
     if (!user) return false
@@ -290,6 +294,10 @@ export function AppSidebar() {
                 <DropdownMenuItem onClick={() => switchRole('executive')}>
                   <Badge variant="default" className="mr-2">Executive</Badge>
                   Jennifer Martinez
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => switchRole('admin')}>
+                  <Badge variant="destructive" className="mr-2">Admin</Badge>
+                  System Administrator
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout} className="text-destructive">

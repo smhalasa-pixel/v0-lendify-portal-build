@@ -61,12 +61,31 @@ import type { User, UserRole } from '@/lib/types'
 
 function getRoleBadgeVariant(role: UserRole) {
   switch (role) {
+    case 'admin':
+      return 'destructive'
     case 'executive':
+      return 'default'
+    case 'supervisor':
       return 'default'
     case 'leadership':
       return 'secondary'
     default:
       return 'outline'
+  }
+}
+
+function getRoleLabel(role: UserRole) {
+  switch (role) {
+    case 'admin':
+      return 'Administrator'
+    case 'executive':
+      return 'Executive'
+    case 'supervisor':
+      return 'Supervisor'
+    case 'leadership':
+      return 'Team Leader'
+    default:
+      return 'Sales Agent'
   }
 }
 
@@ -90,8 +109,8 @@ export default function UserManagementPage() {
   const [statusFilter, setStatusFilter] = React.useState<string>('all')
   const [isAddUserOpen, setIsAddUserOpen] = React.useState(false)
 
-  // Redirect non-executives
-  if (user?.role !== 'executive') {
+  // Redirect non-admins
+  if (user?.role !== 'admin') {
     return (
       <div className="p-6 flex items-center justify-center min-h-[60vh]">
         <Card className="max-w-md w-full">
@@ -99,7 +118,7 @@ export default function UserManagementPage() {
             <Shield className="size-12 mx-auto text-muted-foreground mb-4" />
             <h2 className="text-xl font-semibold mb-2">Access Restricted</h2>
             <p className="text-muted-foreground">
-              User management is only accessible to executives.
+              User management is only accessible to administrators.
             </p>
           </CardContent>
         </Card>
@@ -107,23 +126,31 @@ export default function UserManagementPage() {
     )
   }
 
-  const agents = dataService.getAgents()
+  // Get all users, not just agents
+  const allUsers = React.useMemo(() => {
+    const agents = dataService.getAgents()
+    const teamLeads = dataService.getTeamLeads()
+    const supervisors = dataService.getSupervisors()
+    // Get executives and admins from mockUsers
+    const { mockUsers } = require('@/lib/mock-data')
+    return mockUsers as User[]
+  }, [])
   const teams = dataService.getTeams()
 
-  // Filter agents
-  const filteredAgents = agents.filter((agent) => {
+  // Filter users
+  const filteredUsers = allUsers.filter((u) => {
     const matchesSearch =
-      agent.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      agent.email.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesRole = roleFilter === 'all' || agent.role === roleFilter
-    const matchesStatus = statusFilter === 'all' || agent.status === statusFilter
+      u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      u.email.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesRole = roleFilter === 'all' || u.role === roleFilter
+    const matchesStatus = statusFilter === 'all' || u.status === statusFilter
     return matchesSearch && matchesRole && matchesStatus
   })
 
   // Stats
-  const activeCount = agents.filter(a => a.status === 'active').length
-  const inactiveCount = agents.filter(a => a.status === 'inactive').length
-  const pendingCount = agents.filter(a => a.status === 'pending').length
+  const activeCount = allUsers.filter(a => a.status === 'active').length
+  const inactiveCount = allUsers.filter(a => a.status === 'inactive').length
+  const pendingCount = allUsers.filter(a => a.status === 'pending').length
 
   return (
     <div className="p-6 space-y-6">
@@ -173,8 +200,10 @@ export default function UserManagementPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="agent">Sales Agent</SelectItem>
-                      <SelectItem value="leadership">Team Leader & Supervisor</SelectItem>
+                      <SelectItem value="leadership">Team Leader</SelectItem>
+                      <SelectItem value="supervisor">Supervisor</SelectItem>
                       <SelectItem value="executive">Executive</SelectItem>
+                      <SelectItem value="admin">Administrator</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -270,8 +299,10 @@ export default function UserManagementPage() {
               <SelectContent>
                 <SelectItem value="all">All Roles</SelectItem>
                 <SelectItem value="agent">Sales Agent</SelectItem>
-                <SelectItem value="leadership">Team Leader & Supervisor</SelectItem>
+                <SelectItem value="leadership">Team Leader</SelectItem>
+                <SelectItem value="supervisor">Supervisor</SelectItem>
                 <SelectItem value="executive">Executive</SelectItem>
+                <SelectItem value="admin">Administrator</SelectItem>
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -292,7 +323,7 @@ export default function UserManagementPage() {
       {/* Users Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Users ({filteredAgents.length})</CardTitle>
+          <CardTitle>Users ({filteredUsers.length})</CardTitle>
           <CardDescription>
             All registered users in the platform
           </CardDescription>
@@ -310,37 +341,37 @@ export default function UserManagementPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredAgents.map((agent) => {
-                const team = teams.find(t => t.id === agent.teamId)
+              {filteredUsers.map((u) => {
+                const team = teams.find(t => t.id === u.teamId)
                 return (
-                  <TableRow key={agent.id}>
+                  <TableRow key={u.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="size-9">
-                          <AvatarImage src={agent.avatar} alt={agent.name} />
+                          <AvatarImage src={u.avatar} alt={u.name} />
                           <AvatarFallback className="text-xs">
-                            {agent.name.split(' ').map(n => n[0]).join('')}
+                            {u.name.split(' ').map(n => n[0]).join('')}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="font-medium">{agent.name}</p>
-                          <p className="text-sm text-muted-foreground">{agent.email}</p>
+                          <p className="font-medium">{u.name}</p>
+                          <p className="text-sm text-muted-foreground">{u.email}</p>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={getRoleBadgeVariant(agent.role)}>
-                        {agent.role === 'agent' ? 'Sales Agent' : agent.role === 'leadership' ? 'Team Leader' : 'Executive'}
+                      <Badge variant={getRoleBadgeVariant(u.role)}>
+                        {getRoleLabel(u.role)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {team?.name || '-'}
+                      {u.teamName || u.teamNames?.join(', ') || '-'}
                     </TableCell>
                     <TableCell>
-                      {getStatusBadge(agent.status)}
+                      {getStatusBadge(u.status)}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {new Date(agent.hireDate).toLocaleDateString()}
+                      {new Date(u.hireDate).toLocaleDateString()}
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>

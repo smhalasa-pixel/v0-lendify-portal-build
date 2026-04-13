@@ -107,6 +107,17 @@ export const mockUsers: User[] = [
     hireDate: '2019-01-10',
     status: 'active',
   },
+  {
+    id: 'user-admin',
+    email: 'admin@lendify.com',
+    name: 'System Administrator',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin',
+    role: 'admin',
+    teamId: undefined,
+    teamName: undefined,
+    hireDate: '2017-01-01',
+    status: 'active',
+  },
 ]
 
 // Mock Commissions

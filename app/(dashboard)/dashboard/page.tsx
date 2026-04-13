@@ -130,6 +130,9 @@ export default function DashboardPage() {
   const isLeadership = user?.role === 'leadership'
   const isSupervisor = user?.role === 'supervisor'
   const isExecutive = user?.role === 'executive'
+  const isAdmin = user?.role === 'admin'
+  // Admin and Executive see the same dashboard view
+  const hasExecutiveView = isExecutive || isAdmin
 
   // Get all team leads and supervisors for filter options - dynamically from dataService
   const teamLeads = React.useMemo(() => dataService.getTeamLeads(), [])
@@ -363,8 +366,8 @@ export default function DashboardPage() {
         agents = dataService.getAgentPerformanceByTeam(user.teamId)
       } else if (isSupervisor && user?.teamIds && user.teamIds.length > 0) {
         agents = dataService.getAgentPerformanceByTeams(user.teamIds)
-      } else if (isExecutive) {
-        agents = dataService.getAgentPerformanceByTeams(allTeamIds)
+} else if (hasExecutiveView) {
+    agents = dataService.getAgentPerformanceByTeams(allTeamIds)
       }
     }
     
@@ -374,7 +377,7 @@ export default function DashboardPage() {
     }
     
     return agents
-  }, [filterType, selectedTeamLead, selectedSupervisor, teamLeads, supervisors, allTeamIds, isLeadership, isSupervisor, isExecutive, user?.teamId, user?.teamIds, selectedAgentId])
+  }, [filterType, selectedTeamLead, selectedSupervisor, teamLeads, supervisors, allTeamIds, isLeadership, isSupervisor, hasExecutiveView, user?.teamId, user?.teamIds, selectedAgentId])
 
   // Dashboard title based on filter AND dropdown selections
   const dashboardTitle = React.useMemo(() => {
@@ -407,8 +410,9 @@ export default function DashboardPage() {
     
     if (isLeadership) return `${user?.teamName || 'Team'} Dashboard`
     if (isSupervisor) return 'Supervisor Dashboard'
+    if (isAdmin) return 'Admin Dashboard'
     return 'Executive Dashboard'
-  }, [isAgent, isLeadership, isSupervisor, filterType, selectedTeamLead, selectedSupervisor, teamLeads, supervisors, user?.teamName, selectedAgentId, selectedTeamId, allAgents])
+  }, [isAgent, isLeadership, isSupervisor, isAdmin, filterType, selectedTeamLead, selectedSupervisor, teamLeads, supervisors, user?.teamName, selectedAgentId, selectedTeamId, allAgents])
 
   // Date slicer states
   const [enrollmentDate, setEnrollmentDate] = React.useState('30d')
