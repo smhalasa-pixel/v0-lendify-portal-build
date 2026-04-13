@@ -39,12 +39,16 @@ function Metric({
   label, 
   value, 
   change, 
-  format: fmt = 'number' 
+  format: fmt = 'number',
+  numerator,
+  denominator,
 }: { 
   label: string
   value: number
   change?: number
   format?: 'currency' | 'number' | 'percentage'
+  numerator?: number
+  denominator?: number
 }) {
   const formatted = React.useMemo(() => {
     if (fmt === 'currency') {
@@ -69,7 +73,20 @@ function Metric({
     return new Intl.NumberFormat('en-US').format(value)
   }, [value, fmt])
 
-  const needsTooltip = fmt === 'currency' && value >= 1000
+  // Show tooltip for currency values >= 1000 OR for percentages with numerator/denominator
+  const needsTooltip = (fmt === 'currency' && value >= 1000) || (fmt === 'percentage' && numerator !== undefined && denominator !== undefined)
+
+  const tooltipContent = React.useMemo(() => {
+    if (fmt === 'percentage' && numerator !== undefined && denominator !== undefined) {
+      return (
+        <div className="text-center">
+          <div className="font-semibold">{numerator} Closed / {denominator} Assigned</div>
+          <div className="text-muted-foreground text-xs mt-0.5">= {value.toFixed(2)}%</div>
+        </div>
+      )
+    }
+    return <span className="font-mono">{fullValue}</span>
+  }, [fmt, numerator, denominator, value, fullValue])
 
   return (
     <div className="flex flex-col gap-0.5">
@@ -83,8 +100,8 @@ function Metric({
                   {formatted}
                 </span>
               </TooltipTrigger>
-              <TooltipContent side="top" className="font-mono text-sm">
-                {fullValue}
+              <TooltipContent side="top" className="text-sm">
+                {tooltipContent}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -250,8 +267,22 @@ export default function DashboardPage() {
                   <DateSelector value={conversionDate} onChange={setConversionDate} id="conversion" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <Metric label="Conv. Rate" value={metrics.conversionRate} change={metrics.conversionRateChange} format="percentage" />
-                  <Metric label="Qualified Conv." value={metrics.qualifiedConversionRate} change={metrics.qualifiedConversionRateChange} format="percentage" />
+                  <Metric 
+                    label="Conv. Rate" 
+                    value={metrics.conversionRate} 
+                    change={metrics.conversionRateChange} 
+                    format="percentage" 
+                    numerator={metrics.conversionClosed}
+                    denominator={metrics.conversionAssigned}
+                  />
+                  <Metric 
+                    label="Qualified Conv." 
+                    value={metrics.qualifiedConversionRate} 
+                    change={metrics.qualifiedConversionRateChange} 
+                    format="percentage"
+                    numerator={metrics.qualifiedClosed}
+                    denominator={metrics.qualifiedAssigned}
+                  />
                 </div>
               </CardContent>
             </Card>

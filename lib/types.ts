@@ -119,8 +119,12 @@ export interface DashboardMetrics {
   // Conversion metrics
   conversionRate: number
   conversionRateChange: number
+  conversionClosed: number // numerator for conversion rate
+  conversionAssigned: number // denominator for conversion rate
   qualifiedConversionRate: number
   qualifiedConversionRateChange: number
+  qualifiedClosed: number // numerator for qualified conversion
+  qualifiedAssigned: number // denominator for qualified conversion
   // Financial metrics
   totalCommissions: number
   commissionsChange: number
