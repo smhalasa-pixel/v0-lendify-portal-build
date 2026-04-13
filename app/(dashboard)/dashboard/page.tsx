@@ -323,7 +323,7 @@ export default function DashboardPage() {
     
     if (selectedTeamLeads.length > 0) {
       const names = selectedTeamLeads.map(id => teamLeads.find(l => l.id === id)?.name).filter(Boolean)
-      parts.push(`${names.length} Team Lead${names.length > 1 ? 's' : ''}`)
+      parts.push(`${names.length} Lead Source${names.length > 1 ? 's' : ''}`)
     }
     if (selectedSupervisors.length > 0) {
       const names = selectedSupervisors.map(id => supervisors.find(s => s.id === id)?.name).filter(Boolean)
@@ -508,12 +508,12 @@ export default function DashboardPage() {
     }
     if (selectedSupervisors.length > 1) return `${selectedSupervisors.length} Supervisors Dashboard`
     
-    // If team leads selected
+    // If lead sources selected
     if (selectedTeamLeads.length === 1) {
       const lead = teamLeads.find(l => l.id === selectedTeamLeads[0])
-      return lead ? `${lead.name}'s Team` : 'Team Lead Dashboard'
+      return lead ? `${lead.name} Dashboard` : 'Lead Source Dashboard'
     }
-    if (selectedTeamLeads.length > 1) return `${selectedTeamLeads.length} Team Leads Dashboard`
+    if (selectedTeamLeads.length > 1) return `${selectedTeamLeads.length} Lead Sources Dashboard`
     
     if (isLeadership) return `${user?.teamName || 'Team'} Dashboard`
     if (isSupervisor) return 'Supervisor Dashboard'
@@ -789,7 +789,7 @@ export default function DashboardPage() {
                           : "text-muted-foreground hover:text-foreground"
                       )}
                     >
-                      {tab === 'team-leads' ? 'Leads' : tab === 'supervisors' ? 'Supervisors' : tab === 'teams' ? 'Teams' : 'Agents'}
+                      {tab === 'team-leads' ? 'Lead Source' : tab === 'supervisors' ? 'Supervisors' : tab === 'teams' ? 'Teams' : 'Agents'}
                       {tab === 'team-leads' && selectedTeamLeads.length > 0 && (
                         <Badge variant="secondary" className="ml-1 text-[9px] px-1 py-0">{selectedTeamLeads.length}</Badge>
                       )}
