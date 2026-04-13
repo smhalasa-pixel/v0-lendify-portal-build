@@ -62,6 +62,17 @@ export function AgentPerformanceTable({
     return 'text-rose-400'
   }
 
+  const getCallQueueTierConfig = (tier: 1 | 2 | 3 | 4 | 5) => {
+    const configs = {
+      1: { label: 'Tier 1', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30', description: 'Priority queue - Top performers' },
+      2: { label: 'Tier 2', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', description: 'High priority queue' },
+      3: { label: 'Tier 3', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30', description: 'Standard queue' },
+      4: { label: 'Tier 4', color: 'bg-orange-500/20 text-orange-400 border-orange-500/30', description: 'Lower priority queue' },
+      5: { label: 'Tier 5', color: 'bg-rose-500/20 text-rose-400 border-rose-500/30', description: 'Needs improvement queue' },
+    }
+    return configs[tier]
+  }
+
   return (
     <Card className="glass-card border-border/40">
       <CardHeader className="pb-3">
@@ -79,6 +90,7 @@ export function AgentPerformanceTable({
                 <TableHead className="text-[10px] uppercase tracking-wider text-center">Conv. Rate</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider text-center">Grade</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider text-center">Pacing</TableHead>
+                <TableHead className="text-[10px] uppercase tracking-wider text-center">Queue</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider text-center">Trend</TableHead>
               </TableRow>
             </TableHeader>
@@ -178,6 +190,24 @@ export function AgentPerformanceTable({
                                 </span>
                               </div>
                             </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <TooltipProvider delayDuration={100}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge 
+                              variant="outline" 
+                              className={cn("text-[10px] font-semibold cursor-help px-1.5 py-0.5", getCallQueueTierConfig(agent.callQueueTier).color)}
+                            >
+                              T{agent.callQueueTier}
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">
+                            <p className="text-xs font-medium">{getCallQueueTierConfig(agent.callQueueTier).label}</p>
+                            <p className="text-xs text-muted-foreground">{getCallQueueTierConfig(agent.callQueueTier).description}</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>

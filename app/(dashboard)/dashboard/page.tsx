@@ -581,6 +581,8 @@ export default function DashboardPage() {
   const [clientsActiveDate, setClientsActiveDate] = React.useState('this-month')
   const [clientsCancelledDate, setClientsCancelledDate] = React.useState('this-month')
   const [cancellationRateDate, setCancellationRateDate] = React.useState('this-month')
+  const [epfsCollectedDate, setEpfsCollectedDate] = React.useState('this-month')
+  const [epfsScheduledDate, setEpfsScheduledDate] = React.useState('this-month')
   
   // Region slicer state - for executive and admin views
   const [selectedRegion, setSelectedRegion] = React.useState<'all' | 'dubai' | 'jordan'>('all')
@@ -1002,6 +1004,14 @@ export default function DashboardPage() {
 
           {/* Chart */}
           <VolumeChart data={volumeData} />
+          
+          {/* EPF KPIs - Executive and Admin only */}
+          {hasExecutiveView && (
+            <div className="grid grid-cols-2 gap-2">
+              <MetricTile label="EPFs Collected" value={metrics.epfsCollected} change={metrics.epfsCollectedChange} dateValue={epfsCollectedDate} onDateChange={setEpfsCollectedDate} />
+              <MetricTile label="EPFs Scheduled" value={metrics.epfsScheduled} change={metrics.epfsScheduledChange} dateValue={epfsScheduledDate} onDateChange={setEpfsScheduledDate} />
+            </div>
+          )}
         </div>
 
         {/* Right Column */}

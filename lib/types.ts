@@ -147,6 +147,11 @@ export interface DashboardMetrics {
   clientsCancelledChange: number
   cancellationRate: number
   cancellationRateChange: number
+  // EPF metrics (Electronic Payment Form)
+  epfsCollected: number
+  epfsCollectedChange: number
+  epfsScheduled: number
+  epfsScheduledChange: number
   // Conversion metrics
   conversionRate: number
   conversionRateChange: number
@@ -207,9 +212,10 @@ export interface AgentPerformance {
   monthlyTargetDebtLoad: number
   pacing: number // overall percentage of target based on time elapsed
   pacingUnits: number // pacing percentage for units
-  pacingDebtLoad: number // pacing percentage for debt load
+pacingDebtLoad: number // pacing percentage for debt load
   trend: 'up' | 'down' | 'same'
-}
+  callQueueTier: 1 | 2 | 3 | 4 | 5 // Call queue priority tier (1 = highest priority)
+  }
 
 export interface ChartDataPoint {
   date: string

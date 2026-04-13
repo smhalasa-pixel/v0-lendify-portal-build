@@ -1131,6 +1131,11 @@ export function getDashboardMetrics(userId?: string, teamId?: string): Dashboard
     clientsCancelledChange: -2.3,
     cancellationRate: 15.0, // 15% cancellation rate
     cancellationRateChange: -1.8,
+    // EPF metrics
+    epfsCollected: Math.round(unitsEnrolled * 0.92), // 92% collection rate
+    epfsCollectedChange: 3.2,
+    epfsScheduled: Math.round(unitsEnrolled * 1.1), // Some scheduled for future
+    epfsScheduledChange: 5.8,
     conversionRate,
     conversionRateChange: 3.5,
     conversionClosed: unitsEnrolled,
@@ -1521,6 +1526,8 @@ export const dataService = {
         pacingUnits,
         pacingDebtLoad,
         trend: leaderboardEntry?.trend || 'same',
+        // Call queue tier based on performance (1 = best performers get priority)
+        callQueueTier: pacing >= 110 ? 1 : pacing >= 95 ? 2 : pacing >= 80 ? 3 : pacing >= 60 ? 4 : 5,
       }
     }).sort((a, b) => b.debtLoadEnrolled - a.debtLoadEnrolled)
   },
