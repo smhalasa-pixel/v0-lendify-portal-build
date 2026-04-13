@@ -243,11 +243,11 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          {/* COMMISSIONS Table */}
-          <CommissionsTable commissions={commissions} clawbacks={clawbacks} />
-
           {/* Chart */}
           <VolumeChart data={volumeData} />
+
+          {/* COMMISSIONS Table - placed after chart for visibility */}
+          <CommissionsTable commissions={commissions} clawbacks={clawbacks} />
         </div>
 
         {/* Right Column - Targets, Search, Announcements */}
