@@ -19,6 +19,12 @@ import { dataService } from '@/lib/mock-data'
 import { DateRangePicker } from '@/components/date-range-picker'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
@@ -289,19 +295,28 @@ export default function LeaderboardsPage() {
                     {entry.conversionRate.toFixed(1)}%
                   </TableCell>
                   <TableCell className="text-center">
-                    <Badge 
-                      variant="outline" 
-                      className={cn(
-                        "font-semibold",
-                        entry.performanceGrade.startsWith('A') && "border-emerald-500 text-emerald-500 bg-emerald-500/10",
-                        entry.performanceGrade.startsWith('B') && "border-blue-500 text-blue-500 bg-blue-500/10",
-                        entry.performanceGrade.startsWith('C') && "border-amber-500 text-amber-500 bg-amber-500/10",
-                        entry.performanceGrade.startsWith('D') && "border-orange-500 text-orange-500 bg-orange-500/10",
-                        entry.performanceGrade === 'F' && "border-red-500 text-red-500 bg-red-500/10"
-                      )}
-                    >
-                      {entry.performanceGrade}
-                    </Badge>
+                    <TooltipProvider delayDuration={100}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge 
+                            variant="outline" 
+                            className={cn(
+                              "font-semibold cursor-help",
+                              entry.performanceGrade.startsWith('A') && "border-emerald-500 text-emerald-500 bg-emerald-500/10",
+                              entry.performanceGrade.startsWith('B') && "border-blue-500 text-blue-500 bg-blue-500/10",
+                              entry.performanceGrade.startsWith('C') && "border-amber-500 text-amber-500 bg-amber-500/10",
+                              entry.performanceGrade.startsWith('D') && "border-orange-500 text-orange-500 bg-orange-500/10",
+                              entry.performanceGrade === 'F' && "border-red-500 text-red-500 bg-red-500/10"
+                            )}
+                          >
+                            {entry.performanceGrade}
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-[200px] text-center">
+                          <p className="text-xs">Based on weighted performance metrics and pacing towards monthly target</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </TableCell>
                   <TableCell className="text-center">
                     <div className="flex items-center justify-center gap-1">
