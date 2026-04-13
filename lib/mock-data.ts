@@ -1106,19 +1106,46 @@ export const dataService = {
     if (!userId) return mockTasks
     
     const user = mockUsers.find(u => u.id === userId)
+    if (!user) return []
+    
+    // Role hierarchy: executive > leadership > agent
+    // Higher roles can see tasks assigned to lower roles in their chain
+    const roleHierarchy = { executive: 3, leadership: 2, agent: 1 }
+    const userRoleLevel = roleHierarchy[user.role] || 1
     
     return mockTasks.filter(task => {
       // Department-wide tasks are visible to everyone
       if (task.assignmentType === 'department') return true
       
-      // Team tasks are visible to team members
+      // Team tasks
       if (task.assignmentType === 'team') {
-        return task.assignedToTeamId === user?.teamId
+        // Executives see all team tasks
+        if (user.role === 'executive') return true
+        // Leadership/agents only see their own team's tasks
+        return task.assignedToTeamId === user.teamId
       }
       
-      // Individual tasks
+      // Individual tasks - hierarchical visibility
       if (task.assignmentType === 'individual') {
-        return task.assignedToId === userId
+        // If task is assigned to current user, they see it
+        if (task.assignedToId === userId) return true
+        
+        // Get the assigned user to check hierarchy
+        const assignedUser = mockUsers.find(u => u.id === task.assignedToId)
+        if (!assignedUser) return false
+        
+        const assignedRoleLevel = roleHierarchy[assignedUser.role] || 1
+        
+        // Executives can see all individual tasks
+        if (user.role === 'executive') return true
+        
+        // Leadership can see tasks assigned to agents on their team
+        if (user.role === 'leadership' && assignedUser.role === 'agent') {
+          return assignedUser.teamId === user.teamId
+        }
+        
+        // Agents can only see tasks assigned directly to them (handled above)
+        return false
       }
       
       return false
