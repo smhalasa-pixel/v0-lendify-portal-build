@@ -43,6 +43,7 @@ import { AnnouncementsList } from '@/components/dashboard/announcements-list'
 import { TeamPerformanceTable } from '@/components/dashboard/team-performance-table'
 import { AgentPerformanceTable } from '@/components/dashboard/agent-performance-table'
 import { cn } from '@/lib/utils'
+import { CurrencyDisplay } from '@/components/ui/currency-display'
 import type { DateRange } from 'react-day-picker'
 
 // Compact metric display with hover tooltip for full value
