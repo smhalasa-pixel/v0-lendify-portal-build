@@ -27,6 +27,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { useAuth } from '@/lib/auth-context'
 import { dataService } from '@/lib/mock-data'
 import { VolumeChart } from '@/components/dashboard/volume-chart'
@@ -749,35 +757,54 @@ export default function DashboardPage() {
         
         <div className="flex items-center gap-2 flex-wrap">
           {/* Global Date Slicer */}
-          <Popover open={showGlobalCustomPicker} onOpenChange={setShowGlobalCustomPicker}>
-            <div className="flex items-center gap-1.5 bg-muted/50 rounded-lg p-1.5">
-              <CalendarIcon className="size-3.5 text-muted-foreground ml-1" />
-              <Select value={globalDateFilter} onValueChange={applyGlobalDate}>
-                <SelectTrigger className="h-7 text-xs w-auto min-w-[100px] bg-background border-0">
-                  <SelectValue>
-                    {globalDateFilter === 'custom' && globalCustomDateRange?.from && globalCustomDateRange?.to
-                      ? `${format(globalCustomDateRange.from, 'MMM d')} - ${format(globalCustomDateRange.to, 'MMM d')}`
-                      : dateOptions.find(o => o.value === globalDateFilter)?.label
-                    }
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {dateOptions.map(opt => (
-                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {globalDateFilter === 'custom' && (
-                <PopoverTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-6 px-1.5 text-xs">
-                    <CalendarIcon className="size-3" />
-                  </Button>
-                </PopoverTrigger>
-              )}
-            </div>
-            <PopoverContent className="w-auto p-3" align="end">
-              <div className="space-y-3">
-                <div className="text-sm font-medium">Select Date Range</div>
+          <div className="flex items-center gap-1.5 bg-muted/50 rounded-lg p-1.5">
+            <CalendarIcon className="size-3.5 text-muted-foreground ml-1" />
+            <Select 
+              value={globalDateFilter} 
+              onValueChange={(val) => {
+                if (val === 'custom') {
+                  setShowGlobalCustomPicker(true)
+                } else {
+                  applyGlobalDate(val)
+                }
+              }}
+            >
+              <SelectTrigger className="h-7 text-xs w-auto min-w-[100px] bg-background border-0">
+                <SelectValue>
+                  {globalDateFilter === 'custom' && globalCustomDateRange?.from && globalCustomDateRange?.to
+                    ? `${format(globalCustomDateRange.from, 'MMM d')} - ${format(globalCustomDateRange.to, 'MMM d')}`
+                    : dateOptions.find(o => o.value === globalDateFilter)?.label
+                  }
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {dateOptions.map(opt => (
+                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {globalDateFilter === 'custom' && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 px-1.5 text-xs"
+                onClick={() => setShowGlobalCustomPicker(true)}
+              >
+                <CalendarIcon className="size-3" />
+              </Button>
+            )}
+          </div>
+          
+          {/* Custom Date Range Picker Dialog */}
+          <Dialog open={showGlobalCustomPicker} onOpenChange={setShowGlobalCustomPicker}>
+            <DialogContent className="max-w-fit">
+              <DialogHeader>
+                <DialogTitle>Select Date Range</DialogTitle>
+                <DialogDescription>
+                  Choose a custom date range to apply to all metrics
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4">
                 <Calendar
                   mode="range"
                   selected={globalCustomDateRange}
@@ -785,22 +812,22 @@ export default function DashboardPage() {
                   numberOfMonths={2}
                   className="rounded-md border"
                 />
-                <div className="text-xs text-muted-foreground">
-                  {globalCustomDateRange?.from ? format(globalCustomDateRange.from, 'MMM d, yyyy') : 'Select start'} 
-                  {' - '} 
-                  {globalCustomDateRange?.to ? format(globalCustomDateRange.to, 'MMM d, yyyy') : 'Select end'}
-                </div>
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setShowGlobalCustomPicker(false)}>
-                    Cancel
-                  </Button>
-                  <Button size="sm" onClick={applyGlobalCustomDateRange} disabled={!globalCustomDateRange?.from || !globalCustomDateRange?.to}>
-                    Apply to All
-                  </Button>
-                </div>
               </div>
-            </PopoverContent>
-          </Popover>
+              <div className="text-sm text-muted-foreground text-center">
+                {globalCustomDateRange?.from ? format(globalCustomDateRange.from, 'MMM d, yyyy') : 'Select start'} 
+                {' - '} 
+                {globalCustomDateRange?.to ? format(globalCustomDateRange.to, 'MMM d, yyyy') : 'Select end'}
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowGlobalCustomPicker(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={applyGlobalCustomDateRange} disabled={!globalCustomDateRange?.from || !globalCustomDateRange?.to}>
+                  Apply to All
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           
           {/* Region Slicer - Only for Executive and Admin */}
           {hasExecutiveView && (
