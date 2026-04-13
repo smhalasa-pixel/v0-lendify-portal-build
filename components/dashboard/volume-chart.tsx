@@ -44,16 +44,29 @@ const datePresets = [
   { value: '30d', label: '30 Days', days: 30 },
   { value: '60d', label: '60 Days', days: 60 },
   { value: '90d', label: '90 Days', days: 90 },
+  { value: '6m', label: '6 Months', days: 180 },
+  { value: '1y', label: '1 Year', days: 365 },
   { value: 'mtd', label: 'MTD', days: new Date().getDate() },
   { value: 'ytd', label: 'YTD', days: Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 1).getTime()) / (1000 * 60 * 60 * 24)) },
   { value: 'custom', label: 'Custom...', days: 30 },
+]
+
+const viewOptions = [
+  { value: 'daily', label: 'Daily' },
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'monthly', label: 'Monthly' },
+  { value: 'quarterly', label: 'Quarterly' },
+  { value: 'yearly', label: 'Yearly' },
 ]
 
 interface ChartData {
   label: string
   fullDate: string
   value: number
+  date: Date
 }
+
+type ViewType = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly'
 
 function generateMetricData(metric: string, days: number = 30): ChartData[] {
   const data: ChartData[] = []
@@ -95,9 +108,96 @@ function generateMetricData(metric: string, days: number = 30): ChartData[] {
       label,
       fullDate: format(date, 'EEEE, MMMM d, yyyy'),
       value: Math.round(value * 100) / 100,
+      date: new Date(date),
     })
   }
   return data
+}
+
+function aggregateData(data: ChartData[], view: ViewType): ChartData[] {
+  if (view === 'daily') return data
+
+  const groups: Map<string, ChartData[]> = new Map()
+
+  data.forEach((point) => {
+    let key: string
+    const d = point.date
+
+    switch (view) {
+      case 'weekly': {
+        // Get start of week (Sunday)
+        const startOfWeek = new Date(d)
+        startOfWeek.setDate(d.getDate() - d.getDay())
+        key = format(startOfWeek, 'yyyy-MM-dd')
+        break
+      }
+      case 'monthly':
+        key = format(d, 'yyyy-MM')
+        break
+      case 'quarterly': {
+        const quarter = Math.floor(d.getMonth() / 3) + 1
+        key = `${d.getFullYear()}-Q${quarter}`
+        break
+      }
+      case 'yearly':
+        key = format(d, 'yyyy')
+        break
+      default:
+        key = format(d, 'yyyy-MM-dd')
+    }
+
+    if (!groups.has(key)) {
+      groups.set(key, [])
+    }
+    groups.get(key)!.push(point)
+  })
+
+  const aggregated: ChartData[] = []
+
+  groups.forEach((points, key) => {
+    const total = points.reduce((sum, p) => sum + p.value, 0)
+    const firstDate = points[0].date
+    const lastDate = points[points.length - 1].date
+
+    let label: string
+    let fullDate: string
+
+    switch (view) {
+      case 'weekly':
+        label = format(firstDate, 'MMM d')
+        fullDate = `Week of ${format(firstDate, 'MMMM d, yyyy')}`
+        break
+      case 'monthly':
+        label = format(firstDate, 'MMM yyyy')
+        fullDate = format(firstDate, 'MMMM yyyy')
+        break
+      case 'quarterly': {
+        const quarter = Math.floor(firstDate.getMonth() / 3) + 1
+        label = `Q${quarter} ${format(firstDate, 'yyyy')}`
+        fullDate = `Q${quarter} ${format(firstDate, 'yyyy')} (${format(firstDate, 'MMM')} - ${format(new Date(firstDate.getFullYear(), firstDate.getMonth() + 2, 1), 'MMM')})`
+        break
+      }
+      case 'yearly':
+        label = format(firstDate, 'yyyy')
+        fullDate = format(firstDate, 'yyyy')
+        break
+      default:
+        label = format(firstDate, 'MMM d')
+        fullDate = format(firstDate, 'MMMM d, yyyy')
+    }
+
+    aggregated.push({
+      label,
+      fullDate,
+      value: Math.round(total * 100) / 100,
+      date: firstDate,
+    })
+  })
+
+  // Sort by date
+  aggregated.sort((a, b) => a.date.getTime() - b.date.getTime())
+
+  return aggregated
 }
 
 function formatTickValue(value: number, format: string): string {
@@ -163,6 +263,7 @@ export function VolumeChart({ data: _initialData }: VolumeChartProps) {
   const [selectedMetric, setSelectedMetric] = React.useState('debtLoadEnrolled')
   const [chartType, setChartType] = React.useState<'area' | 'bar'>('area')
   const [dateRange, setDateRange] = React.useState('30d')
+  const [viewType, setViewType] = React.useState<ViewType>('daily')
   const [customRange, setCustomRange] = React.useState<{ from?: Date; to?: Date }>({})
   const [calendarOpen, setCalendarOpen] = React.useState(false)
 
@@ -183,9 +284,13 @@ export function VolumeChart({ data: _initialData }: VolumeChartProps) {
     return currentDatePreset.label
   }, [dateRange, customRange, currentDatePreset])
   
-  const chartData = React.useMemo(() => {
+  const rawData = React.useMemo(() => {
     return generateMetricData(selectedMetric, days)
   }, [selectedMetric, days])
+
+  const chartData = React.useMemo(() => {
+    return aggregateData(rawData, viewType)
+  }, [rawData, viewType])
 
   return (
     <div className="glass-card rounded-lg border border-border/40">
@@ -197,6 +302,24 @@ export function VolumeChart({ data: _initialData }: VolumeChartProps) {
           <span className="text-xs text-muted-foreground">{dateLabel}</span>
         </div>
         <div className="flex items-center gap-2">
+          {/* View Aggregation Selector */}
+          <div className="flex items-center bg-muted/30 rounded-md p-0.5">
+            {viewOptions.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => setViewType(option.value as ViewType)}
+                className={cn(
+                  "px-2 py-1 text-[10px] font-medium rounded-sm transition-all",
+                  viewType === option.value 
+                    ? "bg-background text-foreground shadow-sm" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+
           {/* Date Range Selector */}
           <Select value={dateRange} onValueChange={(val) => {
             if (val === 'custom') {
@@ -314,8 +437,8 @@ export function VolumeChart({ data: _initialData }: VolumeChartProps) {
                   tickMargin={12}
                   fontSize={10}
                   tick={{ fill: 'hsl(var(--muted-foreground))', fontWeight: 500 }}
-                  interval={days <= 14 ? 0 : days <= 30 ? 'preserveStartEnd' : 'equidistantPreserveStart'}
-                  minTickGap={days <= 14 ? 30 : 50}
+                  interval={viewType !== 'daily' || chartData.length <= 14 ? 0 : chartData.length <= 30 ? 'preserveStartEnd' : 'equidistantPreserveStart'}
+                  minTickGap={chartData.length <= 14 ? 30 : 50}
                 />
                 <YAxis
                   tickLine={false}
@@ -366,8 +489,8 @@ export function VolumeChart({ data: _initialData }: VolumeChartProps) {
                   tickMargin={12}
                   fontSize={10}
                   tick={{ fill: 'hsl(var(--muted-foreground))', fontWeight: 500 }}
-                  interval={days <= 14 ? 0 : days <= 30 ? 'preserveStartEnd' : 'equidistantPreserveStart'}
-                  minTickGap={days <= 14 ? 30 : 50}
+                  interval={viewType !== 'daily' || chartData.length <= 14 ? 0 : chartData.length <= 30 ? 'preserveStartEnd' : 'equidistantPreserveStart'}
+                  minTickGap={chartData.length <= 14 ? 30 : 50}
                 />
                 <YAxis
                   tickLine={false}
