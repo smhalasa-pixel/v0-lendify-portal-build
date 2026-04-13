@@ -1,16 +1,25 @@
 'use client'
 
 import * as React from 'react'
-import { TrendingUp, TrendingDown, Minus, ChevronDown } from 'lucide-react'
+import { TrendingUp, TrendingDown, Minus, ChevronDown, Calendar } from 'lucide-react'
 import { Area, AreaChart, ResponsiveContainer } from 'recharts'
+import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import { Calendar as CalendarComponent } from '@/components/ui/calendar'
 import { Button } from '@/components/ui/button'
+import type { DateRange } from 'react-day-picker'
 
 interface KPICardProps {
   title: string
@@ -24,12 +33,16 @@ interface KPICardProps {
   showDateFilter?: boolean
 }
 
-const dateRanges = [
-  { label: '7D', value: '7d' },
-  { label: '30D', value: '30d' },
-  { label: '90D', value: '90d' },
-  { label: 'YTD', value: 'ytd' },
-  { label: '1Y', value: '1y' },
+const presetRanges = [
+  { label: 'Today', value: 'today' },
+  { label: 'Yesterday', value: 'yesterday' },
+  { label: 'Last 7 Days', value: '7d' },
+  { label: 'Last 30 Days', value: '30d' },
+  { label: 'Last 90 Days', value: '90d' },
+  { label: 'This Month', value: 'mtd' },
+  { label: 'Last Month', value: 'last_month' },
+  { label: 'Year to Date', value: 'ytd' },
+  { label: 'Last Year', value: '1y' },
 ]
 
 const colorMap = {
@@ -40,10 +53,10 @@ const colorMap = {
   rose: { line: '#f43f5e', gradient: 'rgba(244, 63, 94, 0.3)' },
 }
 
-function formatValue(value: string | number, format?: 'currency' | 'number' | 'percentage'): string {
+function formatValue(value: string | number, formatType?: 'currency' | 'number' | 'percentage'): string {
   if (typeof value === 'string') return value
   
-  switch (format) {
+  switch (formatType) {
     case 'currency':
       if (value >= 1000000) {
         return `$${(value / 1000000).toFixed(1)}M`
@@ -76,23 +89,51 @@ function generateSparklineData(length: number = 12): { value: number }[] {
   return data
 }
 
+function getPresetLabel(preset: string): string {
+  return presetRanges.find(r => r.value === preset)?.label || preset
+}
+
 export function KPICard({
   title,
   value,
   change,
   changeLabel = 'vs last period',
   icon,
-  format = 'number',
+  format: formatType = 'number',
   color = 'purple',
   showDateFilter = true,
 }: KPICardProps) {
-  const [selectedRange, setSelectedRange] = React.useState('30d')
+  const [selectedPreset, setSelectedPreset] = React.useState('30d')
+  const [customRange, setCustomRange] = React.useState<DateRange | undefined>()
+  const [isCustom, setIsCustom] = React.useState(false)
+  const [calendarOpen, setCalendarOpen] = React.useState(false)
   const sparklineData = React.useMemo(() => generateSparklineData(12), [])
   
   const isPositive = change !== undefined && change > 0
   const isNegative = change !== undefined && change < 0
   const isNeutral = change === 0
   const colors = colorMap[color]
+
+  const handlePresetSelect = (preset: string) => {
+    setSelectedPreset(preset)
+    setIsCustom(false)
+    setCustomRange(undefined)
+  }
+
+  const handleCustomRangeSelect = (range: DateRange | undefined) => {
+    setCustomRange(range)
+    if (range?.from && range?.to) {
+      setIsCustom(true)
+      setCalendarOpen(false)
+    }
+  }
+
+  const displayLabel = React.useMemo(() => {
+    if (isCustom && customRange?.from && customRange?.to) {
+      return `${format(customRange.from, 'MMM d')} - ${format(customRange.to, 'MMM d')}`
+    }
+    return getPresetLabel(selectedPreset)
+  }, [isCustom, customRange, selectedPreset])
 
   return (
     <div className="glass-card rounded-lg p-4 h-full flex flex-col">
@@ -109,34 +150,61 @@ export function KPICard({
           </span>
         </div>
         {showDateFilter && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground">
-                {dateRanges.find(r => r.value === selectedRange)?.label}
-                <ChevronDown className="ml-1 size-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-[80px]">
-              {dateRanges.map((range) => (
-                <DropdownMenuItem
-                  key={range.value}
-                  onClick={() => setSelectedRange(range.value)}
-                  className={cn(
-                    'text-xs',
-                    selectedRange === range.value && 'bg-accent'
-                  )}
-                >
-                  {range.label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground">
+                  {displayLabel}
+                  <ChevronDown className="ml-1 size-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-[160px]">
+                {presetRanges.map((range) => (
+                  <DropdownMenuItem
+                    key={range.value}
+                    onClick={() => handlePresetSelect(range.value)}
+                    className={cn(
+                      'text-xs',
+                      !isCustom && selectedPreset === range.value && 'bg-accent'
+                    )}
+                  >
+                    {range.label}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <PopoverTrigger asChild>
+                  <DropdownMenuItem
+                    className={cn(
+                      'text-xs',
+                      isCustom && 'bg-accent'
+                    )}
+                    onSelect={(e) => {
+                      e.preventDefault()
+                      setCalendarOpen(true)
+                    }}
+                  >
+                    <Calendar className="mr-2 size-3" />
+                    Custom Range...
+                  </DropdownMenuItem>
+                </PopoverTrigger>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <PopoverContent className="w-auto p-0" align="end">
+              <CalendarComponent
+                mode="range"
+                selected={customRange}
+                onSelect={handleCustomRangeSelect}
+                numberOfMonths={2}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
         )}
       </div>
       
       {/* Value */}
       <div className="text-2xl font-bold tracking-tight text-foreground">
-        {formatValue(value, format)}
+        {formatValue(value, formatType)}
       </div>
       
       {/* Change indicator */}
