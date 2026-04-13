@@ -15,6 +15,7 @@ import type {
   PipelineLoan,
   DashboardWidget,
   DashboardLayout,
+  Task,
 } from './types'
 
 // Helper functions
@@ -661,6 +662,120 @@ export const mockPipeline: PipelineLoan[] = [
   },
 ]
 
+// Mock Tasks
+export const mockTasks: Task[] = [
+  {
+    id: 'task-1',
+    title: 'Complete Q1 Compliance Training',
+    description: 'All agents must complete the updated TRID compliance training module. Access the training through the Knowledge Base section.',
+    priority: 'urgent',
+    status: 'pending',
+    dueDate: '2024-03-31',
+    dueTime: '17:00',
+    createdDate: '2024-02-15',
+    createdById: 'user-3',
+    createdByName: 'Jennifer Martinez',
+    assignmentType: 'department',
+    category: 'compliance',
+    completedBy: ['user-1'],
+  },
+  {
+    id: 'task-2',
+    title: 'Submit Weekly Pipeline Report',
+    description: 'Please submit your weekly pipeline report by end of day Friday. Include all active leads and expected close dates.',
+    priority: 'high',
+    status: 'pending',
+    dueDate: '2024-02-16',
+    dueTime: '18:00',
+    createdDate: '2024-02-12',
+    createdById: 'user-2',
+    createdByName: 'Michael Chen',
+    assignmentType: 'team',
+    assignedToTeamId: 'team-1',
+    assignedToTeamName: 'West Coast Team',
+    category: 'administrative',
+    completedBy: [],
+  },
+  {
+    id: 'task-3',
+    title: 'Follow up with Thompson loan',
+    description: 'The Thompson loan is pending final docs. Please follow up with the borrower to get the missing W2 forms.',
+    priority: 'high',
+    status: 'in_progress',
+    dueDate: '2024-02-18',
+    dueTime: '12:00',
+    createdDate: '2024-02-14',
+    createdById: 'user-2',
+    createdByName: 'Michael Chen',
+    assignmentType: 'individual',
+    assignedToId: 'user-1',
+    assignedToName: 'Sarah Johnson',
+    category: 'sales',
+  },
+  {
+    id: 'task-4',
+    title: 'Review new Jumbo product guidelines',
+    description: 'Review the new Jumbo Elite product guidelines and be prepared to discuss in the team meeting.',
+    priority: 'medium',
+    status: 'completed',
+    dueDate: '2024-02-10',
+    createdDate: '2024-02-05',
+    completedDate: '2024-02-09',
+    createdById: 'user-3',
+    createdByName: 'Jennifer Martinez',
+    assignmentType: 'department',
+    category: 'training',
+    completedBy: ['user-1', 'user-4', 'user-5'],
+  },
+  {
+    id: 'task-5',
+    title: 'Update CRM contact records',
+    description: 'Ensure all client contact information is up to date in the CRM system.',
+    priority: 'low',
+    status: 'pending',
+    dueDate: '2024-02-28',
+    createdDate: '2024-02-10',
+    createdById: 'user-6',
+    createdByName: 'James Taylor',
+    assignmentType: 'team',
+    assignedToTeamId: 'team-2',
+    assignedToTeamName: 'East Coast Team',
+    category: 'administrative',
+    completedBy: [],
+  },
+  {
+    id: 'task-6',
+    title: 'Call back referral from Garcia loan',
+    description: 'Kevin Garcia mentioned his brother is looking to refinance. Please reach out to schedule a consultation.',
+    priority: 'medium',
+    status: 'pending',
+    dueDate: '2024-02-20',
+    dueTime: '15:00',
+    createdDate: '2024-02-14',
+    createdById: 'user-6',
+    createdByName: 'James Taylor',
+    assignmentType: 'individual',
+    assignedToId: 'user-5',
+    assignedToName: 'Emily Brown',
+    category: 'sales',
+  },
+  {
+    id: 'task-7',
+    title: 'Attend monthly sales meeting',
+    description: 'Mandatory monthly sales meeting to discuss Q1 goals and new product launches.',
+    priority: 'high',
+    status: 'pending',
+    dueDate: '2024-02-22',
+    dueTime: '10:00',
+    createdDate: '2024-02-01',
+    createdById: 'user-3',
+    createdByName: 'Jennifer Martinez',
+    assignmentType: 'department',
+    category: 'training',
+    completedBy: [],
+  },
+]
+
 // Generate chart data for various time periods
 export function generateVolumeChartData(days: number): ChartDataPoint[] {
   const data: ChartDataPoint[] = []
@@ -985,4 +1100,79 @@ export const dataService = {
   // Chart data
   getVolumeChartData: (days: number = 30) => generateVolumeChartData(days),
   getUnitsChartData: (days: number = 30) => generateUnitsChartData(days),
+  
+  // Tasks
+  getTasks: (userId?: string, teamId?: string): Task[] => {
+    if (!userId) return mockTasks
+    
+    const user = mockUsers.find(u => u.id === userId)
+    
+    return mockTasks.filter(task => {
+      // Department-wide tasks are visible to everyone
+      if (task.assignmentType === 'department') return true
+      
+      // Team tasks are visible to team members
+      if (task.assignmentType === 'team') {
+        return task.assignedToTeamId === user?.teamId
+      }
+      
+      // Individual tasks
+      if (task.assignmentType === 'individual') {
+        return task.assignedToId === userId
+      }
+      
+      return false
+    }).sort((a, b) => {
+      // Sort by status (pending/in_progress first), then by due date
+      const statusOrder = { overdue: 0, pending: 1, in_progress: 2, completed: 3 }
+      if (statusOrder[a.status] !== statusOrder[b.status]) {
+        return statusOrder[a.status] - statusOrder[b.status]
+      }
+      return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+    })
+  },
+  
+  getTaskById: (taskId: string): Task | undefined => {
+    return mockTasks.find(t => t.id === taskId)
+  },
+  
+  createTask: (task: Omit<Task, 'id' | 'createdDate' | 'completedBy'>): Task => {
+    const newTask: Task = {
+      ...task,
+      id: `task-${randomId()}`,
+      createdDate: new Date().toISOString(),
+      completedBy: [],
+    }
+    mockTasks.push(newTask)
+    return newTask
+  },
+  
+  updateTaskStatus: (taskId: string, status: Task['status'], userId?: string): void => {
+    const task = mockTasks.find(t => t.id === taskId)
+    if (task) {
+      task.status = status
+      if (status === 'completed') {
+        task.completedDate = new Date().toISOString()
+        if (userId && task.completedBy && !task.completedBy.includes(userId)) {
+          task.completedBy.push(userId)
+        }
+      }
+    }
+  },
+  
+  markTaskComplete: (taskId: string, userId: string): void => {
+    const task = mockTasks.find(t => t.id === taskId)
+    if (task) {
+      if (task.assignmentType === 'individual') {
+        task.status = 'completed'
+        task.completedDate = new Date().toISOString()
+      } else {
+        // For team/department tasks, track individual completions
+        if (!task.completedBy) task.completedBy = []
+        if (!task.completedBy.includes(userId)) {
+          task.completedBy.push(userId)
+        }
+      }
+    }
+  },
 }

@@ -17,6 +17,7 @@ import {
   ChevronDown,
   LogOut,
   Shield,
+  ClipboardList,
 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
@@ -81,6 +82,12 @@ const mainNavItems = [
     title: 'Scripts',
     href: '/scripts',
     icon: FileText,
+    roles: ['agent', 'leadership', 'executive'] as UserRole[],
+  },
+  {
+    title: 'To Do List',
+    href: '/tasks',
+    icon: ClipboardList,
     roles: ['agent', 'leadership', 'executive'] as UserRole[],
   },
   {

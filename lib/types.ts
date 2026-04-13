@@ -192,3 +192,26 @@ export interface DateRange {
   to: Date
   preset?: 'today' | 'yesterday' | 'last7' | 'last30' | 'thisMonth' | 'lastMonth' | 'thisQuarter' | 'thisYear' | 'custom'
 }
+
+export interface Task {
+  id: string
+  title: string
+  description: string
+  priority: 'low' | 'medium' | 'high' | 'urgent'
+  status: 'pending' | 'in_progress' | 'completed' | 'overdue'
+  dueDate: string
+  dueTime?: string
+  createdDate: string
+  completedDate?: string
+  createdById: string
+  createdByName: string
+  // Assignment - can be to individual, team, or all (department-wide)
+  assignmentType: 'individual' | 'team' | 'department'
+  assignedToId?: string // User ID if individual
+  assignedToName?: string // User name if individual
+  assignedToTeamId?: string // Team ID if team
+  assignedToTeamName?: string // Team name if team
+  // Completion tracking for team/department tasks
+  completedBy?: string[] // Array of user IDs who completed
+  category: 'compliance' | 'training' | 'sales' | 'administrative' | 'other'
+}
