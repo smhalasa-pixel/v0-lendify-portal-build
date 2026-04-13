@@ -62,7 +62,7 @@ export function AnnouncementsList({
         </Button>
       </CardHeader>
       <CardContent className="p-3">
-        <div className="space-y-2">
+        <div className="space-y-2 max-h-[280px] overflow-y-auto">
           {displayAnnouncements.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
               <Megaphone className="size-8 mb-2 opacity-50" />
