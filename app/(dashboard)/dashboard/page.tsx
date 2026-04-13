@@ -2,20 +2,12 @@
 
 import * as React from 'react'
 import { format } from 'date-fns'
-import { CalendarIcon } from 'lucide-react'
-import {
-  DollarSign,
-  FileText,
-  TrendingUp,
-  TrendingDown,
-  Briefcase,
-  Target,
-  CheckCircle,
-  Percent,
-  ArrowRightLeft,
-} from 'lucide-react'
+import { CalendarIcon, TrendingUp, TrendingDown, AlertTriangle, Target } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
+import { Progress } from '@/components/ui/progress'
+import { Badge } from '@/components/ui/badge'
 import {
   Popover,
   PopoverContent,
@@ -28,15 +20,54 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuth } from '@/lib/auth-context'
 import { dataService } from '@/lib/mock-data'
-import { KPICard } from '@/components/dashboard/kpi-card'
-import { ProgressCard } from '@/components/dashboard/progress-card'
 import { VolumeChart } from '@/components/dashboard/volume-chart'
 import { ClientSearch } from '@/components/dashboard/client-search'
 import { AnnouncementsList } from '@/components/dashboard/announcements-list'
 import { TeamPerformanceTable } from '@/components/dashboard/team-performance-table'
+import { cn } from '@/lib/utils'
+
+// Compact metric display
+function Metric({ 
+  label, 
+  value, 
+  change, 
+  format: fmt = 'number' 
+}: { 
+  label: string
+  value: number
+  change?: number
+  format?: 'currency' | 'number' | 'percentage'
+}) {
+  const formatted = React.useMemo(() => {
+    if (fmt === 'currency') {
+      if (value >= 1000000) return `$${(value / 1000000).toFixed(2)}M`
+      if (value >= 1000) return `$${(value / 1000).toFixed(1)}K`
+      return `$${value.toLocaleString()}`
+    }
+    if (fmt === 'percentage') return `${value.toFixed(1)}%`
+    return value.toLocaleString()
+  }, [value, fmt])
+
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</span>
+      <div className="flex items-baseline gap-1.5">
+        <span className="text-base font-semibold text-foreground tabular-nums">{formatted}</span>
+        {change !== undefined && (
+          <span className={cn(
+            "text-[10px] font-medium flex items-center gap-0.5",
+            change > 0 ? "text-emerald-400" : change < 0 ? "text-rose-400" : "text-muted-foreground"
+          )}>
+            {change > 0 ? <TrendingUp className="size-2.5" /> : change < 0 ? <TrendingDown className="size-2.5" /> : null}
+            {change > 0 && '+'}{change.toFixed(1)}%
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
 
 export default function DashboardPage() {
   const { user } = useAuth()
@@ -46,300 +77,165 @@ export default function DashboardPage() {
   const isExecutive = user?.role === 'executive'
 
   const metrics = React.useMemo(() => {
-    if (isAgent && user) {
-      return dataService.getDashboardMetrics(user.id)
-    }
-    if (isLeadership && user?.teamId) {
-      return dataService.getDashboardMetrics(undefined, user.teamId)
-    }
+    if (isAgent && user) return dataService.getDashboardMetrics(user.id)
+    if (isLeadership && user?.teamId) return dataService.getDashboardMetrics(undefined, user.teamId)
     return dataService.getDashboardMetrics()
   }, [user, isAgent, isLeadership])
 
   const pipeline = React.useMemo(() => {
-    if (isAgent && user) {
-      return dataService.getPipeline(user.id)
-    }
+    if (isAgent && user) return dataService.getPipeline(user.id)
     return dataService.getPipeline()
   }, [user, isAgent])
 
   const volumeData = React.useMemo(() => dataService.getVolumeChartData(30), [])
   const announcements = React.useMemo(() => dataService.getAnnouncements(), [])
-
   const teamMetrics = React.useMemo(() => {
-    if (isLeadership || isExecutive) {
-      return dataService.getTeamMetrics()
-    }
+    if (isLeadership || isExecutive) return dataService.getTeamMetrics()
     return []
   }, [isLeadership, isExecutive])
 
-  const dashboardTitle = React.useMemo(() => {
-    if (isAgent) return 'My Dashboard'
-    if (isLeadership) return `${user?.teamName || 'Team'} Dashboard`
-    return 'Executive Dashboard'
-  }, [isAgent, isLeadership, user?.teamName])
+  const dashboardTitle = isAgent ? 'My Dashboard' : isLeadership ? `${user?.teamName || 'Team'} Dashboard` : 'Executive Dashboard'
 
-  const dashboardDescription = React.useMemo(() => {
-    if (isAgent) return 'Your personal performance metrics and pipeline'
-    if (isLeadership) return 'Team performance overview and metrics'
-    return 'Organization-wide performance and insights'
-  }, [isAgent, isLeadership])
+  // Commission date slicer
+  const [commissionDate, setCommissionDate] = React.useState('30d')
+  const [customRange, setCustomRange] = React.useState<{ from?: Date; to?: Date }>({})
+  const [calendarOpen, setCalendarOpen] = React.useState(false)
 
-  // Format tier display
-  const tierLabels = ['Bronze', 'Silver', 'Gold']
+  // Progress calculations
+  const now = new Date()
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+  const expectedProgress = (now.getDate() / daysInMonth) * 100
+  const unitsProgress = Math.min((metrics.unitsEnrolled / metrics.monthlyTargetUnits) * 100, 100)
+  const debtProgress = Math.min((metrics.debtLoadEnrolled / metrics.monthlyTargetDebtLoad) * 100, 100)
+  const unitsBehind = unitsProgress < (expectedProgress - 20) && unitsProgress < 100
+  const debtBehind = debtProgress < (expectedProgress - 20) && debtProgress < 100
+  const isPIPRisk = unitsBehind || debtBehind
 
-  // Commission date slicer state
-  const [commissionDatePreset, setCommissionDatePreset] = React.useState('30d')
-  const [commissionCustomRange, setCommissionCustomRange] = React.useState<{
-    from: Date | undefined
-    to: Date | undefined
-  }>({ from: undefined, to: undefined })
-  const [commissionCalendarOpen, setCommissionCalendarOpen] = React.useState(false)
-
-  const commissionDateLabel = React.useMemo(() => {
-    if (commissionDatePreset === 'custom' && commissionCustomRange.from && commissionCustomRange.to) {
-      return `${format(commissionCustomRange.from, 'MMM d, yyyy')} - ${format(commissionCustomRange.to, 'MMM d, yyyy')}`
-    }
-    const labels: Record<string, string> = {
-      'today': 'Today',
-      'yesterday': 'Yesterday',
-      '7d': 'Last 7 Days',
-      '14d': 'Last 14 Days',
-      '30d': 'Last 30 Days',
-      '60d': 'Last 60 Days',
-      '90d': 'Last 90 Days',
-      'mtd': 'Month to Date',
-      'last-month': 'Last Month',
-      'qtd': 'Quarter to Date',
-      'last-quarter': 'Last Quarter',
-      'ytd': 'Year to Date',
-      'last-year': 'Last Year',
-      'all': 'All Time',
-    }
-    return labels[commissionDatePreset] || 'Last 30 Days'
-  }, [commissionDatePreset, commissionCustomRange])
+  const formatCurrency = (val: number) => {
+    if (val >= 1000000) return `$${(val / 1000000).toFixed(2)}M`
+    if (val >= 1000) return `$${(val / 1000).toFixed(0)}K`
+    return `$${val.toLocaleString()}`
+  }
 
   return (
-    <div className="p-4 lg:p-6 space-y-5">
+    <div className="p-4 lg:p-5 space-y-4 max-w-[1600px] mx-auto">
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold tracking-tight text-foreground">
-          {dashboardTitle}
-        </h1>
-        <p className="text-sm text-muted-foreground">{dashboardDescription}</p>
+      <div className="flex items-center justify-between">
+        <h1 className="text-lg font-semibold text-foreground">{dashboardTitle}</h1>
+        <span className="text-xs text-muted-foreground">{format(new Date(), 'EEEE, MMMM d, yyyy')}</span>
       </div>
 
-      {/* Main Grid Layout */}
-      <div className="grid lg:grid-cols-12 gap-4">
+      {/* Main Grid */}
+      <div className="grid lg:grid-cols-3 gap-4">
         
-        {/* Left Column - KPIs */}
-        <div className="lg:col-span-8 space-y-4">
+        {/* Left Column - Metrics */}
+        <div className="lg:col-span-2 space-y-3">
           
-          {/* ENROLLMENTS Section */}
-          <Card className="glass-card border-border/50">
-            <CardHeader className="pb-2 pt-3 px-3">
-              <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Enrollments
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-3 pb-3">
-              <div className="grid grid-cols-2 gap-2">
-                <KPICard
-                  title="Units Enrolled"
-                  value={metrics.unitsEnrolled}
-                  change={metrics.unitsEnrolledChange}
-                  format="number"
-                  icon={<FileText className="size-3" />}
-                  color="blue"
-                  compact
-                />
-                <KPICard
-                  title="Debt Load Enrolled"
-                  value={metrics.debtLoadEnrolled}
-                  change={metrics.debtLoadEnrolledChange}
-                  format="currency"
-                  icon={<DollarSign className="size-3" />}
-                  color="purple"
-                  compact
-                />
+          {/* Row 1: Enrollments + Conversion */}
+          <div className="grid md:grid-cols-2 gap-3">
+            <Card className="glass-card border-border/40">
+              <CardContent className="p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Enrollments</span>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <Metric label="Units" value={metrics.unitsEnrolled} change={metrics.unitsEnrolledChange} />
+                  <Metric label="Debt Load" value={metrics.debtLoadEnrolled} change={metrics.debtLoadEnrolledChange} format="currency" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="glass-card border-border/40">
+              <CardContent className="p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Conversion</span>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <Metric label="Conv. Rate" value={metrics.conversionRate} change={metrics.conversionRateChange} format="percentage" />
+                  <Metric label="Qualified Conv." value={metrics.qualifiedConversionRate} change={metrics.qualifiedConversionRateChange} format="percentage" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Row 2: Submissions */}
+          <Card className="glass-card border-border/40">
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Submissions</span>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Metric label="Units" value={metrics.unitsSubmitted} change={metrics.unitsSubmittedChange} />
+                <Metric label="Debt Load" value={metrics.debtLoadSubmitted} change={metrics.debtLoadSubmittedChange} format="currency" />
+                <Metric label="FPC Units" value={metrics.unitsFPC} change={metrics.unitsFPCChange} />
+                <Metric label="FPC Debt" value={metrics.debtLoadFPC} change={metrics.debtLoadFPCChange} format="currency" />
               </div>
             </CardContent>
           </Card>
 
-          {/* CONVERSION Section */}
-          <Card className="glass-card border-border/50">
-            <CardHeader className="pb-2 pt-3 px-3">
-              <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Conversion
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-3 pb-3">
-              <div className="grid grid-cols-2 gap-2">
-                <KPICard
-                  title="Conversion Rate"
-                  value={metrics.conversionRate}
-                  change={metrics.conversionRateChange}
-                  format="percentage"
-                  icon={<Percent className="size-3" />}
-                  color="amber"
-                  compact
-                />
-                <KPICard
-                  title="Qualified Conversion"
-                  value={metrics.qualifiedConversionRate}
-                  change={metrics.qualifiedConversionRateChange}
-                  format="percentage"
-                  icon={<ArrowRightLeft className="size-3" />}
-                  color="emerald"
-                  compact
-                />
+          {/* Row 3: Commissions */}
+          <Card className="glass-card border-border/40">
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Commissions</span>
+                <Select value={commissionDate} onValueChange={(val) => val === 'custom' ? setCalendarOpen(true) : setCommissionDate(val)}>
+                  <SelectTrigger className="h-5 text-[10px] w-auto min-w-[80px] bg-transparent border-border/40 px-2">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="today">Today</SelectItem>
+                    <SelectItem value="yesterday">Yesterday</SelectItem>
+                    <SelectItem value="7d">7 Days</SelectItem>
+                    <SelectItem value="14d">14 Days</SelectItem>
+                    <SelectItem value="30d">30 Days</SelectItem>
+                    <SelectItem value="60d">60 Days</SelectItem>
+                    <SelectItem value="90d">90 Days</SelectItem>
+                    <SelectItem value="mtd">MTD</SelectItem>
+                    <SelectItem value="last-month">Last Month</SelectItem>
+                    <SelectItem value="qtd">QTD</SelectItem>
+                    <SelectItem value="ytd">YTD</SelectItem>
+                    <SelectItem value="last-year">Last Year</SelectItem>
+                    <SelectItem value="all">All Time</SelectItem>
+                    <SelectItem value="custom">Custom...</SelectItem>
+                  </SelectContent>
+                </Select>
+                {commissionDate === 'custom' && (
+                  <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-5 text-[10px] px-2">
+                        <CalendarIcon className="size-3 mr-1" />
+                        {customRange.from && customRange.to 
+                          ? `${format(customRange.from, 'MMM d')} - ${format(customRange.to, 'MMM d')}`
+                          : 'Select'}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="end">
+                      <Calendar
+                        mode="range"
+                        selected={{ from: customRange.from, to: customRange.to }}
+                        onSelect={(range) => {
+                          setCustomRange({ from: range?.from, to: range?.to })
+                          if (range?.from && range?.to) setCalendarOpen(false)
+                        }}
+                        numberOfMonths={2}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                )}
               </div>
-            </CardContent>
-          </Card>
-
-          {/* SUBMISSIONS Section */}
-          <Card className="glass-card border-border/50">
-            <CardHeader className="pb-2 pt-3 px-3">
-              <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Submissions
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-3 pb-3">
-              <div className="grid grid-cols-2 gap-2">
-                <KPICard
-                  title="Units Submitted"
-                  value={metrics.unitsSubmitted}
-                  change={metrics.unitsSubmittedChange}
-                  format="number"
-                  icon={<Briefcase className="size-3" />}
-                  color="blue"
-                  compact
-                />
-                <KPICard
-                  title="Debt Load Submitted"
-                  value={metrics.debtLoadSubmitted}
-                  change={metrics.debtLoadSubmittedChange}
-                  format="currency"
-                  icon={<Target className="size-3" />}
-                  color="purple"
-                  compact
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* COMMISSIONS Section */}
-          <Card className="glass-card border-border/50">
-            <CardHeader className="pb-2 pt-3 px-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Commissions
-                </CardTitle>
-                <div className="flex items-center gap-2">
-                  <Select value={commissionDatePreset} onValueChange={(val) => {
-                    if (val === 'custom') {
-                      setCommissionCalendarOpen(true)
-                    } else {
-                      setCommissionDatePreset(val)
-                    }
-                  }}>
-                    <SelectTrigger className="h-6 text-[10px] w-auto min-w-[90px] bg-muted/50 border-border/50">
-                      <SelectValue placeholder="Select range" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="today">Today</SelectItem>
-                      <SelectItem value="yesterday">Yesterday</SelectItem>
-                      <SelectItem value="7d">Last 7 Days</SelectItem>
-                      <SelectItem value="14d">Last 14 Days</SelectItem>
-                      <SelectItem value="30d">Last 30 Days</SelectItem>
-                      <SelectItem value="60d">Last 60 Days</SelectItem>
-                      <SelectItem value="90d">Last 90 Days</SelectItem>
-                      <SelectItem value="mtd">Month to Date</SelectItem>
-                      <SelectItem value="last-month">Last Month</SelectItem>
-                      <SelectItem value="qtd">Quarter to Date</SelectItem>
-                      <SelectItem value="last-quarter">Last Quarter</SelectItem>
-                      <SelectItem value="ytd">Year to Date</SelectItem>
-                      <SelectItem value="last-year">Last Year</SelectItem>
-                      <SelectItem value="all">All Time</SelectItem>
-                      <SelectItem value="custom">Custom Range...</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {commissionDatePreset === 'custom' && (
-                    <Popover open={commissionCalendarOpen} onOpenChange={setCommissionCalendarOpen}>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" size="sm" className="h-6 text-[10px] px-2 bg-muted/50 border-border/50">
-                          <CalendarIcon className="size-3 mr-1" />
-                          {commissionDateLabel}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="end">
-                        <Calendar
-                          mode="range"
-                          selected={{ from: commissionCustomRange.from, to: commissionCustomRange.to }}
-                          onSelect={(range) => {
-                            setCommissionCustomRange({ from: range?.from, to: range?.to })
-                            if (range?.from && range?.to) {
-                              setCommissionDatePreset('custom')
-                              setCommissionCalendarOpen(false)
-                            }
-                          }}
-                          numberOfMonths={2}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  )}
+              <div className="grid grid-cols-3 md:grid-cols-7 gap-3">
+                <Metric label="Commission" value={metrics.totalCommissions} format="currency" />
+                <Metric label="Clawbacks" value={metrics.totalClawbacks} format="currency" />
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Tier</span>
+                  <span className="text-base font-semibold text-amber-400">T{metrics.currentTier}</span>
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent className="px-3 pb-3">
-              <div className="grid grid-cols-3 md:grid-cols-7 gap-2">
-                <KPICard
-                  title="FPC Units"
-                  value={metrics.unitsFPC}
-                  format="number"
-                  icon={<CheckCircle className="size-3" />}
-                  color="emerald"
-                  compact
-                  minimal
-                />
-                <KPICard
-                  title="FPC Debt"
-                  value={metrics.debtLoadFPC}
-                  format="currency"
-                  icon={<CheckCircle className="size-3" />}
-                  color="emerald"
-                  compact
-                  minimal
-                />
-                <KPICard
-                  title="Commission"
-                  value={metrics.totalCommissions}
-                  format="currency"
-                  icon={<TrendingUp className="size-3" />}
-                  color="emerald"
-                  compact
-                  minimal
-                />
-                <KPICard
-                  title="Clawbacks"
-                  value={metrics.totalClawbacks}
-                  format="currency"
-                  icon={<TrendingDown className="size-3" />}
-                  color="rose"
-                  compact
-                  minimal
-                />
-                <div className="glass-card rounded-lg p-2 flex flex-col items-center justify-center">
-                  <span className="text-[9px] font-medium text-muted-foreground uppercase">Tier</span>
-                  <span className="text-sm font-bold text-amber-400">T{metrics.currentTier}</span>
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Exp. Comm</span>
+                  <span className="text-base font-semibold text-purple-400">{formatCurrency(metrics.expectedCommission)}</span>
                 </div>
-                <div className="glass-card rounded-lg p-2 flex flex-col items-center justify-center">
-                  <span className="text-[9px] font-medium text-muted-foreground uppercase">Exp. Comm</span>
-                  <span className="text-sm font-bold text-purple-400">${(metrics.expectedCommission / 1000).toFixed(0)}K</span>
-                </div>
-                <div className="glass-card rounded-lg p-2 flex flex-col items-center justify-center">
-                  <span className="text-[9px] font-medium text-muted-foreground uppercase">Exp. Tier</span>
-                  <span className="text-sm font-bold text-blue-400">T{metrics.expectedTier}</span>
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Exp. Tier</span>
+                  <span className="text-base font-semibold text-blue-400">T{metrics.expectedTier}</span>
                 </div>
               </div>
             </CardContent>
@@ -349,41 +245,72 @@ export default function DashboardPage() {
           <VolumeChart data={volumeData} />
         </div>
 
-        {/* Right Column - Targets, Search, Announcements */}
-        <div className="lg:col-span-4 space-y-4">
+        {/* Right Column */}
+        <div className="space-y-3">
           
           {/* Monthly Targets */}
-          <ProgressCard
-            title="Monthly Targets"
-            items={[
-              {
-                label: 'Units to Target',
-                current: metrics.unitsEnrolled,
-                target: metrics.monthlyTargetUnits,
-                format: 'number',
-              },
-              {
-                label: 'Debt Load to Target',
-                current: metrics.debtLoadEnrolled,
-                target: metrics.monthlyTargetDebtLoad,
-                format: 'currency',
-              },
-            ]}
-          />
+          <Card className={cn("glass-card border-border/40", isPIPRisk && "border-rose-500/30")}>
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-1.5">
+                  <Target className="size-3.5 text-primary" />
+                  <span className="text-xs font-semibold text-foreground">Monthly Targets</span>
+                </div>
+                {isPIPRisk && (
+                  <Badge variant="destructive" className="text-[9px] px-1.5 py-0 h-4 gap-0.5 bg-rose-500/20 text-rose-400 border-rose-500/30">
+                    <AlertTriangle className="size-2.5" />
+                    PIP
+                  </Badge>
+                )}
+              </div>
+              <div className="space-y-3">
+                {/* Units */}
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[11px]">
+                    <span className={cn("text-muted-foreground", unitsBehind && "text-rose-400")}>
+                      Units {unitsBehind && <AlertTriangle className="inline size-2.5 ml-0.5" />}
+                    </span>
+                    <span className="font-medium">{metrics.unitsEnrolled} / {metrics.monthlyTargetUnits}</span>
+                  </div>
+                  <div className="relative">
+                    <div className="absolute top-0 bottom-0 w-px bg-muted-foreground/50 z-10" style={{ left: `${expectedProgress}%` }} />
+                    <Progress value={unitsProgress} className={cn("h-1.5", unitsBehind && "[&>div]:bg-rose-500")} />
+                  </div>
+                  <div className="flex justify-between text-[9px] text-muted-foreground">
+                    <span>{unitsProgress.toFixed(0)}%</span>
+                    <span>{metrics.monthlyTargetUnits - metrics.unitsEnrolled} left</span>
+                  </div>
+                </div>
+                {/* Debt Load */}
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[11px]">
+                    <span className={cn("text-muted-foreground", debtBehind && "text-rose-400")}>
+                      Debt Load {debtBehind && <AlertTriangle className="inline size-2.5 ml-0.5" />}
+                    </span>
+                    <span className="font-medium">{formatCurrency(metrics.debtLoadEnrolled)} / {formatCurrency(metrics.monthlyTargetDebtLoad)}</span>
+                  </div>
+                  <div className="relative">
+                    <div className="absolute top-0 bottom-0 w-px bg-muted-foreground/50 z-10" style={{ left: `${expectedProgress}%` }} />
+                    <Progress value={debtProgress} className={cn("h-1.5", debtBehind && "[&>div]:bg-rose-500")} />
+                  </div>
+                  <div className="flex justify-between text-[9px] text-muted-foreground">
+                    <span>{debtProgress.toFixed(0)}%</span>
+                    <span>{formatCurrency(metrics.monthlyTargetDebtLoad - metrics.debtLoadEnrolled)} left</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Client Search */}
           <ClientSearch data={pipeline} />
 
           {/* Announcements */}
-          <AnnouncementsList
-            announcements={announcements}
-            userId={user?.id}
-            limit={3}
-          />
+          <AnnouncementsList announcements={announcements} userId={user?.id} limit={3} />
         </div>
       </div>
 
-      {/* Team Performance for Leadership/Executive */}
+      {/* Team Performance */}
       {(isLeadership || isExecutive) && teamMetrics.length > 0 && (
         <TeamPerformanceTable data={teamMetrics} />
       )}
