@@ -126,8 +126,8 @@ function Metric({
   )
 }
 
-// Table row for metrics display
-function MetricRow({ 
+// Compact metric tile
+function MetricTile({ 
   label, 
   value, 
   change, 
@@ -135,7 +135,6 @@ function MetricRow({
   decimals,
   dateValue,
   onDateChange,
-  dateId,
 }: { 
   label: string
   value: number
@@ -144,7 +143,6 @@ function MetricRow({
   decimals?: number
   dateValue: string
   onDateChange: (val: string) => void
-  dateId: string
 }) {
   const formatted = React.useMemo(() => {
     if (fmt === 'currency') {
@@ -158,32 +156,32 @@ function MetricRow({
   }, [value, fmt, decimals])
 
   return (
-    <div className="grid grid-cols-[1fr,auto,auto,auto] gap-2 px-4 py-2 items-center hover:bg-muted/10 transition-colors">
-      <span className="text-xs text-foreground">{label}</span>
-      <span className="text-sm font-semibold text-foreground tabular-nums text-right w-20">{formatted}</span>
-      <span className={cn(
-        "text-[10px] font-medium flex items-center justify-end gap-0.5 w-16",
-        change !== undefined && change > 0 ? "text-emerald-400" : change !== undefined && change < 0 ? "text-rose-400" : "text-muted-foreground"
-      )}>
-        {change !== undefined && (
-          <>
-            {change > 0 ? <TrendingUp className="size-2.5" /> : change < 0 ? <TrendingDown className="size-2.5" /> : null}
-            {change > 0 && '+'}{change.toFixed(1)}%
-          </>
-        )}
-      </span>
-      <div className="w-20 flex justify-end">
+    <div className="bg-card/50 border border-border/30 rounded-lg p-2.5">
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-[10px] text-muted-foreground truncate">{label}</span>
         <Select value={dateValue} onValueChange={onDateChange}>
-          <SelectTrigger className="h-5 text-[9px] w-auto min-w-[60px] bg-transparent border-0 px-1.5 text-muted-foreground hover:text-foreground">
+          <SelectTrigger className="h-4 text-[8px] w-auto bg-transparent border-0 p-0 text-muted-foreground/60 hover:text-muted-foreground [&>svg]:size-2.5 [&>svg]:ml-0.5 gap-0">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="7d">7 Days</SelectItem>
-            <SelectItem value="30d">30 Days</SelectItem>
-            <SelectItem value="90d">90 Days</SelectItem>
-            <SelectItem value="ytd">YTD</SelectItem>
+            <SelectItem value="7d" className="text-xs">7D</SelectItem>
+            <SelectItem value="30d" className="text-xs">30D</SelectItem>
+            <SelectItem value="90d" className="text-xs">90D</SelectItem>
+            <SelectItem value="ytd" className="text-xs">YTD</SelectItem>
           </SelectContent>
         </Select>
+      </div>
+      <div className="flex items-end justify-between">
+        <span className="text-base font-semibold text-foreground tabular-nums">{formatted}</span>
+        {change !== undefined && (
+          <span className={cn(
+            "text-[9px] font-medium flex items-center gap-0.5",
+            change > 0 ? "text-emerald-400" : change < 0 ? "text-rose-400" : "text-muted-foreground"
+          )}>
+            {change > 0 ? <TrendingUp className="size-2.5" /> : change < 0 ? <TrendingDown className="size-2.5" /> : null}
+            {change > 0 && '+'}{change.toFixed(1)}%
+          </span>
+        )}
       </div>
     </div>
   )
@@ -906,121 +904,21 @@ export default function DashboardPage() {
             </Card>
           </div>
 
-          {/* Performance Metrics Table */}
-          <Card className="glass-card border-border/40">
-            <CardContent className="p-0">
-              {/* Table Header */}
-              <div className="grid grid-cols-[1fr,auto,auto,auto] gap-2 px-4 py-2.5 border-b border-border/30 bg-muted/20">
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Metric</span>
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right w-20">Value</span>
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right w-16">Change</span>
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right w-20">Period</span>
-              </div>
-              
-              {/* Enrollments Section */}
-              <div className="border-b border-border/20">
-                <div className="px-4 py-1.5 bg-muted/10">
-                  <span className="text-[9px] font-semibold text-primary uppercase tracking-wider">Enrollments</span>
-                </div>
-                <div className="divide-y divide-border/10">
-                  <MetricRow 
-                    label="Units Enrolled" 
-                    value={metrics.unitsEnrolled} 
-                    change={metrics.unitsEnrolledChange}
-                    dateValue={unitsEnrolledDate}
-                    onDateChange={setUnitsEnrolledDate}
-                    dateId="units-enrolled"
-                  />
-                  <MetricRow 
-                    label="Debt Load Enrolled" 
-                    value={metrics.debtLoadEnrolled} 
-                    change={metrics.debtLoadEnrolledChange}
-                    format="currency"
-                    dateValue={debtLoadEnrolledDate}
-                    onDateChange={setDebtLoadEnrolledDate}
-                    dateId="debt-enrolled"
-                  />
-                </div>
-              </div>
-
-              {/* FPC Section */}
-              <div className="border-b border-border/20">
-                <div className="px-4 py-1.5 bg-muted/10">
-                  <span className="text-[9px] font-semibold text-primary uppercase tracking-wider">First Payment Cleared</span>
-                </div>
-                <div className="divide-y divide-border/10">
-                  <MetricRow 
-                    label="Units FPC" 
-                    value={metrics.unitsFPC} 
-                    change={metrics.unitsFPCChange}
-                    dateValue={unitsFpcDate}
-                    onDateChange={setUnitsFpcDate}
-                    dateId="units-fpc"
-                  />
-                  <MetricRow 
-                    label="Debt Load FPC" 
-                    value={metrics.debtLoadFPC} 
-                    change={metrics.debtLoadFPCChange}
-                    format="currency"
-                    dateValue={debtLoadFpcDate}
-                    onDateChange={setDebtLoadFpcDate}
-                    dateId="debt-fpc"
-                  />
-                </div>
-              </div>
-
-              {/* Ancillary Section */}
-              <div className="border-b border-border/20">
-                <div className="px-4 py-1.5 bg-muted/10">
-                  <span className="text-[9px] font-semibold text-primary uppercase tracking-wider">Ancillary</span>
-                </div>
-                <MetricRow 
-                  label="Ancillary Sales" 
-                  value={metrics.ancillaryCount} 
-                  change={metrics.ancillaryCountChange}
-                  dateValue={ancillaryDate}
-                  onDateChange={setAncillaryDate}
-                  dateId="ancillary"
-                />
-              </div>
-
-              {/* Averages Section */}
-              <div>
-                <div className="px-4 py-1.5 bg-muted/10">
-                  <span className="text-[9px] font-semibold text-primary uppercase tracking-wider">Averages</span>
-                </div>
-                <div className="divide-y divide-border/10">
-                  <MetricRow 
-                    label="Avg Debt Per File" 
-                    value={metrics.avgDebtLoadPerFile} 
-                    change={metrics.avgDebtLoadPerFileChange}
-                    format="currency"
-                    dateValue={avgDebtPerFileDate}
-                    onDateChange={setAvgDebtPerFileDate}
-                    dateId="avg-debt-file"
-                  />
-                  <MetricRow 
-                    label="Avg Daily Enrolled Debt" 
-                    value={metrics.avgDailyEnrolledDebt} 
-                    change={metrics.avgDailyEnrolledDebtChange}
-                    format="currency"
-                    dateValue={avgDailyDebtDate}
-                    onDateChange={setAvgDailyDebtDate}
-                    dateId="avg-daily-debt"
-                  />
-                  <MetricRow 
-                    label="Avg Daily Enrolled Units" 
-                    value={metrics.avgDailyEnrolledUnits} 
-                    change={metrics.avgDailyEnrolledUnitsChange}
-                    decimals={1}
-                    dateValue={avgDailyUnitsDate}
-                    onDateChange={setAvgDailyUnitsDate}
-                    dateId="avg-daily-units"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Compact Metrics Grid */}
+          <div className="grid grid-cols-3 gap-2">
+            {/* Enrollments */}
+            <MetricTile label="Units Enrolled" value={metrics.unitsEnrolled} change={metrics.unitsEnrolledChange} dateValue={unitsEnrolledDate} onDateChange={setUnitsEnrolledDate} />
+            <MetricTile label="Debt Load" value={metrics.debtLoadEnrolled} change={metrics.debtLoadEnrolledChange} format="currency" dateValue={debtLoadEnrolledDate} onDateChange={setDebtLoadEnrolledDate} />
+            {/* FPC */}
+            <MetricTile label="Units FPC" value={metrics.unitsFPC} change={metrics.unitsFPCChange} dateValue={unitsFpcDate} onDateChange={setUnitsFpcDate} />
+            <MetricTile label="Debt Load FPC" value={metrics.debtLoadFPC} change={metrics.debtLoadFPCChange} format="currency" dateValue={debtLoadFpcDate} onDateChange={setDebtLoadFpcDate} />
+            {/* Ancillary */}
+            <MetricTile label="Ancillary Sales" value={metrics.ancillaryCount} change={metrics.ancillaryCountChange} dateValue={ancillaryDate} onDateChange={setAncillaryDate} />
+            {/* Averages */}
+            <MetricTile label="Avg Debt/File" value={metrics.avgDebtLoadPerFile} change={metrics.avgDebtLoadPerFileChange} format="currency" dateValue={avgDebtPerFileDate} onDateChange={setAvgDebtPerFileDate} />
+            <MetricTile label="Avg Daily Debt" value={metrics.avgDailyEnrolledDebt} change={metrics.avgDailyEnrolledDebtChange} format="currency" dateValue={avgDailyDebtDate} onDateChange={setAvgDailyDebtDate} />
+            <MetricTile label="Avg Daily Units" value={metrics.avgDailyEnrolledUnits} change={metrics.avgDailyEnrolledUnitsChange} decimals={1} dateValue={avgDailyUnitsDate} onDateChange={setAvgDailyUnitsDate} />
+          </div>
 
           {/* Chart */}
           <VolumeChart data={volumeData} />
