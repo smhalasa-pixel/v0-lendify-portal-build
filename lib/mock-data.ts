@@ -1139,6 +1139,8 @@ export const dataService = {
       const debtProgress = (debtLoadEnrolled / monthlyTargetDebtLoad) * 100
       const avgProgress = (unitsProgress + debtProgress) / 2
       const pacing = avgProgress / expectedProgress * 100
+      const pacingUnits = unitsProgress / expectedProgress * 100
+      const pacingDebtLoad = debtProgress / expectedProgress * 100
       
       return {
         agentId: agent.id,
@@ -1155,6 +1157,8 @@ export const dataService = {
         monthlyTargetUnits,
         monthlyTargetDebtLoad,
         pacing: Math.min(pacing, 150),
+        pacingUnits: Math.min(pacingUnits, 150),
+        pacingDebtLoad: Math.min(pacingDebtLoad, 150),
         trend: leaderboardEntry?.trend || 'same',
       }
     }).sort((a, b) => b.debtLoadEnrolled - a.debtLoadEnrolled)

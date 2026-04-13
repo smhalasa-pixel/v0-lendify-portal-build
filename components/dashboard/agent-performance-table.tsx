@@ -167,12 +167,21 @@ export function AgentPerformanceTable({
                               />
                             </div>
                           </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="text-xs">
-                              {agent.pacing >= 100 
-                                ? 'On track or ahead of target' 
-                                : `${(100 - agent.pacing).toFixed(0)}% behind expected pace`}
-                            </p>
+                          <TooltipContent side="top" className="text-xs">
+                            <div className="flex flex-col gap-1.5 py-1">
+                              <div className="flex items-center justify-between gap-4">
+                                <span className="text-muted-foreground">Units Pacing:</span>
+                                <span className={cn("font-semibold", getPacingColor(agent.pacingUnits))}>
+                                  {agent.pacingUnits.toFixed(0)}%
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between gap-4">
+                                <span className="text-muted-foreground">Debt Load Pacing:</span>
+                                <span className={cn("font-semibold", getPacingColor(agent.pacingDebtLoad))}>
+                                  {agent.pacingDebtLoad.toFixed(0)}%
+                                </span>
+                              </div>
+                            </div>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>

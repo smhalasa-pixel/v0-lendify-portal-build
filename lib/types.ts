@@ -173,7 +173,9 @@ export interface AgentPerformance {
   performanceGrade: 'A+' | 'A' | 'A-' | 'B+' | 'B' | 'B-' | 'C+' | 'C' | 'C-' | 'D' | 'F'
   monthlyTargetUnits: number
   monthlyTargetDebtLoad: number
-  pacing: number // percentage of target based on time elapsed
+  pacing: number // overall percentage of target based on time elapsed
+  pacingUnits: number // pacing percentage for units
+  pacingDebtLoad: number // pacing percentage for debt load
   trend: 'up' | 'down' | 'same'
 }
 
