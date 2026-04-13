@@ -496,9 +496,9 @@ export default function LeaderboardsPage() {
                   </div>
                   <div>
                     <p className="text-lg font-bold text-success">
-                      {formatCurrency(entry.totalCommissions / 1000)}K
+                      {entry.conversionRate.toFixed(1)}%
                     </p>
-                    <p className="text-xs text-muted-foreground">Earned</p>
+                    <p className="text-xs text-muted-foreground">Qualified Conv.</p>
                   </div>
                 </div>
 
