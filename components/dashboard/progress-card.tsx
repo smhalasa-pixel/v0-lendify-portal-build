@@ -8,14 +8,6 @@ import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { CurrencyDisplay, formatCurrencyAbbreviated } from '@/components/ui/currency-display'
 
-// Calculate days passed in current month as a percentage
-function getExpectedProgress(): number {
-  const now = new Date()
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
-  const currentDay = now.getDate()
-  return (currentDay / daysInMonth) * 100
-}
-
 interface ProgressCardProps {
   title: string
   items: {
@@ -36,12 +28,10 @@ function formatValue(value: number, format: 'currency' | 'number' = 'number'): s
 }
 
 export function ProgressCard({ title, items, showPIPFlag = true, pipThreshold = 20 }: ProgressCardProps) {
-  const expectedProgress = getExpectedProgress()
-  
-  // Check if any item is significantly behind expected progress
+  // Check if any item is significantly behind (below threshold percentage)
   const isPIPRisk = showPIPFlag && items.some((item) => {
     const percentage = (item.current / item.target) * 100
-    return percentage < (expectedProgress - pipThreshold) && percentage < 100
+    return percentage < pipThreshold && percentage < 100
   })
 
   return (
@@ -67,7 +57,7 @@ export function ProgressCard({ title, items, showPIPFlag = true, pipThreshold = 
         {items.map((item) => {
           const percentage = Math.min((item.current / item.target) * 100, 100)
           const isComplete = percentage >= 100
-          const isBehind = percentage < (expectedProgress - pipThreshold) && !isComplete
+          const isBehind = percentage < pipThreshold && !isComplete
           
           return (
             <div key={item.label} className="space-y-1.5">
@@ -86,13 +76,7 @@ export function ProgressCard({ title, items, showPIPFlag = true, pipThreshold = 
                   )}
                 </span>
               </div>
-              <div className="relative">
-                {/* Expected progress marker */}
-                <div 
-                  className="absolute top-0 bottom-0 w-0.5 bg-muted-foreground/40 z-10"
-                  style={{ left: `${expectedProgress}%` }}
-                />
-                <Progress 
+              <Progress 
                   value={percentage} 
                   className={cn(
                     "h-2",
@@ -100,14 +84,12 @@ export function ProgressCard({ title, items, showPIPFlag = true, pipThreshold = 
                     isBehind && "[&>div]:bg-rose-500"
                   )}
                 />
-              </div>
               <div className="flex items-center justify-between text-[10px]">
                 <span className={cn(
                   "font-medium",
                   isComplete ? "text-emerald-400" : isBehind ? "text-rose-400" : "text-muted-foreground"
                 )}>
                   {percentage.toFixed(0)}% Complete
-                  {isBehind && ` (Expected: ${expectedProgress.toFixed(0)}%)`}
                 </span>
                 {!isComplete && (
                   <span className="text-muted-foreground">
