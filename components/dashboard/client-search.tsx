@@ -129,7 +129,7 @@ export function ClientSearch({ data }: ClientSearchProps) {
           <span className="text-muted-foreground">Search clients...</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-[98vw] w-[1600px] max-h-[90vh] flex flex-col">
+      <DialogContent className="!w-[98vw] !h-[95vh] !max-w-[98vw] !max-h-[95vh] flex flex-col p-6">
         <DialogHeader>
           <DialogTitle>Client Search</DialogTitle>
           <DialogDescription>
