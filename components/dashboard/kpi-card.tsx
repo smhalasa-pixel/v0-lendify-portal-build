@@ -209,7 +209,7 @@ export function KPICard({
       </div>
       
       {/* Value and Change */}
-      <div className="flex items-end justify-between gap-2">
+      <div className="flex flex-col items-center text-center gap-1">
         {formatType === 'currency' && typeof value === 'number' ? (
           <CurrencyDisplay value={value} className={cn(
             "font-bold text-foreground leading-none",
@@ -226,7 +226,7 @@ export function KPICard({
         
         {change !== undefined && (
           <div className={cn(
-            'flex items-center gap-0.5 text-[10px] font-medium shrink-0',
+            'flex items-center justify-center gap-0.5 text-[10px] font-medium',
             isPositive && 'text-emerald-400',
             isNegative && 'text-rose-400',
             !isPositive && !isNegative && 'text-muted-foreground'
