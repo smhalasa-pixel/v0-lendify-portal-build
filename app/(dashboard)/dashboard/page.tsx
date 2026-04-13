@@ -637,12 +637,12 @@ export default function DashboardPage() {
   }, [selectedTargetMonth])
   
   // Progress calculations - based on selected month
-  const now = new Date()
+  const currentDate = new Date()
   const selectedYearNum = parseInt(selectedYear)
   const selectedMonthNum = parseInt(selectedMonth)
-  const isCurrentMonth = selectedYearNum === now.getFullYear() && selectedMonthNum === now.getMonth() + 1
+  const isCurrentMonth = selectedYearNum === currentDate.getFullYear() && selectedMonthNum === currentDate.getMonth() + 1
   const daysInSelectedMonth = new Date(selectedYearNum, selectedMonthNum, 0).getDate()
-  const dayOfMonth = isCurrentMonth ? now.getDate() : daysInSelectedMonth // For past months, show full month
+  const dayOfMonth = isCurrentMonth ? currentDate.getDate() : daysInSelectedMonth // For past months, show full month
   const expectedProgress = isCurrentMonth ? (dayOfMonth / daysInSelectedMonth) * 100 : 100
   
   const unitsProgress = Math.min((monthlyTargetMetrics.unitsEnrolled / monthlyTargetMetrics.monthlyTargetUnits) * 100, 100)
