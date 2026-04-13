@@ -230,7 +230,8 @@ export default function CommissionsPage() {
                   <TableHead className="font-semibold">Client Name</TableHead>
                   <TableHead className="font-semibold">Status</TableHead>
                   <TableHead className="font-semibold text-right">Debt Load</TableHead>
-                  <TableHead className="font-semibold text-center">Payable Tier</TableHead>
+                  <TableHead className="font-semibold text-center">Tier</TableHead>
+                  <TableHead className="font-semibold text-center">Tier %</TableHead>
                   <TableHead className="font-semibold text-right">Commission</TableHead>
                   <TableHead className="font-semibold text-center">Paid</TableHead>
                 </TableRow>
@@ -239,7 +240,7 @@ export default function CommissionsPage() {
                 {filteredCommissions.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={7}
+                      colSpan={8}
                       className="text-center text-muted-foreground py-8"
                     >
                       No commissions found
@@ -270,6 +271,9 @@ export default function CommissionsPage() {
                           <Badge className={getTierBadgeColor(tierInfo.tier)}>
                             {tierInfo.label}
                           </Badge>
+                        </TableCell>
+                        <TableCell className="text-center font-mono text-sm">
+                          {(commission.commissionRate * 100).toFixed(2)}%
                         </TableCell>
                         <TableCell className="text-right font-mono font-medium text-emerald-400">
                           {formatCurrency(commission.commissionAmount)}

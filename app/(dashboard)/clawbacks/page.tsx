@@ -247,7 +247,8 @@ export default function ClawbacksPage() {
                   <TableHead className="font-semibold">Client Name</TableHead>
                   <TableHead className="font-semibold">Status</TableHead>
                   <TableHead className="font-semibold text-right">Debt Load</TableHead>
-                  <TableHead className="font-semibold text-center">Payable Tier</TableHead>
+                  <TableHead className="font-semibold text-center">Tier</TableHead>
+                  <TableHead className="font-semibold text-center">Tier %</TableHead>
                   <TableHead className="font-semibold text-right">Clawback</TableHead>
                   <TableHead className="font-semibold text-center">Deducted</TableHead>
                   <TableHead className="font-semibold">Actions</TableHead>
@@ -257,7 +258,7 @@ export default function ClawbacksPage() {
                 {filteredClawbacks.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={8}
+                      colSpan={9}
                       className="text-center text-muted-foreground py-8"
                     >
                       No clawbacks found
@@ -288,6 +289,9 @@ export default function ClawbacksPage() {
                           <Badge className={getTierBadgeColor(tierInfo.tier)}>
                             {tierInfo.label}
                           </Badge>
+                        </TableCell>
+                        <TableCell className="text-center font-mono text-sm">
+                          {((clawback.clawbackAmount / clawback.originalAmount) * 100).toFixed(2)}%
                         </TableCell>
                         <TableCell className="text-right font-mono font-medium text-rose-400">
                           -{formatCurrency(clawback.clawbackAmount)}
