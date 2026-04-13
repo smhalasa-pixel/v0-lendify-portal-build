@@ -126,30 +126,22 @@ function Metric({
   )
 }
 
-// Month options
-const MONTHS = [
-  { value: '01', label: 'Jan' },
-  { value: '02', label: 'Feb' },
-  { value: '03', label: 'Mar' },
-  { value: '04', label: 'Apr' },
-  { value: '05', label: 'May' },
-  { value: '06', label: 'Jun' },
-  { value: '07', label: 'Jul' },
-  { value: '08', label: 'Aug' },
-  { value: '09', label: 'Sep' },
-  { value: '10', label: 'Oct' },
-  { value: '11', label: 'Nov' },
-  { value: '12', label: 'Dec' },
+// Date preset options
+const DATE_PRESETS = [
+  { value: 'today', label: 'Today' },
+  { value: 'yesterday', label: 'Yesterday' },
+  { value: 'this-week', label: 'This Week' },
+  { value: 'last-week', label: 'Last Week' },
+  { value: 'this-month', label: 'This Month' },
+  { value: 'last-month', label: 'Last Month' },
+  { value: 'this-quarter', label: 'This Quarter' },
+  { value: 'last-quarter', label: 'Last Quarter' },
+  { value: 'this-year', label: 'This Year' },
+  { value: 'last-year', label: 'Last Year' },
+  { value: 'custom', label: 'Custom...' },
 ]
 
-// Years from 2020 to current year + 1
-const currentYear = new Date().getFullYear()
-const YEARS = Array.from({ length: currentYear - 2019 + 1 }, (_, i) => {
-  const year = currentYear + 1 - i
-  return { value: String(year), label: String(year) }
-})
-
-// Compact metric tile with month/year selector
+// Compact metric tile with date preset selector
 function MetricTile({ 
   label, 
   value, 
@@ -164,11 +156,9 @@ function MetricTile({
   change?: number
   format?: 'currency' | 'number' | 'percentage'
   decimals?: number
-  dateValue: string // Format: YYYY-MM
+  dateValue: string
   onDateChange: (val: string) => void
 }) {
-  const [year, month] = dateValue.split('-')
-  
   const formatted = React.useMemo(() => {
     if (fmt === 'currency') {
       if (value >= 1000000) return `$${(value / 1000000).toFixed(2)}M`
@@ -180,34 +170,22 @@ function MetricTile({
     return value.toLocaleString()
   }, [value, fmt, decimals])
 
-  const monthLabel = MONTHS.find(m => m.value === month)?.label || month
+  const dateLabel = DATE_PRESETS.find(d => d.value === dateValue)?.label || dateValue
 
   return (
     <div className="bg-card/50 border border-border/30 rounded-lg p-2.5">
       <div className="flex items-center justify-between gap-1 mb-1">
         <span className="text-[10px] text-muted-foreground truncate flex-1">{label}</span>
-        <div className="flex items-center gap-0.5 text-[9px] text-muted-foreground">
-          <Select value={month} onValueChange={(m) => onDateChange(`${year}-${m}`)}>
-            <SelectTrigger className="h-5 text-[9px] w-auto min-w-[32px] bg-muted/30 border-border/40 px-1 py-0 [&>svg]:size-2.5 [&>svg]:opacity-50">
-              <span>{monthLabel}</span>
-            </SelectTrigger>
-            <SelectContent>
-              {MONTHS.map(m => (
-                <SelectItem key={m.value} value={m.value} className="text-xs">{m.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={year} onValueChange={(y) => onDateChange(`${y}-${month}`)}>
-            <SelectTrigger className="h-5 text-[9px] w-auto min-w-[44px] bg-muted/30 border-border/40 px-1 py-0 [&>svg]:size-2.5 [&>svg]:opacity-50">
-              <span>{year}</span>
-            </SelectTrigger>
-            <SelectContent>
-              {YEARS.map(y => (
-                <SelectItem key={y.value} value={y.value} className="text-xs">{y.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <Select value={dateValue} onValueChange={onDateChange}>
+          <SelectTrigger className="h-5 text-[9px] w-auto min-w-[70px] bg-muted/30 border-border/40 px-1.5 py-0 [&>svg]:size-2.5 [&>svg]:opacity-50">
+            <span className="truncate">{dateLabel}</span>
+          </SelectTrigger>
+          <SelectContent>
+            {DATE_PRESETS.map(d => (
+              <SelectItem key={d.value} value={d.value} className="text-xs">{d.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       <div className="flex items-end justify-between">
         <span className="text-base font-semibold text-foreground tabular-nums">{formatted}</span>
@@ -516,25 +494,23 @@ export default function DashboardPage() {
     return 'Executive Dashboard'
   }, [isAgent, isLeadership, isSupervisor, isAdmin, filterType, selectedTeamLead, selectedSupervisor, teamLeads, supervisors, user?.teamName, selectedAgentId, selectedTeamId, allAgents])
 
-  // Date slicer states - each metric has its own (format: YYYY-MM)
-  const now = new Date()
-  const defaultDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-  const [unitsSubmittedDate, setUnitsSubmittedDate] = React.useState(defaultDate)
-  const [debtLoadSubmittedDate, setDebtLoadSubmittedDate] = React.useState(defaultDate)
-  const [convRateDate, setConvRateDate] = React.useState(defaultDate)
-  const [qualConvDate, setQualConvDate] = React.useState(defaultDate)
-  const [unitsEnrolledDate, setUnitsEnrolledDate] = React.useState(defaultDate)
-  const [debtLoadEnrolledDate, setDebtLoadEnrolledDate] = React.useState(defaultDate)
-  const [unitsFpcDate, setUnitsFpcDate] = React.useState(defaultDate)
-  const [debtLoadFpcDate, setDebtLoadFpcDate] = React.useState(defaultDate)
-  const [ancillaryDate, setAncillaryDate] = React.useState(defaultDate)
-  const [avgDebtPerFileDate, setAvgDebtPerFileDate] = React.useState(defaultDate)
-  const [avgDailyDebtDate, setAvgDailyDebtDate] = React.useState(defaultDate)
-  const [avgDailyUnitsDate, setAvgDailyUnitsDate] = React.useState(defaultDate)
-  const [clientsEnrolledDate, setClientsEnrolledDate] = React.useState(defaultDate)
-  const [clientsActiveDate, setClientsActiveDate] = React.useState(defaultDate)
-  const [clientsCancelledDate, setClientsCancelledDate] = React.useState(defaultDate)
-  const [cancellationRateDate, setCancellationRateDate] = React.useState(defaultDate)
+  // Date slicer states - each metric has its own
+  const [unitsSubmittedDate, setUnitsSubmittedDate] = React.useState('this-month')
+  const [debtLoadSubmittedDate, setDebtLoadSubmittedDate] = React.useState('this-month')
+  const [convRateDate, setConvRateDate] = React.useState('this-month')
+  const [qualConvDate, setQualConvDate] = React.useState('this-month')
+  const [unitsEnrolledDate, setUnitsEnrolledDate] = React.useState('this-month')
+  const [debtLoadEnrolledDate, setDebtLoadEnrolledDate] = React.useState('this-month')
+  const [unitsFpcDate, setUnitsFpcDate] = React.useState('this-month')
+  const [debtLoadFpcDate, setDebtLoadFpcDate] = React.useState('this-month')
+  const [ancillaryDate, setAncillaryDate] = React.useState('this-month')
+  const [avgDebtPerFileDate, setAvgDebtPerFileDate] = React.useState('this-month')
+  const [avgDailyDebtDate, setAvgDailyDebtDate] = React.useState('this-month')
+  const [avgDailyUnitsDate, setAvgDailyUnitsDate] = React.useState('this-month')
+  const [clientsEnrolledDate, setClientsEnrolledDate] = React.useState('this-month')
+  const [clientsActiveDate, setClientsActiveDate] = React.useState('this-month')
+  const [clientsCancelledDate, setClientsCancelledDate] = React.useState('this-month')
+  const [cancellationRateDate, setCancellationRateDate] = React.useState('this-month')
   
   // Region slicer state - for executive and admin views
   const [selectedRegion, setSelectedRegion] = React.useState<'all' | 'dubai' | 'jordan'>('all')
