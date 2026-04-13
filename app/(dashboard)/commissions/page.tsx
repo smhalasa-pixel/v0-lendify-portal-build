@@ -253,18 +253,18 @@ export default function CommissionsPage() {
                     
                     return (
                       <TableRow key={commission.id} className="hover:bg-muted/20">
-                        <TableCell className="font-mono text-xs text-muted-foreground">
+                        <TableCell className="text-center font-mono text-xs text-muted-foreground">
                           {commission.id.slice(0, 12)}
                         </TableCell>
-                        <TableCell className="font-medium">
+                        <TableCell className="text-center font-medium">
                           {commission.borrowerName}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-center">
                           <Badge variant={statusConfig[commission.status].variant}>
                             {statusConfig[commission.status].label}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right font-mono">
+                        <TableCell className="text-center font-mono">
                           {formatCurrency(commission.loanAmount)}
                         </TableCell>
                         <TableCell className="text-center">
@@ -275,7 +275,7 @@ export default function CommissionsPage() {
                         <TableCell className="text-center font-mono text-sm">
                           {(commission.commissionRate * 100).toFixed(2)}%
                         </TableCell>
-                        <TableCell className="text-right font-mono font-medium text-emerald-400">
+                        <TableCell className="text-center font-mono font-medium text-emerald-400">
                           {formatCurrency(commission.commissionAmount)}
                         </TableCell>
                         <TableCell className="text-center">
