@@ -82,15 +82,15 @@ export function TeamPerformanceTable({
           <Table>
             <TableHeader>
               <TableRow className="border-border/50 hover:bg-transparent">
-                <TableHead className="text-[10px] uppercase tracking-wider w-12">#</TableHead>
-                <TableHead className="text-[10px] uppercase tracking-wider">Team</TableHead>
+                <TableHead className="text-[10px] uppercase tracking-wider w-12 text-center">#</TableHead>
+                <TableHead className="text-[10px] uppercase tracking-wider text-center">Team</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider text-center">Units</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider text-center">Debt Enrolled</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider text-center">Conv. Rate</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider text-center">Grade</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider text-center">Pacing</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider text-center">Trend</TableHead>
-                <TableHead className="text-[10px] uppercase tracking-wider">Top Performer</TableHead>
+                <TableHead className="text-[10px] uppercase tracking-wider text-center">Top Performer</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -108,22 +108,24 @@ export function TeamPerformanceTable({
                       key={team.teamId} 
                       className={cn("border-border/50 hover:bg-muted/30", isUserTeam && "bg-primary/5")}
                     >
-                      <TableCell className="font-medium">
-                        {index < 3 ? (
-                          <div className={cn(
-                            "size-6 rounded-full flex items-center justify-center text-xs font-bold",
-                            index === 0 && "bg-yellow-500/20 text-yellow-400",
-                            index === 1 && "bg-slate-400/20 text-slate-300",
-                            index === 2 && "bg-orange-600/20 text-orange-400"
-                          )}>
-                            {index + 1}
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground text-sm">{index + 1}</span>
-                        )}
+                      <TableCell className="font-medium text-center">
+                        <div className="flex justify-center">
+                          {index < 3 ? (
+                            <div className={cn(
+                              "size-6 rounded-full flex items-center justify-center text-xs font-bold",
+                              index === 0 && "bg-yellow-500/20 text-yellow-400",
+                              index === 1 && "bg-slate-400/20 text-slate-300",
+                              index === 2 && "bg-orange-600/20 text-orange-400"
+                            )}>
+                              {index + 1}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">{index + 1}</span>
+                          )}
+                        </div>
                       </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
+                      <TableCell className="text-center">
+                        <div className="flex items-center justify-center gap-2">
                           <span className="font-medium text-foreground">
                             {team.teamName}
                           </span>
@@ -208,8 +210,8 @@ export function TeamPerformanceTable({
                       <TableCell className="text-center">
                         {getTrendIcon(team.trend)}
                       </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
+                      <TableCell className="text-center">
+                        <div className="flex items-center justify-center gap-2">
                           <div className="size-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-medium text-primary">
                             {team.topPerformer.charAt(0)}
                           </div>

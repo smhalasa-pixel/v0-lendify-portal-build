@@ -159,7 +159,7 @@ export function ClientSearch({ data }: ClientSearchProps) {
                 <TableHead className="w-[140px]">
                   <button
                     onClick={() => handleSort('debtLoad')}
-                    className="flex items-center text-left font-medium hover:text-foreground transition-colors"
+                    className="flex items-center justify-center font-medium hover:text-foreground transition-colors mx-auto"
                   >
                     Debt Load
                     <SortIcon field="debtLoad" />
@@ -169,7 +169,7 @@ export function ClientSearch({ data }: ClientSearchProps) {
                 <TableHead className="w-[130px]">
                   <button
                     onClick={() => handleSort('enrolledDate')}
-                    className="flex items-center text-left font-medium hover:text-foreground transition-colors"
+                    className="flex items-center justify-center font-medium hover:text-foreground transition-colors mx-auto"
                   >
                     Enrolled
                     <SortIcon field="enrolledDate" />

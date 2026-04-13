@@ -73,12 +73,12 @@ export function PipelineTable({
           <Table>
             <TableHeader>
               <TableRow className="border-border/50 hover:bg-transparent">
-                <TableHead className="text-muted-foreground font-medium">Borrower</TableHead>
-                <TableHead className="text-muted-foreground font-medium">Amount</TableHead>
-                <TableHead className="text-muted-foreground font-medium">Type</TableHead>
-                <TableHead className="text-muted-foreground font-medium">Status</TableHead>
-                <TableHead className="text-muted-foreground font-medium">Expected Close</TableHead>
-                {showAgent && <TableHead className="text-muted-foreground font-medium">Agent</TableHead>}
+                <TableHead className="text-muted-foreground font-medium text-center">Borrower</TableHead>
+                <TableHead className="text-muted-foreground font-medium text-center">Amount</TableHead>
+                <TableHead className="text-muted-foreground font-medium text-center">Type</TableHead>
+                <TableHead className="text-muted-foreground font-medium text-center">Status</TableHead>
+                <TableHead className="text-muted-foreground font-medium text-center">Expected Close</TableHead>
+                {showAgent && <TableHead className="text-muted-foreground font-medium text-center">Agent</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -96,16 +96,16 @@ export function PipelineTable({
                       key={loan.id} 
                       className="border-border/50 hover:bg-muted/30"
                     >
-                      <TableCell className="font-medium text-foreground">
+                      <TableCell className="font-medium text-foreground text-center">
                         {loan.borrowerName}
                       </TableCell>
-                      <TableCell className="text-foreground/80 font-mono text-sm">
+                      <TableCell className="text-foreground/80 font-mono text-sm text-center">
                         <CurrencyDisplay value={loan.loanAmount} />
                       </TableCell>
-                      <TableCell className="text-muted-foreground">
+                      <TableCell className="text-muted-foreground text-center">
                         {loan.loanType}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-center">
                         <Badge 
                           variant="outline" 
                           className={`${config.bg} ${config.text} border-current/30`}
@@ -113,11 +113,11 @@ export function PipelineTable({
                           {statusLabels[loan.status]}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
+                      <TableCell className="text-muted-foreground text-sm text-center">
                         {formatDate(loan.expectedCloseDate)}
                       </TableCell>
                       {showAgent && (
-                        <TableCell className="text-muted-foreground">
+                        <TableCell className="text-muted-foreground text-center">
                           {loan.agentName}
                         </TableCell>
                       )}
