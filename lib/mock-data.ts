@@ -1101,14 +1101,19 @@ export function getDashboardMetrics(userId?: string, teamId?: string): Dashboard
     debtLoadFPCChange: 9.8,
     unitsFPC,
     unitsFPCChange: 7.2,
-    // Ancillary metrics - mock data for services sold alongside main product
-    ancillaryRevenue: Math.round(unitsEnrolled * 450), // Avg $450 per unit in ancillary
+    // Ancillary metrics - count of ancillary sales (units)
+    ancillaryRevenue: Math.round(unitsEnrolled * 450), // Keep for backwards compat
     ancillaryRevenueChange: 11.2,
     ancillaryCount: Math.round(unitsEnrolled * 0.65), // 65% of enrolled have ancillary
     ancillaryCountChange: 8.7,
-    // Average debt load
-    avgDebtLoad: unitsEnrolled > 0 ? Math.round(debtLoadEnrolled / unitsEnrolled) : 0,
-    avgDebtLoadChange: 4.2,
+    // Average debt load per file
+    avgDebtLoadPerFile: unitsEnrolled > 0 ? Math.round(debtLoadEnrolled / unitsEnrolled) : 0,
+    avgDebtLoadPerFileChange: 4.2,
+    // Daily averages (based on ~20 working days per month)
+    avgDailyEnrolledDebt: Math.round(debtLoadEnrolled / 20),
+    avgDailyEnrolledDebtChange: 6.5,
+    avgDailyEnrolledUnits: Math.round((unitsEnrolled / 20) * 10) / 10, // One decimal
+    avgDailyEnrolledUnitsChange: 5.8,
     conversionRate,
     conversionRateChange: 3.5,
     conversionClosed: unitsEnrolled,

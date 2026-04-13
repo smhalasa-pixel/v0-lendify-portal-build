@@ -128,8 +128,13 @@ export interface DashboardMetrics {
   ancillaryCount: number
   ancillaryCountChange: number
   // Average metrics
-  avgDebtLoad: number
-  avgDebtLoadChange: number
+  avgDebtLoadPerFile: number
+  avgDebtLoadPerFileChange: number
+  // Daily averages
+  avgDailyEnrolledDebt: number
+  avgDailyEnrolledDebtChange: number
+  avgDailyEnrolledUnits: number
+  avgDailyEnrolledUnitsChange: number
   // Conversion metrics
   conversionRate: number
   conversionRateChange: number

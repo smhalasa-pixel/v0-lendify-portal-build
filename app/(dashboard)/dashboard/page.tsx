@@ -44,6 +44,7 @@ function Metric({
   format: fmt = 'number',
   numerator,
   denominator,
+  decimals,
 }: { 
   label: string
   value: number
@@ -51,6 +52,7 @@ function Metric({
   format?: 'currency' | 'number' | 'percentage'
   numerator?: number
   denominator?: number
+  decimals?: number
 }) {
   const formatted = React.useMemo(() => {
     if (fmt === 'currency') {
@@ -59,8 +61,9 @@ function Metric({
       return `$${value.toLocaleString()}`
     }
     if (fmt === 'percentage') return `${value.toFixed(1)}%`
+    if (decimals !== undefined) return value.toFixed(decimals)
     return value.toLocaleString()
-  }, [value, fmt])
+  }, [value, fmt, decimals])
 
   const fullValue = React.useMemo(() => {
     if (fmt === 'currency') {
@@ -417,6 +420,9 @@ export default function DashboardPage() {
   // Date slicer states
   const [enrollmentDate, setEnrollmentDate] = React.useState('30d')
   const [conversionDate, setConversionDate] = React.useState('30d')
+  const [fpcDate, setFpcDate] = React.useState('30d')
+  const [ancillaryDate, setAncillaryDate] = React.useState('30d')
+  const [dailyAvgDate, setDailyAvgDate] = React.useState('30d')
   const [submissionDate, setSubmissionDate] = React.useState('30d')
   
   const [customRange, setCustomRange] = React.useState<{ from?: Date; to?: Date }>({})
@@ -852,6 +858,7 @@ export default function DashboardPage() {
             <CardContent className="p-3">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">First Payment Cleared (FPC)</span>
+                <DateSelector value={fpcDate} onChange={setFpcDate} id="fpc" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <Metric label="Units FPC" value={metrics.unitsFPC} change={metrics.unitsFPCChange} />
@@ -860,15 +867,30 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Row 4: Ancillary & Average Debt Load */}
+          {/* Row 4: Ancillary & Average Debt Load Per File */}
           <Card className="glass-card border-border/40">
             <CardContent className="p-3">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Ancillary & Averages</span>
+                <DateSelector value={ancillaryDate} onChange={setAncillaryDate} id="ancillary" />
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <Metric label="Ancillary" value={metrics.ancillaryRevenue} change={metrics.ancillaryRevenueChange} format="currency" />
-                <Metric label="Avg Debt Load" value={metrics.avgDebtLoad} change={metrics.avgDebtLoadChange} format="currency" />
+                <Metric label="Ancillary Sales" value={metrics.ancillaryCount} change={metrics.ancillaryCountChange} />
+                <Metric label="Avg Debt Load Per File" value={metrics.avgDebtLoadPerFile} change={metrics.avgDebtLoadPerFileChange} format="currency" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Row 5: Daily Averages */}
+          <Card className="glass-card border-border/40">
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Daily Averages</span>
+                <DateSelector value={dailyAvgDate} onChange={setDailyAvgDate} id="dailyavg" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <Metric label="Avg Daily Enrolled Debt" value={metrics.avgDailyEnrolledDebt} change={metrics.avgDailyEnrolledDebtChange} format="currency" />
+                <Metric label="Avg Daily Enrolled Units" value={metrics.avgDailyEnrolledUnits} change={metrics.avgDailyEnrolledUnitsChange} decimals={1} />
               </div>
             </CardContent>
           </Card>
