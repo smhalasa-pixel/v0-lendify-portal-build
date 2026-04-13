@@ -657,18 +657,8 @@ export default function DashboardPage() {
   
   // Progress calculations - based on selected month
   const currentDate = new Date()
-  const selectedYearNum = parseInt(selectedYear)
-  const selectedMonthNum = parseInt(selectedMonth)
-  const isCurrentMonth = selectedYearNum === currentDate.getFullYear() && selectedMonthNum === currentDate.getMonth() + 1
-  const daysInSelectedMonth = new Date(selectedYearNum, selectedMonthNum, 0).getDate()
-  const dayOfMonth = isCurrentMonth ? currentDate.getDate() : daysInSelectedMonth // For past months, show full month
-  const expectedProgress = isCurrentMonth ? (dayOfMonth / daysInSelectedMonth) * 100 : 100
-  
   const unitsProgress = Math.min((monthlyTargetMetrics.unitsEnrolled / monthlyTargetMetrics.monthlyTargetUnits) * 100, 100)
   const debtProgress = Math.min((monthlyTargetMetrics.debtLoadEnrolled / monthlyTargetMetrics.monthlyTargetDebtLoad) * 100, 100)
-  const unitsBehind = unitsProgress < (expectedProgress - 20) && unitsProgress < 100
-  const debtBehind = debtProgress < (expectedProgress - 20) && debtProgress < 100
-  const isPIPRisk = unitsBehind || debtBehind
 
   const formatCurrency = (val: number) => {
     if (val >= 1000000) return `$${(val / 1000000).toFixed(2)}M`
@@ -1173,56 +1163,35 @@ export default function DashboardPage() {
                 {/* Units */}
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className={cn("text-xs font-medium", unitsBehind ? "text-amber-400" : "text-muted-foreground")}>
-                      Units Enrolled {unitsBehind && <AlertTriangle className="inline size-3 ml-1" />}
-                    </span>
+                    <span className="text-xs font-medium text-muted-foreground">Units Enrolled</span>
                     <span className="text-sm font-bold text-foreground">{monthlyTargetMetrics.unitsEnrolled} <span className="text-muted-foreground font-normal">/ {monthlyTargetMetrics.monthlyTargetUnits}</span></span>
                   </div>
                   <div className="relative h-3 bg-muted/50 rounded-full overflow-hidden">
-                    <div className="absolute top-0 bottom-0 w-0.5 bg-white/60 z-10 rounded-full" style={{ left: `${expectedProgress}%` }} />
                     <div 
-                      className={cn(
-                        "h-full rounded-full transition-all duration-500",
-                        unitsBehind ? "bg-gradient-to-r from-amber-600 to-amber-400" : "bg-gradient-to-r from-primary to-primary/70"
-                      )} 
+                      className="h-full rounded-full transition-all duration-500 bg-gradient-to-r from-primary to-primary/70"
                       style={{ width: `${unitsProgress}%` }}
                     />
                   </div>
                   <div className="flex justify-between text-[10px]">
-                    <span className={cn("font-semibold", unitsBehind ? "text-amber-400" : "text-primary")}>{unitsProgress.toFixed(0)}% complete</span>
+                    <span className="font-semibold text-primary">{unitsProgress.toFixed(0)}% complete</span>
                     <span className="text-muted-foreground">{Math.max(0, monthlyTargetMetrics.monthlyTargetUnits - monthlyTargetMetrics.unitsEnrolled)} remaining</span>
                   </div>
                 </div>
                 {/* Debt Load */}
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className={cn("text-xs font-medium", debtBehind ? "text-amber-400" : "text-muted-foreground")}>
-                      Debt Load {debtBehind && <AlertTriangle className="inline size-3 ml-1" />}
-                    </span>
+                    <span className="text-xs font-medium text-muted-foreground">Debt Load</span>
                     <span className="text-sm font-bold text-foreground">{formatCurrency(monthlyTargetMetrics.debtLoadEnrolled)} <span className="text-muted-foreground font-normal">/ {formatCurrency(monthlyTargetMetrics.monthlyTargetDebtLoad)}</span></span>
                   </div>
                   <div className="relative h-3 bg-muted/50 rounded-full overflow-hidden">
-                    <div className="absolute top-0 bottom-0 w-0.5 bg-white/60 z-10 rounded-full" style={{ left: `${expectedProgress}%` }} />
                     <div 
-                      className={cn(
-                        "h-full rounded-full transition-all duration-500",
-                        debtBehind ? "bg-gradient-to-r from-amber-600 to-amber-400" : "bg-gradient-to-r from-emerald-600 to-emerald-400"
-                      )} 
+                      className="h-full rounded-full transition-all duration-500 bg-gradient-to-r from-emerald-600 to-emerald-400"
                       style={{ width: `${debtProgress}%` }}
                     />
                   </div>
                   <div className="flex justify-between text-[10px]">
-                    <span className={cn("font-semibold", debtBehind ? "text-amber-400" : "text-emerald-400")}>{debtProgress.toFixed(0)}% complete</span>
+                    <span className="font-semibold text-emerald-400">{debtProgress.toFixed(0)}% complete</span>
                     <span className="text-muted-foreground">{formatCurrency(Math.max(0, monthlyTargetMetrics.monthlyTargetDebtLoad - monthlyTargetMetrics.debtLoadEnrolled))} remaining</span>
-                  </div>
-                </div>
-                {/* Expected Progress Indicator */}
-                <div className="pt-2 border-t border-border/30">
-                  <div className="flex items-center justify-between text-[10px]">
-                    <span className="text-muted-foreground">
-                      {isCurrentMonth ? 'Expected progress for today' : 'Month completed'}
-                    </span>
-                    <span className="font-semibold text-foreground">{expectedProgress.toFixed(0)}%</span>
                   </div>
                 </div>
               </div>
