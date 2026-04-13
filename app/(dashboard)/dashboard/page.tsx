@@ -222,23 +222,20 @@ function MetricTile({
                 mode="range"
                 selected={dateRange}
                 onSelect={(range) => setDateRange(range || {})}
-                numberOfMonths={2}
                 className="rounded-md border"
               />
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>
-                  {dateRange.from ? format(dateRange.from, 'MMM d, yyyy') : 'Start'} 
-                  {' - '} 
-                  {dateRange.to ? format(dateRange.to, 'MMM d, yyyy') : 'End'}
-                </span>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setShowCustom(false)}>
-                    Cancel
-                  </Button>
-                  <Button size="sm" onClick={handleApplyCustom} disabled={!dateRange.from || !dateRange.to}>
-                    Apply
-                  </Button>
-                </div>
+              <div className="text-xs text-muted-foreground">
+                {dateRange.from ? format(dateRange.from, 'MMM d, yyyy') : 'Select start'} 
+                {' - '} 
+                {dateRange.to ? format(dateRange.to, 'MMM d, yyyy') : 'Select end'}
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={() => setShowCustom(false)}>
+                  Cancel
+                </Button>
+                <Button size="sm" onClick={handleApplyCustom} disabled={!dateRange.from || !dateRange.to}>
+                  Apply
+                </Button>
               </div>
             </div>
           </PopoverContent>
