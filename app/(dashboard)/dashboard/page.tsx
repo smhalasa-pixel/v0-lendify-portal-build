@@ -156,6 +156,12 @@ export default function DashboardPage() {
   const [teamsPopoverOpen, setTeamsPopoverOpen] = React.useState(false)
   const [agentsPopoverOpen, setAgentsPopoverOpen] = React.useState(false)
   
+  // Month selector for Monthly Targets
+  const [selectedTargetMonth, setSelectedTargetMonth] = React.useState(() => {
+    const now = new Date()
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  })
+  
   // Get all agents for the agent dropdown - filtered based on current filter selection
   const allAgents = React.useMemo(() => dataService.getAgents(), [])
   
@@ -467,12 +473,34 @@ export default function DashboardPage() {
     </div>
   )
 
-  // Progress calculations
+  // Get month list for dropdown (last 12 months)
+  const monthOptions = React.useMemo(() => {
+    const options = []
+    const now = new Date()
+    for (let i = 0; i < 12; i++) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+      const label = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+      options.push({ value, label })
+    }
+    return options
+  }, [])
+  
+  // Get monthly target metrics based on selected month
+  const monthlyTargetMetrics = React.useMemo(() => {
+    return dataService.getMonthlyTargetMetrics(selectedTargetMonth)
+  }, [selectedTargetMonth])
+  
+  // Progress calculations - based on selected month
   const now = new Date()
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
-  const expectedProgress = (now.getDate() / daysInMonth) * 100
-  const unitsProgress = Math.min((metrics.unitsEnrolled / metrics.monthlyTargetUnits) * 100, 100)
-  const debtProgress = Math.min((metrics.debtLoadEnrolled / metrics.monthlyTargetDebtLoad) * 100, 100)
+  const [selectedYear, selectedMonthNum] = selectedTargetMonth.split('-').map(Number)
+  const isCurrentMonth = selectedYear === now.getFullYear() && selectedMonthNum === now.getMonth() + 1
+  const daysInSelectedMonth = new Date(selectedYear, selectedMonthNum, 0).getDate()
+  const dayOfMonth = isCurrentMonth ? now.getDate() : daysInSelectedMonth // For past months, show full month
+  const expectedProgress = isCurrentMonth ? (dayOfMonth / daysInSelectedMonth) * 100 : 100
+  
+  const unitsProgress = Math.min((monthlyTargetMetrics.unitsEnrolled / monthlyTargetMetrics.monthlyTargetUnits) * 100, 100)
+  const debtProgress = Math.min((monthlyTargetMetrics.debtLoadEnrolled / monthlyTargetMetrics.monthlyTargetDebtLoad) * 100, 100)
   const unitsBehind = unitsProgress < (expectedProgress - 20) && unitsProgress < 100
   const debtBehind = debtProgress < (expectedProgress - 20) && debtProgress < 100
   const isPIPRisk = unitsBehind || debtBehind
@@ -823,12 +851,26 @@ export default function DashboardPage() {
                     <p className="text-[10px] text-muted-foreground">Track your progress</p>
                   </div>
                 </div>
-                {isPIPRisk && (
-                  <Badge variant="destructive" className="text-[10px] px-2 py-0.5 h-5 gap-1 bg-rose-500/20 text-rose-400 border-rose-500/40 animate-pulse">
-                    <AlertTriangle className="size-3" />
-                    PIP Risk
-                  </Badge>
-                )}
+                <div className="flex items-center gap-2">
+                  {isPIPRisk && (
+                    <Badge variant="destructive" className="text-[10px] px-2 py-0.5 h-5 gap-1 bg-rose-500/20 text-rose-400 border-rose-500/40 animate-pulse">
+                      <AlertTriangle className="size-3" />
+                      PIP Risk
+                    </Badge>
+                  )}
+                  <Select value={selectedTargetMonth} onValueChange={setSelectedTargetMonth}>
+                    <SelectTrigger className="w-[140px] h-7 text-xs bg-background/50 border-border/50">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {monthOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value} className="text-xs">
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <div className="space-y-4">
                 {/* Units */}
@@ -837,7 +879,7 @@ export default function DashboardPage() {
                     <span className={cn("text-xs font-medium", unitsBehind ? "text-rose-400" : "text-muted-foreground")}>
                       Units Enrolled {unitsBehind && <AlertTriangle className="inline size-3 ml-1" />}
                     </span>
-                    <span className="text-sm font-bold text-foreground">{metrics.unitsEnrolled} <span className="text-muted-foreground font-normal">/ {metrics.monthlyTargetUnits}</span></span>
+                    <span className="text-sm font-bold text-foreground">{monthlyTargetMetrics.unitsEnrolled} <span className="text-muted-foreground font-normal">/ {monthlyTargetMetrics.monthlyTargetUnits}</span></span>
                   </div>
                   <div className="relative h-3 bg-muted/50 rounded-full overflow-hidden">
                     <div className="absolute top-0 bottom-0 w-0.5 bg-white/60 z-10 rounded-full" style={{ left: `${expectedProgress}%` }} />
@@ -851,7 +893,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex justify-between text-[10px]">
                     <span className={cn("font-semibold", unitsBehind ? "text-rose-400" : "text-primary")}>{unitsProgress.toFixed(0)}% complete</span>
-                    <span className="text-muted-foreground">{Math.max(0, metrics.monthlyTargetUnits - metrics.unitsEnrolled)} remaining</span>
+                    <span className="text-muted-foreground">{Math.max(0, monthlyTargetMetrics.monthlyTargetUnits - monthlyTargetMetrics.unitsEnrolled)} remaining</span>
                   </div>
                 </div>
                 {/* Debt Load */}
@@ -860,7 +902,7 @@ export default function DashboardPage() {
                     <span className={cn("text-xs font-medium", debtBehind ? "text-rose-400" : "text-muted-foreground")}>
                       Debt Load {debtBehind && <AlertTriangle className="inline size-3 ml-1" />}
                     </span>
-                    <span className="text-sm font-bold text-foreground">{formatCurrency(metrics.debtLoadEnrolled)} <span className="text-muted-foreground font-normal">/ {formatCurrency(metrics.monthlyTargetDebtLoad)}</span></span>
+                    <span className="text-sm font-bold text-foreground">{formatCurrency(monthlyTargetMetrics.debtLoadEnrolled)} <span className="text-muted-foreground font-normal">/ {formatCurrency(monthlyTargetMetrics.monthlyTargetDebtLoad)}</span></span>
                   </div>
                   <div className="relative h-3 bg-muted/50 rounded-full overflow-hidden">
                     <div className="absolute top-0 bottom-0 w-0.5 bg-white/60 z-10 rounded-full" style={{ left: `${expectedProgress}%` }} />
@@ -874,13 +916,15 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex justify-between text-[10px]">
                     <span className={cn("font-semibold", debtBehind ? "text-rose-400" : "text-emerald-400")}>{debtProgress.toFixed(0)}% complete</span>
-                    <span className="text-muted-foreground">{formatCurrency(Math.max(0, metrics.monthlyTargetDebtLoad - metrics.debtLoadEnrolled))} remaining</span>
+                    <span className="text-muted-foreground">{formatCurrency(Math.max(0, monthlyTargetMetrics.monthlyTargetDebtLoad - monthlyTargetMetrics.debtLoadEnrolled))} remaining</span>
                   </div>
                 </div>
                 {/* Expected Progress Indicator */}
                 <div className="pt-2 border-t border-border/30">
                   <div className="flex items-center justify-between text-[10px]">
-                    <span className="text-muted-foreground">Expected progress for today</span>
+                    <span className="text-muted-foreground">
+                      {isCurrentMonth ? 'Expected progress for today' : 'Month completed'}
+                    </span>
                     <span className="font-semibold text-foreground">{expectedProgress.toFixed(0)}%</span>
                   </div>
                 </div>

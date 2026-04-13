@@ -1394,6 +1394,22 @@ export const dataService = {
   getDashboardMetrics,
   getTeamMetrics,
   
+  // Monthly Target Metrics - returns different values based on selected month
+  getMonthlyTargetMetrics: (month: string): { unitsEnrolled: number; debtLoadEnrolled: number; monthlyTargetUnits: number; monthlyTargetDebtLoad: number } => {
+    // Mock data for different months (format: 'YYYY-MM')
+    const monthlyData: Record<string, { unitsEnrolled: number; debtLoadEnrolled: number; monthlyTargetUnits: number; monthlyTargetDebtLoad: number }> = {
+      '2026-04': { unitsEnrolled: 8, debtLoadEnrolled: 1850000, monthlyTargetUnits: 15, monthlyTargetDebtLoad: 3000000 }, // Current month - partial
+      '2026-03': { unitsEnrolled: 14, debtLoadEnrolled: 2780000, monthlyTargetUnits: 15, monthlyTargetDebtLoad: 3000000 }, // Last month - almost hit
+      '2026-02': { unitsEnrolled: 16, debtLoadEnrolled: 3250000, monthlyTargetUnits: 15, monthlyTargetDebtLoad: 3000000 }, // Exceeded targets
+      '2026-01': { unitsEnrolled: 12, debtLoadEnrolled: 2450000, monthlyTargetUnits: 15, monthlyTargetDebtLoad: 3000000 }, // Below target
+      '2025-12': { unitsEnrolled: 15, debtLoadEnrolled: 3100000, monthlyTargetUnits: 15, monthlyTargetDebtLoad: 3000000 }, // Hit targets
+      '2025-11': { unitsEnrolled: 11, debtLoadEnrolled: 2200000, monthlyTargetUnits: 14, monthlyTargetDebtLoad: 2800000 }, // Different targets
+      '2025-10': { unitsEnrolled: 13, debtLoadEnrolled: 2650000, monthlyTargetUnits: 14, monthlyTargetDebtLoad: 2800000 },
+    }
+    
+    return monthlyData[month] || { unitsEnrolled: 8, debtLoadEnrolled: 1850000, monthlyTargetUnits: 15, monthlyTargetDebtLoad: 3000000 }
+  },
+  
   // Dynamic user/team helpers - these update automatically when users change
   getAllTeamIds: (): string[] => {
     const teamIds = new Set<string>()
