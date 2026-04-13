@@ -1299,10 +1299,43 @@ export const dataService = {
     )
   },
   
-  // Leaderboard
+  // Leaderboard - returns different rankings based on period
   getLeaderboard: (period: 'mtd' | 'qtd' | 'ytd' = 'mtd'): LeaderboardEntry[] => {
-    // In a real app, this would filter by period
+    // Simulate different rankings and values based on period
+    const periodMultipliers: Record<string, number> = {
+      'mtd': 1,
+      'qtd': 2.8,
+      'ytd': 11.5,
+    }
+    
+    const multiplier = periodMultipliers[period] || 1
+    
+    // Different ranking orders for different periods
+    const periodRankings: Record<string, string[]> = {
+      'mtd': ['user-1', 'user-5', 'user-4', 'user-7'], // Sarah #1 for MTD
+      'qtd': ['user-5', 'user-1', 'user-4', 'user-7'], // Emily #1 for QTD
+      'ytd': ['user-4', 'user-5', 'user-1', 'user-7'], // David #1 for YTD
+    }
+    
+    const ranking = periodRankings[period] || periodRankings['mtd']
+    
     return mockLeaderboard
+      .map(entry => {
+        const newRank = ranking.indexOf(entry.agentId) + 1 || entry.rank
+        const prevRank = entry.rank
+        
+        return {
+          ...entry,
+          rank: newRank,
+          unitsClosed: Math.round(entry.unitsClosed * multiplier),
+          debtLoadEnrolled: Math.round(entry.debtLoadEnrolled * multiplier),
+          unitsEnrolled: Math.round(entry.unitsEnrolled * multiplier),
+          totalCommissions: Math.round(entry.totalCommissions * multiplier),
+          previousRank: prevRank,
+          trend: newRank < prevRank ? 'up' as const : newRank > prevRank ? 'down' as const : 'same' as const,
+        }
+      })
+      .sort((a, b) => a.rank - b.rank)
   },
   
   // Pipeline
