@@ -157,6 +157,11 @@ export interface TeamMetrics extends DashboardMetrics {
   teamName: string
   memberCount: number
   topPerformer: string
+  performanceGrade: 'A+' | 'A' | 'A-' | 'B+' | 'B' | 'B-' | 'C+' | 'C' | 'C-' | 'D' | 'F'
+  pacing: number
+  pacingUnits: number
+  pacingDebtLoad: number
+  trend: 'up' | 'down' | 'same'
 }
 
 export interface AgentPerformance {

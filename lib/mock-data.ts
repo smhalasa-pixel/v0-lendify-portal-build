@@ -964,6 +964,11 @@ export function getTeamMetrics(): TeamMetrics[] {
     'team-1': 'West Coast Team',
     'team-2': 'East Coast Team',
   }
+  
+  const now = new Date()
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+  const daysPassed = now.getDate()
+  const expectedProgressDecimal = daysPassed / daysInMonth
 
   return teams.map(teamId => {
     const members = mockUsers.filter(u => u.teamId === teamId)
@@ -972,6 +977,34 @@ export function getTeamMetrics(): TeamMetrics[] {
       const user = mockUsers.find(u => u.id === l.agentId)
       return user?.teamId === teamId
     })
+    
+    // Calculate team pacing
+    const teamTargetUnits = metrics.monthlyTargetUnits * members.length
+    const teamTargetDebtLoad = metrics.monthlyTargetDebtLoad * members.length
+    const expectedUnitsAtThisPoint = teamTargetUnits * expectedProgressDecimal
+    const expectedDebtAtThisPoint = teamTargetDebtLoad * expectedProgressDecimal
+    
+    const pacingUnits = expectedUnitsAtThisPoint > 0 ? (metrics.unitsEnrolled / expectedUnitsAtThisPoint) * 100 : 0
+    const pacingDebtLoad = expectedDebtAtThisPoint > 0 ? (metrics.debtLoadEnrolled / expectedDebtAtThisPoint) * 100 : 0
+    const pacing = (pacingUnits + pacingDebtLoad) / 2
+    
+    // Determine performance grade based on pacing
+    const getGrade = (p: number): 'A+' | 'A' | 'A-' | 'B+' | 'B' | 'B-' | 'C+' | 'C' | 'C-' | 'D' | 'F' => {
+      if (p >= 120) return 'A+'
+      if (p >= 110) return 'A'
+      if (p >= 100) return 'A-'
+      if (p >= 90) return 'B+'
+      if (p >= 80) return 'B'
+      if (p >= 70) return 'B-'
+      if (p >= 60) return 'C+'
+      if (p >= 50) return 'C'
+      if (p >= 40) return 'C-'
+      if (p >= 30) return 'D'
+      return 'F'
+    }
+    
+    // Determine trend
+    const trend: 'up' | 'down' | 'same' = teamId === 'team-1' ? 'up' : 'same'
 
     return {
       ...metrics,
@@ -979,6 +1012,11 @@ export function getTeamMetrics(): TeamMetrics[] {
       teamName: teamNames[teamId],
       memberCount: members.length,
       topPerformer: teamLeader?.agentName || 'N/A',
+      performanceGrade: getGrade(pacing),
+      pacing,
+      pacingUnits,
+      pacingDebtLoad,
+      trend,
     }
   })
 }

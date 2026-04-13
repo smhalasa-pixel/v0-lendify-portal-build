@@ -1,6 +1,6 @@
 'use client'
 
-import { Users, Trophy } from 'lucide-react'
+import { Users, Trophy, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Table,
@@ -10,6 +10,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import { cn } from '@/lib/utils'
 import type { TeamMetrics } from '@/lib/types'
 
 interface TeamPerformanceTableProps {
@@ -20,14 +29,14 @@ interface TeamPerformanceTableProps {
 }
 
 function formatCurrency(value: number): string {
+  if (value >= 1000000) return `$${(value / 1000000).toFixed(2)}M`
+  if (value >= 1000) return `$${(value / 1000).toFixed(0)}K`
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 0,
   }).format(value)
 }
-
-import { Badge } from '@/components/ui/badge'
 
 export function TeamPerformanceTable({
   data,
@@ -38,16 +47,42 @@ export function TeamPerformanceTable({
   // Sort by debt load enrolled to determine rankings
   const sortedData = [...data].sort((a, b) => b.debtLoadEnrolled - a.debtLoadEnrolled)
 
+  const getTrendIcon = (trend: 'up' | 'down' | 'same') => {
+    switch (trend) {
+      case 'up':
+        return <TrendingUp className="size-4 text-emerald-400" />
+      case 'down':
+        return <TrendingDown className="size-4 text-rose-400" />
+      default:
+        return <Minus className="size-4 text-muted-foreground" />
+    }
+  }
+
+  const getGradeColor = (grade: string) => {
+    if (grade.startsWith('A')) return 'border-emerald-500 text-emerald-500 bg-emerald-500/10'
+    if (grade.startsWith('B')) return 'border-blue-500 text-blue-500 bg-blue-500/10'
+    if (grade.startsWith('C')) return 'border-amber-500 text-amber-500 bg-amber-500/10'
+    if (grade.startsWith('D')) return 'border-orange-500 text-orange-500 bg-orange-500/10'
+    return 'border-red-500 text-red-500 bg-red-500/10'
+  }
+
+  const getPacingColor = (pacing: number) => {
+    if (pacing >= 100) return 'text-emerald-400'
+    if (pacing >= 80) return 'text-blue-400'
+    if (pacing >= 60) return 'text-amber-400'
+    return 'text-rose-400'
+  }
+
   return (
     <Card className="glass-card overflow-hidden">
-      <CardHeader className="border-b border-border/50">
+      <CardHeader className="border-b border-border/50 pb-3">
         <div className="flex items-center gap-3">
           <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center">
             <Users className="size-4 text-primary" />
           </div>
           <div>
-            <CardTitle className="text-foreground">{title}</CardTitle>
-            <CardDescription>{description}</CardDescription>
+            <CardTitle className="text-base font-semibold">{title}</CardTitle>
+            <CardDescription className="text-xs">{description}</CardDescription>
           </div>
         </div>
       </CardHeader>
@@ -56,19 +91,21 @@ export function TeamPerformanceTable({
           <Table>
             <TableHeader>
               <TableRow className="border-border/50 hover:bg-transparent">
-                <TableHead className="text-muted-foreground font-medium w-12">#</TableHead>
-                <TableHead className="text-muted-foreground font-medium">Team</TableHead>
-                <TableHead className="text-muted-foreground font-medium text-right">Members</TableHead>
-                <TableHead className="text-muted-foreground font-medium text-right">Debt Enrolled</TableHead>
-                <TableHead className="text-muted-foreground font-medium text-right">Units</TableHead>
-                <TableHead className="text-muted-foreground font-medium text-right">Commission</TableHead>
-                <TableHead className="text-muted-foreground font-medium">Top Performer</TableHead>
+                <TableHead className="text-[10px] uppercase tracking-wider w-12">#</TableHead>
+                <TableHead className="text-[10px] uppercase tracking-wider">Team</TableHead>
+                <TableHead className="text-[10px] uppercase tracking-wider text-center">Units</TableHead>
+                <TableHead className="text-[10px] uppercase tracking-wider text-center">Debt Enrolled</TableHead>
+                <TableHead className="text-[10px] uppercase tracking-wider text-center">Conv. Rate</TableHead>
+                <TableHead className="text-[10px] uppercase tracking-wider text-center">Grade</TableHead>
+                <TableHead className="text-[10px] uppercase tracking-wider text-center">Pacing</TableHead>
+                <TableHead className="text-[10px] uppercase tracking-wider text-center">Trend</TableHead>
+                <TableHead className="text-[10px] uppercase tracking-wider">Top Performer</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {sortedData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-12">
+                  <TableCell colSpan={9} className="text-center text-muted-foreground py-12">
                     No team data available
                   </TableCell>
                 </TableRow>
@@ -76,59 +113,121 @@ export function TeamPerformanceTable({
                 sortedData.map((team, index) => {
                   const isUserTeam = highlightTeamId && team.teamId === highlightTeamId
                   return (
-                  <TableRow 
-                    key={team.teamId} 
-                    className={`border-border/50 hover:bg-muted/30 ${isUserTeam ? 'bg-primary/5' : ''}`}
-                  >
-                    <TableCell className="font-medium">
-                      {index < 3 ? (
-                        <div className={`
-                          size-6 rounded-full flex items-center justify-center text-xs font-bold
-                          ${index === 0 ? 'bg-yellow-500/20 text-yellow-400' : ''}
-                          ${index === 1 ? 'bg-slate-400/20 text-slate-300' : ''}
-                          ${index === 2 ? 'bg-orange-600/20 text-orange-400' : ''}
-                        `}>
-                          {index + 1}
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">{index + 1}</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-foreground">
-                          {team.teamName}
-                        </span>
-                        {index === 0 && (
-                          <Trophy className="size-4 text-yellow-400" />
+                    <TableRow 
+                      key={team.teamId} 
+                      className={cn("border-border/50 hover:bg-muted/30", isUserTeam && "bg-primary/5")}
+                    >
+                      <TableCell className="font-medium">
+                        {index < 3 ? (
+                          <div className={cn(
+                            "size-6 rounded-full flex items-center justify-center text-xs font-bold",
+                            index === 0 && "bg-yellow-500/20 text-yellow-400",
+                            index === 1 && "bg-slate-400/20 text-slate-300",
+                            index === 2 && "bg-orange-600/20 text-orange-400"
+                          )}>
+                            {index + 1}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">{index + 1}</span>
                         )}
-                        {isUserTeam && (
-                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Your Team</Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right text-muted-foreground">
-                      {team.memberCount}
-                    </TableCell>
-                    <TableCell className="text-right font-mono text-sm text-foreground/80">
-                      {formatCurrency(team.debtLoadEnrolled)}
-                    </TableCell>
-                    <TableCell className="text-right text-muted-foreground">
-                      {team.unitsEnrolled}
-                    </TableCell>
-                    <TableCell className="text-right font-mono text-sm text-emerald-400">
-                      {formatCurrency(team.totalCommissions)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className="size-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-medium text-primary">
-                          {team.topPerformer.charAt(0)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-foreground">
+                            {team.teamName}
+                          </span>
+                          {index === 0 && (
+                            <Trophy className="size-4 text-yellow-400" />
+                          )}
+                          {isUserTeam && (
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Your Team</Badge>
+                          )}
                         </div>
-                        <span className="text-muted-foreground text-sm">{team.topPerformer}</span>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )})
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex flex-col items-center gap-1">
+                          <span className="text-sm font-medium">{team.unitsEnrolled}</span>
+                          <span className="text-[10px] text-muted-foreground">/ {team.monthlyTargetUnits * team.memberCount}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex flex-col items-center gap-1">
+                          <span className="text-sm font-medium">{formatCurrency(team.debtLoadEnrolled)}</span>
+                          <span className="text-[10px] text-muted-foreground">/ {formatCurrency(team.monthlyTargetDebtLoad * team.memberCount)}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span className="text-sm font-medium">{team.conversionRate.toFixed(1)}%</span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <TooltipProvider delayDuration={100}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Badge 
+                                variant="outline" 
+                                className={cn("font-semibold cursor-help", getGradeColor(team.performanceGrade))}
+                              >
+                                {team.performanceGrade}
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-[200px] text-center">
+                              <p className="text-xs">Based on team&apos;s weighted performance metrics and pacing towards monthly target</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <TooltipProvider delayDuration={100}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex flex-col items-center gap-1 cursor-help">
+                                <span className={cn("text-sm font-semibold", getPacingColor(team.pacing))}>
+                                  {team.pacing.toFixed(0)}%
+                                </span>
+                                <Progress 
+                                  value={Math.min(team.pacing, 100)} 
+                                  className={cn(
+                                    "h-1 w-12",
+                                    team.pacing < 80 && "[&>div]:bg-rose-500",
+                                    team.pacing >= 80 && team.pacing < 100 && "[&>div]:bg-amber-500",
+                                    team.pacing >= 100 && "[&>div]:bg-emerald-500"
+                                  )}
+                                />
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="text-xs">
+                              <div className="flex flex-col gap-1.5 py-1">
+                                <div className="flex items-center justify-between gap-4">
+                                  <span className="text-muted-foreground">Units Pacing:</span>
+                                  <span className={cn("font-semibold", getPacingColor(team.pacingUnits))}>
+                                    {team.pacingUnits.toFixed(0)}%
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-between gap-4">
+                                  <span className="text-muted-foreground">Debt Load Pacing:</span>
+                                  <span className={cn("font-semibold", getPacingColor(team.pacingDebtLoad))}>
+                                    {team.pacingDebtLoad.toFixed(0)}%
+                                  </span>
+                                </div>
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {getTrendIcon(team.trend)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="size-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-medium text-primary">
+                            {team.topPerformer.charAt(0)}
+                          </div>
+                          <span className="text-muted-foreground text-sm">{team.topPerformer}</span>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })
               )}
             </TableBody>
           </Table>
