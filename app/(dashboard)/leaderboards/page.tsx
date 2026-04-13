@@ -11,12 +11,18 @@ import {
   DollarSign,
   Users,
   Target,
+  CalendarIcon,
 } from 'lucide-react'
-import type { DateRange } from 'react-day-picker'
 
 import { useAuth } from '@/lib/auth-context'
 import { dataService } from '@/lib/mock-data'
-import { DateRangePicker } from '@/components/date-range-picker'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -26,7 +32,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+
 import {
   Table,
   TableBody,
@@ -60,12 +66,27 @@ function getTrendIcon(trend: 'up' | 'down' | 'same') {
   return <Minus className="size-4 text-muted-foreground" />
 }
 
+const periodOptions = [
+  { value: 'today', label: 'Today' },
+  { value: 'yesterday', label: 'Yesterday' },
+  { value: 'last7', label: 'Last 7 Days' },
+  { value: 'last14', label: 'Last 14 Days' },
+  { value: 'last30', label: 'Last 30 Days' },
+  { value: 'mtd', label: 'Month to Date' },
+  { value: 'lastMonth', label: 'Last Month' },
+  { value: 'qtd', label: 'Quarter to Date' },
+  { value: 'lastQuarter', label: 'Last Quarter' },
+  { value: 'ytd', label: 'Year to Date' },
+  { value: 'lastYear', label: 'Last Year' },
+]
+
 export default function LeaderboardsPage() {
   const { user } = useAuth()
-  const [period, setPeriod] = React.useState<'mtd' | 'qtd' | 'ytd'>('mtd')
-  const [dateRange, setDateRange] = React.useState<DateRange | undefined>(undefined)
+  const [period, setPeriod] = React.useState('mtd')
 
-  const leaderboard = React.useMemo(() => dataService.getLeaderboard(period), [period])
+  const leaderboard = React.useMemo(() => dataService.getLeaderboard(period as 'mtd' | 'qtd' | 'ytd'), [period])
+  
+  const currentPeriodLabel = periodOptions.find(p => p.value === period)?.label || 'Month to Date'
 
   // Find current user's position
   const userRank = user ? leaderboard.find((entry) => entry.agentId === user.id) : null
@@ -86,19 +107,19 @@ export default function LeaderboardsPage() {
             See how you stack up against your peers
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-          <DateRangePicker
-            dateRange={dateRange}
-            onDateRangeChange={setDateRange}
-          />
-          <Tabs value={period} onValueChange={(v) => setPeriod(v as 'mtd' | 'qtd' | 'ytd')}>
-            <TabsList>
-              <TabsTrigger value="mtd">This Month</TabsTrigger>
-              <TabsTrigger value="qtd">This Quarter</TabsTrigger>
-              <TabsTrigger value="ytd">This Year</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
+        <Select value={period} onValueChange={setPeriod}>
+          <SelectTrigger className="w-[180px]">
+            <CalendarIcon className="size-4 mr-2 text-muted-foreground" />
+            <SelectValue placeholder="Select period" />
+          </SelectTrigger>
+          <SelectContent>
+            {periodOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Your Position Card (if applicable) */}
