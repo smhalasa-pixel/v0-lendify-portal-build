@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { format, subDays, startOfMonth, startOfQuarter, startOfYear, subMonths, subQuarters, subYears, differenceInDays } from 'date-fns'
 import {
   Trophy,
   TrendingUp,
@@ -23,6 +24,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
+import { Calendar } from '@/components/ui/calendar'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -78,15 +86,104 @@ const periodOptions = [
   { value: 'lastQuarter', label: 'Last Quarter' },
   { value: 'ytd', label: 'Year to Date' },
   { value: 'lastYear', label: 'Last Year' },
+  { value: 'custom', label: 'Custom Range' },
 ]
+
+// Helper to calculate date ranges and their comparison periods
+function getDateRangeInfo(period: string, customRange?: { from?: Date; to?: Date }) {
+  const today = new Date()
+  today.setHours(23, 59, 59, 999)
+  
+  let from: Date
+  let to: Date = today
+  
+  switch (period) {
+    case 'today':
+      from = new Date(today)
+      from.setHours(0, 0, 0, 0)
+      break
+    case 'yesterday':
+      from = subDays(today, 1)
+      from.setHours(0, 0, 0, 0)
+      to = subDays(today, 1)
+      to.setHours(23, 59, 59, 999)
+      break
+    case 'last7':
+      from = subDays(today, 6)
+      break
+    case 'last14':
+      from = subDays(today, 13)
+      break
+    case 'last30':
+      from = subDays(today, 29)
+      break
+    case 'mtd':
+      from = startOfMonth(today)
+      break
+    case 'lastMonth':
+      from = startOfMonth(subMonths(today, 1))
+      to = subDays(startOfMonth(today), 1)
+      break
+    case 'qtd':
+      from = startOfQuarter(today)
+      break
+    case 'lastQuarter':
+      from = startOfQuarter(subQuarters(today, 1))
+      to = subDays(startOfQuarter(today), 1)
+      break
+    case 'ytd':
+      from = startOfYear(today)
+      break
+    case 'lastYear':
+      from = startOfYear(subYears(today, 1))
+      to = subDays(startOfYear(today), 1)
+      break
+    case 'custom':
+      if (customRange?.from && customRange?.to) {
+        from = customRange.from
+        to = customRange.to
+      } else {
+        from = subDays(today, 29)
+      }
+      break
+    default:
+      from = startOfMonth(today)
+  }
+  
+  // Calculate the comparison period (same length, immediately before)
+  const daysDiff = differenceInDays(to, from) + 1
+  const comparisonTo = subDays(from, 1)
+  const comparisonFrom = subDays(comparisonTo, daysDiff - 1)
+  
+  return {
+    from,
+    to,
+    daysDiff,
+    comparisonFrom,
+    comparisonTo,
+  }
+}
 
 export default function LeaderboardsPage() {
   const { user } = useAuth()
   const [period, setPeriod] = React.useState('mtd')
+  const [customRange, setCustomRange] = React.useState<{ from?: Date; to?: Date }>({})
+  const [calendarOpen, setCalendarOpen] = React.useState(false)
 
   const leaderboard = React.useMemo(() => dataService.getLeaderboard(period as 'mtd' | 'qtd' | 'ytd'), [period])
   
-  const currentPeriodLabel = periodOptions.find(p => p.value === period)?.label || 'Month to Date'
+  const dateRangeInfo = React.useMemo(() => getDateRangeInfo(period, customRange), [period, customRange])
+  
+  const currentPeriodLabel = React.useMemo(() => {
+    if (period === 'custom' && customRange.from && customRange.to) {
+      return `${format(customRange.from, 'MMM d')} - ${format(customRange.to, 'MMM d, yyyy')}`
+    }
+    return periodOptions.find(p => p.value === period)?.label || 'Month to Date'
+  }, [period, customRange])
+  
+  const comparisonPeriodLabel = React.useMemo(() => {
+    return `${format(dateRangeInfo.comparisonFrom, 'MMM d')} - ${format(dateRangeInfo.comparisonTo, 'MMM d, yyyy')}`
+  }, [dateRangeInfo])
 
   // Find current user's position
   const userRank = user ? leaderboard.find((entry) => entry.agentId === user.id) : null
@@ -107,19 +204,51 @@ export default function LeaderboardsPage() {
             See how you stack up against your peers
           </p>
         </div>
-        <Select value={period} onValueChange={setPeriod}>
-          <SelectTrigger className="w-[180px]">
-            <CalendarIcon className="size-4 mr-2 text-muted-foreground" />
-            <SelectValue placeholder="Select period" />
-          </SelectTrigger>
-          <SelectContent>
-            {periodOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2">
+          <Select value={period} onValueChange={(val) => {
+            setPeriod(val)
+            if (val === 'custom' && !customRange.from) {
+              setCalendarOpen(true)
+            }
+          }}>
+            <SelectTrigger className="w-[180px]">
+              <CalendarIcon className="size-4 mr-2 text-muted-foreground" />
+              <SelectValue placeholder="Select period" />
+            </SelectTrigger>
+            <SelectContent>
+              {periodOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          {period === 'custom' && (
+            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-9 px-3">
+                  {customRange.from && customRange.to 
+                    ? `${format(customRange.from, 'MMM d')} - ${format(customRange.to, 'MMM d')}`
+                    : 'Select dates'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  mode="range"
+                  selected={{ from: customRange.from, to: customRange.to }}
+                  onSelect={(range) => {
+                    setCustomRange({ from: range?.from, to: range?.to })
+                    if (range?.from && range?.to) {
+                      setCalendarOpen(false)
+                    }
+                  }}
+                  numberOfMonths={2}
+                />
+              </PopoverContent>
+            </Popover>
+          )}
+        </div>
       </div>
 
       {/* Your Position Card (if applicable) */}
@@ -136,14 +265,23 @@ export default function LeaderboardsPage() {
                   {formatCurrency(userRank.debtLoadEnrolled)} enrolled | {userRank.unitsEnrolled} units
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                {getTrendIcon(userRank.trend)}
-                <span className="text-sm text-muted-foreground">
-                  {userRank.previousRank && userRank.rank !== userRank.previousRank
-                    ? `${userRank.trend === 'up' ? '+' : ''}${userRank.previousRank - userRank.rank} from last period`
-                    : 'No change'}
-                </span>
-              </div>
+              <TooltipProvider delayDuration={100}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-2 cursor-help">
+                      {getTrendIcon(userRank.trend)}
+                      <span className="text-sm text-muted-foreground">
+                        {userRank.previousRank && userRank.rank !== userRank.previousRank
+                          ? `${userRank.trend === 'up' ? '+' : ''}${userRank.previousRank - userRank.rank} from last period`
+                          : 'No change'}
+                      </span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p className="text-xs">Compared to: {comparisonPeriodLabel}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
           </CardContent>
         </Card>
@@ -340,14 +478,23 @@ export default function LeaderboardsPage() {
                     </TooltipProvider>
                   </TableCell>
                   <TableCell className="text-center">
-                    <div className="flex items-center justify-center gap-1">
-                      {getTrendIcon(entry.trend)}
-                      {entry.previousRank && entry.rank !== entry.previousRank && (
-                        <span className="text-xs text-muted-foreground">
-                          ({entry.previousRank > entry.rank ? '+' : ''}{entry.previousRank - entry.rank})
-                        </span>
-                      )}
-                    </div>
+                    <TooltipProvider delayDuration={100}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center justify-center gap-1 cursor-help">
+                            {getTrendIcon(entry.trend)}
+                            {entry.previousRank && entry.rank !== entry.previousRank && (
+                              <span className="text-xs text-muted-foreground">
+                                ({entry.previousRank > entry.rank ? '+' : ''}{entry.previousRank - entry.rank})
+                              </span>
+                            )}
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                          <p className="text-xs">vs {comparisonPeriodLabel}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </TableCell>
                 </TableRow>
               ))}
