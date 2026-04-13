@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { format } from 'date-fns'
-import { CalendarIcon, TrendingUp, TrendingDown, AlertTriangle, Target, Users, User } from 'lucide-react'
+import { CalendarIcon, TrendingUp, TrendingDown, AlertTriangle, Target, Users, User, Filter } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useAuth } from '@/lib/auth-context'
-import { dataService } from '@/lib/mock-data'
+import { dataService, mockUsers } from '@/lib/mock-data'
 import { VolumeChart } from '@/components/dashboard/volume-chart'
 import { ClientSearch } from '@/components/dashboard/client-search'
 import { AnnouncementsList } from '@/components/dashboard/announcements-list'
@@ -130,16 +130,53 @@ export default function DashboardPage() {
   const isSupervisor = user?.role === 'supervisor'
   const isExecutive = user?.role === 'executive'
 
-  // Executive view toggle: 'teams' or 'agents'
-  const [executiveView, setExecutiveView] = React.useState<'teams' | 'agents'>('teams')
+  // Get all team leads and supervisors for filter options
+  const teamLeads = React.useMemo(() => 
+    mockUsers.filter(u => u.role === 'leadership'), 
+  [])
+  
+  const supervisors = React.useMemo(() => 
+    mockUsers.filter(u => u.role === 'supervisor'), 
+  [])
 
-  // Get metrics based on role
+  // Filter state: 'overall' | 'team-lead' | 'supervisor'
+  const [filterType, setFilterType] = React.useState<'overall' | 'team-lead' | 'supervisor'>('overall')
+  const [selectedTeamLead, setSelectedTeamLead] = React.useState<string>('all')
+  const [selectedSupervisor, setSelectedSupervisor] = React.useState<string>('all')
+  
+  // View toggle for tables: 'teams' or 'agents'
+  const [tableView, setTableView] = React.useState<'teams' | 'agents'>('teams')
+
+  // Get filtered metrics based on filter selection
   const metrics = React.useMemo(() => {
+    // Agent always sees their own metrics
     if (isAgent && user) return dataService.getDashboardMetrics(user.id)
+    
+    // For other roles, apply filter
+    if (filterType === 'team-lead') {
+      if (selectedTeamLead === 'all') {
+        // All team leads = all teams
+        return dataService.getDashboardMetrics()
+      }
+      const lead = teamLeads.find(l => l.id === selectedTeamLead)
+      if (lead?.teamId) {
+        return dataService.getDashboardMetrics(undefined, lead.teamId)
+      }
+    }
+    
+    if (filterType === 'supervisor') {
+      if (selectedSupervisor === 'all') {
+        return dataService.getDashboardMetrics()
+      }
+      const supervisor = supervisors.find(s => s.id === selectedSupervisor)
+      // For supervisor, we'd aggregate their teams - for now show global
+      return dataService.getDashboardMetrics()
+    }
+    
+    // Default: leadership sees their team, others see global
     if (isLeadership && user?.teamId) return dataService.getDashboardMetrics(undefined, user.teamId)
-    // Supervisors and executives see global metrics
     return dataService.getDashboardMetrics()
-  }, [user, isAgent, isLeadership])
+  }, [user, isAgent, isLeadership, filterType, selectedTeamLead, selectedSupervisor, teamLeads, supervisors])
 
   const pipeline = React.useMemo(() => {
     if (isAgent && user) return dataService.getPipeline(user.id)
@@ -149,54 +186,97 @@ export default function DashboardPage() {
   const volumeData = React.useMemo(() => dataService.getVolumeChartData(30), [])
   const announcements = React.useMemo(() => dataService.getAnnouncements(), [])
   
-  // Team metrics - filtered by role
+  // Team metrics - filtered by selection
   const teamMetrics = React.useMemo(() => {
     const allTeams = dataService.getTeamMetrics()
     
-    // Leadership only sees their team
+    if (filterType === 'team-lead') {
+      if (selectedTeamLead === 'all') {
+        return allTeams
+      }
+      const lead = teamLeads.find(l => l.id === selectedTeamLead)
+      if (lead?.teamId) {
+        return allTeams.filter(t => t.teamId === lead.teamId)
+      }
+    }
+    
+    if (filterType === 'supervisor') {
+      if (selectedSupervisor === 'all') {
+        return allTeams
+      }
+      const supervisor = supervisors.find(s => s.id === selectedSupervisor)
+      if (supervisor?.teamIds) {
+        return allTeams.filter(t => supervisor.teamIds!.includes(t.teamId))
+      }
+    }
+    
+    // Default behavior by role
     if (isLeadership && user?.teamId) {
       return allTeams.filter(t => t.teamId === user.teamId)
     }
-    
-    // Supervisor sees their assigned teams
     if (isSupervisor && user?.teamIds) {
       return allTeams.filter(t => user.teamIds!.includes(t.teamId))
     }
     
-    // Executive sees all teams
     return allTeams
-  }, [isLeadership, isSupervisor, user?.teamId, user?.teamIds])
+  }, [filterType, selectedTeamLead, selectedSupervisor, teamLeads, supervisors, isLeadership, isSupervisor, user?.teamId, user?.teamIds])
   
-  // Agent performance - filtered by role
+  // Agent performance - filtered by selection
   const agentPerformance = React.useMemo(() => {
-    // Leadership: their team's agents
+    if (filterType === 'team-lead') {
+      if (selectedTeamLead === 'all') {
+        return dataService.getAgentPerformanceByTeams(['team-1', 'team-2'])
+      }
+      const lead = teamLeads.find(l => l.id === selectedTeamLead)
+      if (lead?.teamId) {
+        return dataService.getAgentPerformanceByTeam(lead.teamId)
+      }
+    }
+    
+    if (filterType === 'supervisor') {
+      if (selectedSupervisor === 'all') {
+        return dataService.getAgentPerformanceByTeams(['team-1', 'team-2'])
+      }
+      const supervisor = supervisors.find(s => s.id === selectedSupervisor)
+      if (supervisor?.teamIds) {
+        return dataService.getAgentPerformanceByTeams(supervisor.teamIds)
+      }
+    }
+    
+    // Default behavior by role
     if (isLeadership && user?.teamId) {
       return dataService.getAgentPerformanceByTeam(user.teamId)
     }
-    
-    // Supervisor: agents from all their teams
     if (isSupervisor && user?.teamIds && user.teamIds.length > 0) {
       return dataService.getAgentPerformanceByTeams(user.teamIds)
     }
-    
-    // Executive: all agents (when in agents view)
     if (isExecutive) {
       return dataService.getAgentPerformanceByTeams(['team-1', 'team-2'])
     }
     
     return []
-  }, [isLeadership, isSupervisor, isExecutive, user?.teamId, user?.teamIds])
+  }, [filterType, selectedTeamLead, selectedSupervisor, teamLeads, supervisors, isLeadership, isSupervisor, isExecutive, user?.teamId, user?.teamIds])
 
-  // Dashboard title based on role
+  // Dashboard title based on filter
   const dashboardTitle = React.useMemo(() => {
     if (isAgent) return 'My Dashboard'
-    if (isLeadership) return `${user?.teamName || 'Team'} Dashboard`
-    if (isSupervisor) {
-      const teamCount = user?.teamIds?.length || 0
-      return `Supervisor Dashboard (${teamCount} Team${teamCount !== 1 ? 's' : ''})`
+    
+    if (filterType === 'team-lead') {
+      if (selectedTeamLead === 'all') return 'All Team Leads'
+      const lead = teamLeads.find(l => l.id === selectedTeamLead)
+      return lead ? `${lead.name}'s Team` : 'Team Lead Dashboard'
     }
+    
+    if (filterType === 'supervisor') {
+      if (selectedSupervisor === 'all') return 'All Supervisors'
+      const supervisor = supervisors.find(s => s.id === selectedSupervisor)
+      return supervisor ? `${supervisor.name}'s Teams` : 'Supervisor Dashboard'
+    }
+    
+    if (isLeadership) return `${user?.teamName || 'Team'} Dashboard`
+    if (isSupervisor) return 'Supervisor Dashboard'
     return 'Executive Dashboard'
-  }, [isAgent, isLeadership, isSupervisor, user?.teamName, user?.teamIds])
+  }, [isAgent, isLeadership, isSupervisor, filterType, selectedTeamLead, selectedSupervisor, teamLeads, supervisors, user?.teamName])
 
   // Date slicer states
   const [enrollmentDate, setEnrollmentDate] = React.useState('30d')
@@ -277,21 +357,82 @@ export default function DashboardPage() {
     return `$${val.toLocaleString()}`
   }
 
+  // Reset sub-filter when main filter changes
+  React.useEffect(() => {
+    setSelectedTeamLead('all')
+    setSelectedSupervisor('all')
+  }, [filterType])
+
   return (
     <div className="p-4 lg:p-5 space-y-4 max-w-[1600px] mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <h1 className="text-lg font-semibold text-foreground">{dashboardTitle}</h1>
+        </div>
+        
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Data Filter Slicer - Available to all roles except Agent */}
+          {!isAgent && (
+            <div className="flex items-center gap-2 bg-muted/50 rounded-lg p-1.5">
+              <Filter className="size-3.5 text-muted-foreground ml-1" />
+              
+              {/* Filter Type */}
+              <Select value={filterType} onValueChange={(val) => setFilterType(val as 'overall' | 'team-lead' | 'supervisor')}>
+                <SelectTrigger className="h-7 text-xs w-auto min-w-[100px] bg-background border-0">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="overall">Overall</SelectItem>
+                  <SelectItem value="team-lead">Per Team Lead</SelectItem>
+                  <SelectItem value="supervisor">Per Supervisor</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              {/* Team Lead Sub-filter */}
+              {filterType === 'team-lead' && (
+                <Select value={selectedTeamLead} onValueChange={setSelectedTeamLead}>
+                  <SelectTrigger className="h-7 text-xs w-auto min-w-[130px] bg-background border-0">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Team Leads</SelectItem>
+                    {teamLeads.map(lead => (
+                      <SelectItem key={lead.id} value={lead.id}>
+                        {lead.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              
+              {/* Supervisor Sub-filter */}
+              {filterType === 'supervisor' && (
+                <Select value={selectedSupervisor} onValueChange={setSelectedSupervisor}>
+                  <SelectTrigger className="h-7 text-xs w-auto min-w-[130px] bg-background border-0">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Supervisors</SelectItem>
+                    {supervisors.map(sup => (
+                      <SelectItem key={sup.id} value={sup.id}>
+                        {sup.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          )}
           
-          {/* Executive View Toggle */}
-          {isExecutive && (
+          {/* View Toggle for tables (Teams/Agents) - not for agents */}
+          {!isAgent && (
             <div className="flex items-center bg-muted rounded-lg p-1">
               <button
-                onClick={() => setExecutiveView('teams')}
+                onClick={() => setTableView('teams')}
                 className={cn(
                   "px-3 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-1.5",
-                  executiveView === 'teams' 
+                  tableView === 'teams' 
                     ? "bg-background text-foreground shadow-sm" 
                     : "text-muted-foreground hover:text-foreground"
                 )}
@@ -300,10 +441,10 @@ export default function DashboardPage() {
                 Teams
               </button>
               <button
-                onClick={() => setExecutiveView('agents')}
+                onClick={() => setTableView('agents')}
                 className={cn(
                   "px-3 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-1.5",
-                  executiveView === 'agents' 
+                  tableView === 'agents' 
                     ? "bg-background text-foreground shadow-sm" 
                     : "text-muted-foreground hover:text-foreground"
                 )}
@@ -313,8 +454,9 @@ export default function DashboardPage() {
               </button>
             </div>
           )}
+          
+          <span className="text-xs text-muted-foreground hidden sm:block">{format(new Date(), 'EEEE, MMMM d, yyyy')}</span>
         </div>
-        <span className="text-xs text-muted-foreground">{format(new Date(), 'EEEE, MMMM d, yyyy')}</span>
       </div>
 
       {/* Main Grid */}
@@ -448,54 +590,29 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Role-specific tables section */}
-      
-      {/* Agent: No tables, they see personal metrics only */}
-      
-      {/* Team Lead: Their team's agents only */}
-      {isLeadership && agentPerformance.length > 0 && (
-        <AgentPerformanceTable 
-          data={agentPerformance}
-          title={`${user?.teamName || 'My Team'} Agents`}
-          description="Individual performance breakdown for your team members"
-        />
-      )}
-      
-      {/* Supervisor: Their teams + agents from all their teams */}
-      {isSupervisor && (
+      {/* Data Tables - Based on filter and view selection */}
+      {!isAgent && (
         <>
-          {teamMetrics.length > 0 && (
+          {tableView === 'teams' && teamMetrics.length > 0 && (
             <TeamPerformanceTable 
               data={teamMetrics} 
-              title="My Teams"
-              description={`Performance metrics for your ${teamMetrics.length} team${teamMetrics.length !== 1 ? 's' : ''}`}
+              title={filterType === 'overall' ? 'All Teams' : 
+                     filterType === 'team-lead' ? (selectedTeamLead === 'all' ? 'All Teams' : `${teamLeads.find(l => l.id === selectedTeamLead)?.teamName || 'Team'}`) :
+                     filterType === 'supervisor' ? (selectedSupervisor === 'all' ? 'All Teams' : `${supervisors.find(s => s.id === selectedSupervisor)?.name}'s Teams`) :
+                     'Teams'}
+              description={`Performance metrics for ${teamMetrics.length} team${teamMetrics.length !== 1 ? 's' : ''}`}
+              highlightTeamId={user?.teamId}
             />
           )}
-          {agentPerformance.length > 0 && (
+          
+          {tableView === 'agents' && agentPerformance.length > 0 && (
             <AgentPerformanceTable 
               data={agentPerformance}
-              title="All My Agents"
-              description="Individual performance breakdown across all your teams"
-            />
-          )}
-        </>
-      )}
-      
-      {/* Executive: Toggle between Teams view and Agents view */}
-      {isExecutive && (
-        <>
-          {executiveView === 'teams' && teamMetrics.length > 0 && (
-            <TeamPerformanceTable 
-              data={teamMetrics} 
-              title="All Teams"
-              description="Performance metrics for all teams in the organization"
-            />
-          )}
-          {executiveView === 'agents' && agentPerformance.length > 0 && (
-            <AgentPerformanceTable 
-              data={agentPerformance}
-              title="All Agents"
-              description="Individual performance breakdown for all agents in the organization"
+              title={filterType === 'overall' ? 'All Agents' : 
+                     filterType === 'team-lead' ? (selectedTeamLead === 'all' ? 'All Agents' : `${teamLeads.find(l => l.id === selectedTeamLead)?.teamName || 'Team'} Agents`) :
+                     filterType === 'supervisor' ? (selectedSupervisor === 'all' ? 'All Agents' : `${supervisors.find(s => s.id === selectedSupervisor)?.name}'s Agents`) :
+                     'Agents'}
+              description={`Individual performance for ${agentPerformance.length} agent${agentPerformance.length !== 1 ? 's' : ''}`}
             />
           )}
         </>
