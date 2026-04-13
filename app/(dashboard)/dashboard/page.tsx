@@ -96,10 +96,72 @@ export default function DashboardPage() {
 
   const dashboardTitle = isAgent ? 'My Dashboard' : isLeadership ? `${user?.teamName || 'Team'} Dashboard` : 'Executive Dashboard'
 
-  // Commission date slicer
+  // Date slicer states for each section
+  const [enrollmentDate, setEnrollmentDate] = React.useState('30d')
+  const [conversionDate, setConversionDate] = React.useState('30d')
+  const [submissionDate, setSubmissionDate] = React.useState('30d')
   const [commissionDate, setCommissionDate] = React.useState('30d')
+  
+  // Custom date range state
   const [customRange, setCustomRange] = React.useState<{ from?: Date; to?: Date }>({})
-  const [calendarOpen, setCalendarOpen] = React.useState(false)
+  const [calendarOpen, setCalendarOpen] = React.useState<string | null>(null)
+
+  // Date preset options
+  const dateOptions = [
+    { value: 'today', label: 'Today' },
+    { value: 'yesterday', label: 'Yesterday' },
+    { value: '7d', label: '7 Days' },
+    { value: '14d', label: '14 Days' },
+    { value: '30d', label: '30 Days' },
+    { value: '60d', label: '60 Days' },
+    { value: '90d', label: '90 Days' },
+    { value: 'mtd', label: 'MTD' },
+    { value: 'last-month', label: 'Last Month' },
+    { value: 'qtd', label: 'QTD' },
+    { value: 'ytd', label: 'YTD' },
+    { value: 'last-year', label: 'Last Year' },
+    { value: 'all', label: 'All Time' },
+    { value: 'custom', label: 'Custom...' },
+  ]
+
+  // Reusable date selector component
+  const DateSelector = ({ value, onChange, id }: { value: string; onChange: (val: string) => void; id: string }) => (
+    <div className="flex items-center gap-1">
+      <Select value={value} onValueChange={(val) => val === 'custom' ? setCalendarOpen(id) : onChange(val)}>
+        <SelectTrigger className="h-5 text-[10px] w-auto min-w-[70px] bg-transparent border-border/40 px-2">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {dateOptions.map(opt => (
+            <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {value === 'custom' && (
+        <Popover open={calendarOpen === id} onOpenChange={(open) => setCalendarOpen(open ? id : null)}>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-5 text-[10px] px-1.5">
+              <CalendarIcon className="size-3 mr-1" />
+              {customRange.from && customRange.to 
+                ? `${format(customRange.from, 'MMM d')} - ${format(customRange.to, 'MMM d')}`
+                : 'Select'}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="end">
+            <Calendar
+              mode="range"
+              selected={{ from: customRange.from, to: customRange.to }}
+              onSelect={(range) => {
+                setCustomRange({ from: range?.from, to: range?.to })
+                if (range?.from && range?.to) setCalendarOpen(null)
+              }}
+              numberOfMonths={2}
+            />
+          </PopoverContent>
+        </Popover>
+      )}
+    </div>
+  )
 
   // Progress calculations
   const now = new Date()
@@ -137,6 +199,7 @@ export default function DashboardPage() {
               <CardContent className="p-3">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Enrollments</span>
+                  <DateSelector value={enrollmentDate} onChange={setEnrollmentDate} id="enrollment" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <Metric label="Units" value={metrics.unitsEnrolled} change={metrics.unitsEnrolledChange} />
@@ -148,6 +211,7 @@ export default function DashboardPage() {
               <CardContent className="p-3">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Conversion</span>
+                  <DateSelector value={conversionDate} onChange={setConversionDate} id="conversion" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <Metric label="Conv. Rate" value={metrics.conversionRate} change={metrics.conversionRateChange} format="percentage" />
@@ -162,6 +226,7 @@ export default function DashboardPage() {
             <CardContent className="p-3">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Submissions</span>
+                <DateSelector value={submissionDate} onChange={setSubmissionDate} id="submission" />
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <Metric label="Units" value={metrics.unitsSubmitted} change={metrics.unitsSubmittedChange} />
@@ -177,50 +242,7 @@ export default function DashboardPage() {
             <CardContent className="p-3">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Commissions</span>
-                <Select value={commissionDate} onValueChange={(val) => val === 'custom' ? setCalendarOpen(true) : setCommissionDate(val)}>
-                  <SelectTrigger className="h-5 text-[10px] w-auto min-w-[80px] bg-transparent border-border/40 px-2">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="today">Today</SelectItem>
-                    <SelectItem value="yesterday">Yesterday</SelectItem>
-                    <SelectItem value="7d">7 Days</SelectItem>
-                    <SelectItem value="14d">14 Days</SelectItem>
-                    <SelectItem value="30d">30 Days</SelectItem>
-                    <SelectItem value="60d">60 Days</SelectItem>
-                    <SelectItem value="90d">90 Days</SelectItem>
-                    <SelectItem value="mtd">MTD</SelectItem>
-                    <SelectItem value="last-month">Last Month</SelectItem>
-                    <SelectItem value="qtd">QTD</SelectItem>
-                    <SelectItem value="ytd">YTD</SelectItem>
-                    <SelectItem value="last-year">Last Year</SelectItem>
-                    <SelectItem value="all">All Time</SelectItem>
-                    <SelectItem value="custom">Custom...</SelectItem>
-                  </SelectContent>
-                </Select>
-                {commissionDate === 'custom' && (
-                  <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-                    <PopoverTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-5 text-[10px] px-2">
-                        <CalendarIcon className="size-3 mr-1" />
-                        {customRange.from && customRange.to 
-                          ? `${format(customRange.from, 'MMM d')} - ${format(customRange.to, 'MMM d')}`
-                          : 'Select'}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="end">
-                      <Calendar
-                        mode="range"
-                        selected={{ from: customRange.from, to: customRange.to }}
-                        onSelect={(range) => {
-                          setCustomRange({ from: range?.from, to: range?.to })
-                          if (range?.from && range?.to) setCalendarOpen(false)
-                        }}
-                        numberOfMonths={2}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                )}
+                <DateSelector value={commissionDate} onChange={setCommissionDate} id="commission" />
               </div>
               <div className="grid grid-cols-3 md:grid-cols-7 gap-3">
                 <Metric label="Commission" value={metrics.totalCommissions} format="currency" />
