@@ -11,8 +11,6 @@ import {
   BookOpen,
   DollarSign,
   AlertTriangle,
-  TrendingUp,
-  Database,
   Activity,
   Shield,
 } from 'lucide-react'
@@ -21,7 +19,6 @@ import { useAuth } from '@/lib/auth-context'
 import { dataService } from '@/lib/mock-data'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { CurrencyDisplay } from '@/components/ui/currency-display'
 
 const adminModules = [
   {
@@ -95,9 +92,10 @@ export default function AdminPage() {
     )
   }
 
-  const dashboardMetrics = dataService.getDashboardMetrics('executive')
   const agents = dataService.getAgents()
   const activeAgents = agents.filter(a => a.status === 'active').length
+  const teams = dataService.getTeams()
+  const pendingApprovals = 3 // Would come from real data - clawback disputes, access requests, etc.
 
   return (
     <div className="p-6 space-y-6">
@@ -127,38 +125,38 @@ export default function AdminPage() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="size-10 rounded-lg bg-success/10 flex items-center justify-center">
-                <DollarSign className="size-5 text-success" />
-              </div>
-              <div>
-                <CurrencyDisplay value={dashboardMetrics.debtLoadEnrolled} className="text-2xl font-bold" />
-                <p className="text-sm text-muted-foreground">MTD Debt Load</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="size-10 rounded-lg bg-chart-1/10 flex items-center justify-center">
-                <TrendingUp className="size-5 text-chart-1" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{dashboardMetrics.unitsEnrolled}</p>
-                <p className="text-sm text-muted-foreground">MTD Units</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
               <div className="size-10 rounded-lg bg-info/10 flex items-center justify-center">
                 <Activity className="size-5 text-info" />
               </div>
               <div>
                 <p className="text-2xl font-bold">99.9%</p>
                 <p className="text-sm text-muted-foreground">System Uptime</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="size-10 rounded-lg bg-chart-2/10 flex items-center justify-center">
+                <LayoutGrid className="size-5 text-chart-2" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{teams.length}</p>
+                <p className="text-sm text-muted-foreground">Total Teams</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="size-10 rounded-lg bg-warning/10 flex items-center justify-center">
+                <AlertTriangle className="size-5 text-warning" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{pendingApprovals}</p>
+                <p className="text-sm text-muted-foreground">Pending Approvals</p>
               </div>
             </div>
           </CardContent>
