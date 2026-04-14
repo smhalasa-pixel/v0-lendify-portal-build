@@ -1067,36 +1067,6 @@ export default function DashboardPage() {
             </Popover>
           )}
           
-          {/* View Toggle for tables */}
-          {!isAgent && (
-            <div className="flex items-center bg-muted rounded-lg p-1 gap-1">
-              <button
-                onClick={() => setTableView('teams')}
-                className={cn(
-                  "px-3 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-1.5",
-                  tableView === 'teams' 
-                    ? "bg-background text-foreground shadow-sm" 
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <Users className="size-3" />
-                Teams
-              </button>
-              <button
-                onClick={() => setTableView('agents')}
-                className={cn(
-                  "px-3 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-1.5",
-                  tableView === 'agents' 
-                    ? "bg-background text-foreground shadow-sm" 
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <User className="size-3" />
-                Agents
-              </button>
-            </div>
-          )}
-          
           {/* Current Date Display */}
           <span className="text-xs text-muted-foreground hidden sm:block">
             {format(new Date(), 'EEEE, MMMM d, yyyy')}
@@ -1254,7 +1224,37 @@ export default function DashboardPage() {
 
       {/* Data Tables - Based on filter and view selection */}
       {!isAgent && (
-        <>
+        <div className="space-y-4">
+          {/* View Toggle */}
+          <div className="flex items-center justify-center">
+            <div className="flex items-center bg-muted rounded-lg p-1 gap-1">
+              <button
+                onClick={() => setTableView('teams')}
+                className={cn(
+                  "px-4 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2",
+                  tableView === 'teams' 
+                    ? "bg-background text-foreground shadow-sm" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Users className="size-4" />
+                Teams
+              </button>
+              <button
+                onClick={() => setTableView('agents')}
+                className={cn(
+                  "px-4 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2",
+                  tableView === 'agents' 
+                    ? "bg-background text-foreground shadow-sm" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <User className="size-4" />
+                Agents
+              </button>
+            </div>
+          </div>
+
           {tableView === 'teams' && teamMetrics.length > 0 && (
             <TeamPerformanceTable 
               data={teamMetrics} 
@@ -1271,7 +1271,7 @@ export default function DashboardPage() {
               description={`Individual performance for ${agentPerformance.length} agent${agentPerformance.length !== 1 ? 's' : ''}`}
             />
           )}
-        </>
+        </div>
       )}
 
       {/* EPF Lead Source Performance - Admin Only */}
