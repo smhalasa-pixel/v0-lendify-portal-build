@@ -1129,7 +1129,8 @@ export function getDashboardMetrics(userId?: string, teamId?: string): Dashboard
     clientsActiveChange: 4.5,
     clientsCancelled: Math.round(unitsEnrolled * 0.15), // 15% cancelled
     clientsCancelledChange: -2.3,
-    cancellationRate: 15.0, // 15% cancellation rate
+    // Cancellation % = Clients Cancelled / Clients Enrolled * 100
+    cancellationRate: Math.round((Math.round(unitsEnrolled * 0.15) / unitsEnrolled) * 1000) / 10,
     cancellationRateChange: -1.8,
     // EPF metrics
     epfsCollected: Math.round(unitsEnrolled * 0.92), // 92% collection rate
