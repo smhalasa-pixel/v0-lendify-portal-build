@@ -1111,11 +1111,10 @@ export default function DashboardPage() {
         <div className="lg:col-span-2 space-y-3">
           
           {/* Top Row - Submissions (subtle highlight) */}
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <MetricTile label="Units Submitted" value={metrics.unitsSubmitted} change={metrics.unitsSubmittedChange} dateValue={unitsSubmittedDate} onDateChange={setUnitsSubmittedDate} subtleHighlight />
             <MetricTile label="Debt Submitted" value={metrics.debtLoadSubmitted} change={metrics.debtLoadSubmittedChange} format="currency" dateValue={debtLoadSubmittedDate} onDateChange={setDebtLoadSubmittedDate} subtleHighlight />
             <MetricTile label="Conv. Rate" value={metrics.conversionRate} change={metrics.conversionRateChange} format="percentage" dateValue={convRateDate} onDateChange={setConvRateDate} subtleHighlight />
-            <MetricTile label="Avg Daily Units" value={metrics.avgDailyEnrolledUnits} change={metrics.avgDailyEnrolledUnitsChange} decimals={1} dateValue={avgDailyUnitsDate} onDateChange={setAvgDailyUnitsDate} subtleHighlight />
           </div>
 
           {/* Highlighted KPIs - Units Enrolled, Debt Enrolled, Qualified Conv. */}
@@ -1133,9 +1132,10 @@ export default function DashboardPage() {
           </div>
 
           {/* Averages Row */}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <MetricTile label="Avg Debt/File" value={metrics.avgDebtLoadPerFile} change={metrics.avgDebtLoadPerFileChange} format="currency" dateValue={avgDebtPerFileDate} onDateChange={setAvgDebtPerFileDate} />
             <MetricTile label="Avg Daily Debt" value={metrics.avgDailyEnrolledDebt} change={metrics.avgDailyEnrolledDebtChange} format="currency" dateValue={avgDailyDebtDate} onDateChange={setAvgDailyDebtDate} />
+            <MetricTile label="Avg Daily Units" value={metrics.avgDailyEnrolledUnits} change={metrics.avgDailyEnrolledUnitsChange} decimals={1} dateValue={avgDailyUnitsDate} onDateChange={setAvgDailyUnitsDate} />
           </div>
 
           {/* Clients Row - All client metrics together */}
