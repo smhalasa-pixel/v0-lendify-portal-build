@@ -180,8 +180,8 @@ export default function LeaderboardsPage() {
   const isExecutive = user?.role === 'executive'
   
   // Determine if user can toggle between views
-  // Agent and Executive can see both views, Leadership and Supervisor see Team only
-  const canToggleView = isAgent || isExecutive
+  // Agent, Leadership, Supervisor, and Executive can see both views
+  const canToggleView = isAgent || isLeadership || isSupervisor || isExecutive
   
   const [period, setPeriod] = React.useState('mtd')
   const [viewType, setViewType] = React.useState<'agent' | 'team'>(canToggleView ? 'agent' : 'team')
