@@ -1274,13 +1274,13 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* EPF Lead Source Performance - Admin Only */}
+      {/* Lead Source Performance - Admin Only */}
       {user?.role === 'admin' && (
         <Card className="mt-6">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="text-center flex-1">
-                <CardTitle>EPF Lead Source Performance</CardTitle>
+                <CardTitle>Lead Source Performance</CardTitle>
                 <CardDescription>Marketing spend and cost efficiency by lead source</CardDescription>
               </div>
               <Select defaultValue="mtd">

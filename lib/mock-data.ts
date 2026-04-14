@@ -1520,6 +1520,7 @@ export const dataService = {
         unitsEnrolled,
         debtLoadEnrolled,
         conversionRate: leaderboardEntry?.conversionRate || Math.floor(Math.random() * 20) + 55,
+        ancillaryCount: Math.floor(Math.random() * 8) + 1, // Random ancillary sales 1-8
         performanceGrade: leaderboardEntry?.performanceGrade || 'B',
         monthlyTargetUnits,
         monthlyTargetDebtLoad,

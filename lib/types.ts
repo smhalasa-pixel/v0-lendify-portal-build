@@ -207,12 +207,13 @@ export interface AgentPerformance {
   unitsEnrolled: number
   debtLoadEnrolled: number
   conversionRate: number
+  ancillaryCount: number // Ancillary sales count
   performanceGrade: 'A+' | 'A' | 'A-' | 'B+' | 'B' | 'B-' | 'C+' | 'C' | 'C-' | 'D' | 'F'
   monthlyTargetUnits: number
   monthlyTargetDebtLoad: number
   pacing: number // overall percentage of target based on time elapsed
   pacingUnits: number // pacing percentage for units
-pacingDebtLoad: number // pacing percentage for debt load
+  pacingDebtLoad: number // pacing percentage for debt load
   trend: 'up' | 'down' | 'same'
   callQueueTier: 'bronze' | 'silver' | 'gold' | 'diamond' | 'platinum' | 'titanium' | 'champion' // Call queue tier
   }

@@ -125,6 +125,7 @@ export function AgentPerformanceTable({
                 <TableHead className="text-[10px] uppercase tracking-wider text-center">Units</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider text-center">Debt Enrolled</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider text-center">Conv. Rate</TableHead>
+                <TableHead className="text-[10px] uppercase tracking-wider text-center">Ancillary</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider text-center">Grade</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider text-center">Pacing</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider text-center">Queue</TableHead>
@@ -175,6 +176,9 @@ export function AgentPerformanceTable({
                     </TableCell>
                     <TableCell className="text-center">
                       <span className="text-sm font-medium">{agent.conversionRate.toFixed(1)}%</span>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <span className="text-sm font-medium">{agent.ancillaryCount}</span>
                     </TableCell>
                     <TableCell className="text-center">
                       <TooltipProvider delayDuration={100}>
