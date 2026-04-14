@@ -1129,7 +1129,7 @@ export default function DashboardPage() {
             <MetricTile label="Avg Daily Debt" value={metrics.avgDailyEnrolledDebt} change={metrics.avgDailyEnrolledDebtChange} format="currency" dateValue={avgDailyDebtDate} onDateChange={setAvgDailyDebtDate} />
           </div>
 
-          {/* Bottom Row - Clients & Daily Stats */}
+          {/* Row - Daily & Clients */}
           <div className="grid grid-cols-4 gap-2">
             <MetricTile label="Avg Daily Units" value={metrics.avgDailyEnrolledUnits} change={metrics.avgDailyEnrolledUnitsChange} decimals={1} dateValue={avgDailyUnitsDate} onDateChange={setAvgDailyUnitsDate} />
             <MetricTile label="Clients Enrolled" value={metrics.clientsEnrolled} change={metrics.clientsEnrolledChange} dateValue={clientsEnrolledDate} onDateChange={setClientsEnrolledDate} />
@@ -1137,9 +1137,11 @@ export default function DashboardPage() {
             <MetricTile label="Clients Cancelled" value={metrics.clientsCancelled} change={metrics.clientsCancelledChange} dateValue={clientsCancelledDate} onDateChange={setClientsCancelledDate} />
           </div>
 
-          {/* Cancellation Rate - No date slicer (calculated from Clients Cancelled / Clients Enrolled) */}
+          {/* Bottom Row - Cancellation (no date slicer, calculated from Clients Cancelled / Clients Enrolled) */}
           <div className="grid grid-cols-4 gap-2">
-            <MetricTile label="Cancellation %" value={metrics.cancellationRate} change={metrics.cancellationRateChange} format="percentage" hideDateSlicer />
+            <div className="col-start-2 col-span-2">
+              <MetricTile label="Cancellation %" value={metrics.cancellationRate} change={metrics.cancellationRateChange} format="percentage" hideDateSlicer />
+            </div>
           </div>
 
           {/* Chart */}
