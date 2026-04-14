@@ -268,6 +268,44 @@ export interface DashboardLayout {
   lastUpdated: string
 }
 
+// Ticket System Types
+export type TicketPriority = 'low' | 'medium' | 'high' | 'urgent'
+export type TicketStatus = 'open' | 'in_progress' | 'escalated' | 'resolved' | 'closed'
+export type TicketCategory = 'technical' | 'commission' | 'client' | 'hr' | 'other'
+
+export interface TicketComment {
+  id: string
+  ticketId: string
+  authorId: string
+  authorName: string
+  authorRole: UserRole
+  content: string
+  createdAt: string
+}
+
+export interface Ticket {
+  id: string
+  title: string
+  description: string
+  category: TicketCategory
+  priority: TicketPriority
+  status: TicketStatus
+  createdById: string
+  createdByName: string
+  createdByRole: UserRole
+  createdByTeamId?: string
+  assignedToId?: string
+  assignedToName?: string
+  assignedToRole?: UserRole
+  escalatedToId?: string
+  escalatedToName?: string
+  escalatedToRole?: UserRole
+  createdAt: string
+  updatedAt: string
+  resolvedAt?: string
+  comments: TicketComment[]
+}
+
 export interface DateRange {
   from: Date
   to: Date

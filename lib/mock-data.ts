@@ -18,6 +18,12 @@ import type {
   Task,
   AgentPerformance,
   Client,
+  Ticket,
+  TicketComment,
+  TicketPriority,
+  TicketStatus,
+  TicketCategory,
+  UserRole,
 } from './types'
 
 // Helper functions
@@ -989,6 +995,125 @@ export const mockTasks: Task[] = [
   },
 ]
 
+// Mock Tickets
+export const mockTickets: Ticket[] = [
+  {
+    id: 'ticket-1',
+    title: 'Commission discrepancy on loan #12345',
+    description: 'The commission amount for loan #12345 seems incorrect. Expected $2,500 but received $2,200. Please review.',
+    category: 'commission',
+    priority: 'high',
+    status: 'open',
+    createdById: 'user-1',
+    createdByName: 'Sarah Johnson',
+    createdByRole: 'agent',
+    createdByTeamId: 'team-1',
+    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    comments: [],
+  },
+  {
+    id: 'ticket-2',
+    title: 'CRM system not loading client data',
+    description: 'When I try to access client profiles, the page shows a loading spinner indefinitely. This has been happening since yesterday.',
+    category: 'technical',
+    priority: 'urgent',
+    status: 'in_progress',
+    createdById: 'user-5',
+    createdByName: 'Emily Brown',
+    createdByRole: 'agent',
+    createdByTeamId: 'team-2',
+    assignedToId: 'user-6',
+    assignedToName: 'James Wilson',
+    assignedToRole: 'supervisor',
+    createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
+    comments: [
+      {
+        id: 'comment-1',
+        ticketId: 'ticket-2',
+        authorId: 'user-6',
+        authorName: 'James Wilson',
+        authorRole: 'supervisor',
+        content: 'Looking into this now. Can you try clearing your browser cache in the meantime?',
+        createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
+      },
+    ],
+  },
+  {
+    id: 'ticket-3',
+    title: 'Request for additional training on new product',
+    description: 'Our team would benefit from additional training on the new refinance product that was launched last week.',
+    category: 'other',
+    priority: 'medium',
+    status: 'escalated',
+    createdById: 'user-2',
+    createdByName: 'Michael Chen',
+    createdByRole: 'leadership',
+    createdByTeamId: 'team-1',
+    escalatedToId: 'user-6',
+    escalatedToName: 'James Wilson',
+    escalatedToRole: 'supervisor',
+    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    comments: [
+      {
+        id: 'comment-2',
+        ticketId: 'ticket-3',
+        authorId: 'user-2',
+        authorName: 'Michael Chen',
+        authorRole: 'leadership',
+        content: 'This is affecting the entire team\'s ability to sell the new product effectively.',
+        createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+      },
+    ],
+  },
+  {
+    id: 'ticket-4',
+    title: 'Client complaint about response time',
+    description: 'Client John Smith complained that he hasn\'t received a callback in 3 days. Need guidance on how to handle this.',
+    category: 'client',
+    priority: 'high',
+    status: 'resolved',
+    createdById: 'user-1',
+    createdByName: 'Sarah Johnson',
+    createdByRole: 'agent',
+    createdByTeamId: 'team-1',
+    assignedToId: 'user-2',
+    assignedToName: 'Michael Chen',
+    assignedToRole: 'leadership',
+    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
+    resolvedAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
+    comments: [
+      {
+        id: 'comment-3',
+        ticketId: 'ticket-4',
+        authorId: 'user-2',
+        authorName: 'Michael Chen',
+        authorRole: 'leadership',
+        content: 'I called the client and resolved the issue. Please make sure to follow up within 24 hours in the future.',
+        createdAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
+      },
+    ],
+  },
+  {
+    id: 'ticket-5',
+    title: 'PTO request approval needed',
+    description: 'Requesting time off from April 20-25 for family vacation. All my clients are handled and assignments are up to date.',
+    category: 'hr',
+    priority: 'low',
+    status: 'open',
+    createdById: 'user-4',
+    createdByName: 'David Kim',
+    createdByRole: 'agent',
+    createdByTeamId: 'team-1',
+    createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    comments: [],
+  },
+]
+
 // Generate chart data for various time periods
 export function generateVolumeChartData(days: number): ChartDataPoint[] {
   const data: ChartDataPoint[] = []
@@ -1673,5 +1798,121 @@ export const dataService = {
         }
       }
     }
+  },
+
+  // Tickets
+  getTickets: (userId: string): Ticket[] => {
+    const user = mockUsers.find(u => u.id === userId)
+    if (!user) return []
+
+    return mockTickets.filter(ticket => {
+      // User can see tickets they created
+      if (ticket.createdById === userId) return true
+      
+      // User can see tickets assigned to them
+      if (ticket.assignedToId === userId) return true
+      
+      // User can see tickets escalated to them
+      if (ticket.escalatedToId === userId) return true
+      
+      // Leadership can see tickets from their team members
+      if (user.role === 'leadership' && ticket.createdByTeamId === user.teamId) return true
+      
+      // Supervisors can see tickets from teams they manage
+      if (user.role === 'supervisor' && user.teamIds?.includes(ticket.createdByTeamId || '')) return true
+      
+      // Executives and admins can see all tickets
+      if (user.role === 'executive' || user.role === 'admin') return true
+      
+      return false
+    }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+  },
+
+  getTicketById: (ticketId: string): Ticket | undefined => {
+    return mockTickets.find(t => t.id === ticketId)
+  },
+
+  createTicket: (ticket: Omit<Ticket, 'id' | 'createdAt' | 'updatedAt' | 'comments'>): Ticket => {
+    const newTicket: Ticket = {
+      ...ticket,
+      id: `ticket-${randomId()}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      comments: [],
+    }
+    mockTickets.push(newTicket)
+    return newTicket
+  },
+
+  updateTicketStatus: (ticketId: string, status: TicketStatus): void => {
+    const ticket = mockTickets.find(t => t.id === ticketId)
+    if (ticket) {
+      ticket.status = status
+      ticket.updatedAt = new Date().toISOString()
+      if (status === 'resolved' || status === 'closed') {
+        ticket.resolvedAt = new Date().toISOString()
+      }
+    }
+  },
+
+  escalateTicket: (ticketId: string, escalateToId: string): void => {
+    const ticket = mockTickets.find(t => t.id === ticketId)
+    const escalateTo = mockUsers.find(u => u.id === escalateToId)
+    if (ticket && escalateTo) {
+      ticket.status = 'escalated'
+      ticket.escalatedToId = escalateTo.id
+      ticket.escalatedToName = escalateTo.name
+      ticket.escalatedToRole = escalateTo.role
+      ticket.updatedAt = new Date().toISOString()
+    }
+  },
+
+  addTicketComment: (ticketId: string, authorId: string, content: string): TicketComment | undefined => {
+    const ticket = mockTickets.find(t => t.id === ticketId)
+    const author = mockUsers.find(u => u.id === authorId)
+    if (ticket && author) {
+      const comment: TicketComment = {
+        id: `comment-${randomId()}`,
+        ticketId,
+        authorId,
+        authorName: author.name,
+        authorRole: author.role,
+        content,
+        createdAt: new Date().toISOString(),
+      }
+      ticket.comments.push(comment)
+      ticket.updatedAt = new Date().toISOString()
+      return comment
+    }
+    return undefined
+  },
+
+  assignTicket: (ticketId: string, assignToId: string): void => {
+    const ticket = mockTickets.find(t => t.id === ticketId)
+    const assignTo = mockUsers.find(u => u.id === assignToId)
+    if (ticket && assignTo) {
+      ticket.assignedToId = assignTo.id
+      ticket.assignedToName = assignTo.name
+      ticket.assignedToRole = assignTo.role
+      ticket.status = 'in_progress'
+      ticket.updatedAt = new Date().toISOString()
+    }
+  },
+
+  // Get users available for escalation based on role hierarchy
+  getEscalationTargets: (userId: string): User[] => {
+    const user = mockUsers.find(u => u.id === userId)
+    if (!user) return []
+
+    const roleHierarchy: Record<UserRole, UserRole[]> = {
+      'agent': ['leadership'],
+      'leadership': ['supervisor', 'admin'],
+      'supervisor': ['executive', 'admin'],
+      'executive': ['admin'],
+      'admin': [],
+    }
+
+    const targetRoles = roleHierarchy[user.role] || []
+    return mockUsers.filter(u => targetRoles.includes(u.role) && u.status === 'active')
   },
 }

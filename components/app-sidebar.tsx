@@ -18,6 +18,7 @@ import {
   LogOut,
   Shield,
   ClipboardList,
+  Ticket,
 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
@@ -94,6 +95,12 @@ const mainNavItems = [
     title: 'Clawbacks',
     href: '/clawbacks',
     icon: AlertTriangle,
+    roles: ['agent', 'leadership', 'supervisor', 'executive', 'admin'] as UserRole[],
+  },
+  {
+    title: 'Tickets',
+    href: '/tickets',
+    icon: Ticket,
     roles: ['agent', 'leadership', 'supervisor', 'executive', 'admin'] as UserRole[],
   },
 ]
