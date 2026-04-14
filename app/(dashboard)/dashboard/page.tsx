@@ -136,7 +136,31 @@ function Metric({
   )
 }
 
-// Date preset options
+// Date preset options - used for label lookup (includes aliases for different value formats)
+const DATE_PRESETS_LOOKUP: Record<string, string> = {
+  'today': 'Today',
+  'yesterday': 'Yesterday',
+  '7d': '7 Days',
+  '14d': '14 Days',
+  '30d': '30 Days',
+  '60d': '60 Days',
+  '90d': '90 Days',
+  'this-week': 'This Week',
+  'last-week': 'Last Week',
+  'mtd': 'MTD',
+  'this-month': 'MTD',
+  'last-month': 'Last Month',
+  'qtd': 'QTD',
+  'this-quarter': 'QTD',
+  'ytd': 'YTD',
+  'this-year': 'YTD',
+  'last-quarter': 'Last Quarter',
+  'last-year': 'Last Year',
+  'all': 'All Time',
+  'custom': 'Custom...',
+}
+
+// Date options for dropdown selectors (no duplicates)
 const DATE_PRESETS = [
   { value: 'today', label: 'Today' },
   { value: 'yesterday', label: 'Yesterday' },
@@ -145,20 +169,15 @@ const DATE_PRESETS = [
   { value: '30d', label: '30 Days' },
   { value: '60d', label: '60 Days' },
   { value: '90d', label: '90 Days' },
-  { value: 'this-week', label: 'This Week' },
-  { value: 'last-week', label: 'Last Week' },
   { value: 'mtd', label: 'MTD' },
-  { value: 'this-month', label: 'MTD' },
   { value: 'last-month', label: 'Last Month' },
   { value: 'qtd', label: 'QTD' },
-  { value: 'this-quarter', label: 'QTD' },
-  { value: 'ytd', label: 'YTD' },
-  { value: 'this-year', label: 'YTD' },
   { value: 'last-quarter', label: 'Last Quarter' },
+  { value: 'ytd', label: 'YTD' },
   { value: 'last-year', label: 'Last Year' },
   { value: 'all', label: 'All Time' },
   { value: 'custom', label: 'Custom...' },
-  ]
+]
 
 // Compact metric tile with date preset selector
 function MetricTile({ 
@@ -169,14 +188,18 @@ function MetricTile({
   decimals,
   dateValue,
   onDateChange,
+  highlighted = false,
+  hideDateSlicer = false,
 }: { 
   label: string
   value: number
   change?: number
   format?: 'currency' | 'number' | 'percentage'
   decimals?: number
-  dateValue: string
-  onDateChange: (val: string) => void
+  dateValue?: string
+  onDateChange?: (val: string) => void
+  highlighted?: boolean
+  hideDateSlicer?: boolean
 }) {
   const [showCustom, setShowCustom] = React.useState(false)
   const [dateRange, setDateRange] = React.useState<{ from?: Date; to?: Date }>({})
@@ -196,10 +219,10 @@ function MetricTile({
   const fullValue = fmt === 'currency' ? `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : null
 
   // Check if current value is a custom date range (format: "YYYY-MM-DD to YYYY-MM-DD")
-  const isCustomValue = dateValue.includes(' to ')
-  const dateLabel = isCustomValue 
+  const isCustomValue = dateValue?.includes(' to ') ?? false
+  const dateLabel = isCustomValue && dateValue
     ? dateValue.split(' to ').map(d => format(new Date(d), 'MMM d')).join(' - ')
-    : DATE_PRESETS.find(d => d.value === dateValue)?.label || dateValue
+    : dateValue ? (DATE_PRESETS_LOOKUP[dateValue] || dateValue) : ''
 
   const handleSelectChange = (val: string) => {
     if (val === 'custom') {
@@ -219,56 +242,69 @@ function MetricTile({
   }
 
   return (
-    <div className="bg-card/50 border border-border/30 rounded-lg p-2.5">
+    <div className={cn(
+      "rounded-lg p-2.5 transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-primary/10 hover:z-10 cursor-default",
+      highlighted 
+        ? "bg-gradient-to-br from-primary/20 via-primary/10 to-background border-2 border-primary/40 p-3" 
+        : "bg-card/50 border border-border/30"
+    )}>
       <div className="flex items-center justify-between gap-1 mb-1">
-        <span className="text-[10px] text-muted-foreground truncate flex-1">{label}</span>
-        <Popover open={showCustom} onOpenChange={setShowCustom}>
-          <PopoverTrigger asChild>
-            <div>
-              <Select value={isCustomValue ? 'custom' : dateValue} onValueChange={handleSelectChange}>
-                <SelectTrigger className="h-5 text-[9px] w-auto min-w-[70px] bg-muted/30 border-border/40 px-1.5 py-0 [&>svg]:size-2.5 [&>svg]:opacity-50">
-                  <span className="truncate">{dateLabel}</span>
-                </SelectTrigger>
-                <SelectContent>
-                  {DATE_PRESETS.map(d => (
-                    <SelectItem key={d.value} value={d.value} className="text-xs">{d.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-3" align="end">
-            <div className="space-y-3">
-              <div className="text-xs font-medium">Select Date Range</div>
-              <Calendar
-                mode="range"
-                selected={dateRange}
-                onSelect={(range) => setDateRange(range || {})}
-                className="rounded-md border"
-              />
-              <div className="text-xs text-muted-foreground">
-                {dateRange.from ? format(dateRange.from, 'MMM d, yyyy') : 'Select start'} 
-                {' - '} 
-                {dateRange.to ? format(dateRange.to, 'MMM d, yyyy') : 'Select end'}
+        <span className={cn(
+          "text-muted-foreground truncate flex-1",
+          highlighted ? "text-xs font-medium" : "text-[10px]"
+        )}>{label}</span>
+        {!hideDateSlicer && dateValue && onDateChange && (
+          <Popover open={showCustom} onOpenChange={setShowCustom}>
+            <PopoverTrigger asChild>
+              <div>
+                <Select value={isCustomValue ? 'custom' : dateValue} onValueChange={handleSelectChange}>
+                  <SelectTrigger className="h-5 text-[9px] w-auto min-w-[70px] bg-muted/30 border-border/40 px-1.5 py-0 [&>svg]:size-2.5 [&>svg]:opacity-50">
+                    <span className="truncate">{dateLabel}</span>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DATE_PRESETS.map(d => (
+                      <SelectItem key={d.value} value={d.value} className="text-xs">{d.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" size="sm" onClick={() => setShowCustom(false)}>
-                  Cancel
-                </Button>
-                <Button size="sm" onClick={handleApplyCustom} disabled={!dateRange.from || !dateRange.to}>
-                  Apply
-                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-3" align="end">
+              <div className="space-y-3">
+                <div className="text-xs font-medium">Select Date Range</div>
+                <Calendar
+                  mode="range"
+                  selected={dateRange}
+                  onSelect={(range) => setDateRange(range || {})}
+                  className="rounded-md border"
+                />
+                <div className="text-xs text-muted-foreground">
+                  {dateRange.from ? format(dateRange.from, 'MMM d, yyyy') : 'Select start'} 
+                  {' - '} 
+                  {dateRange.to ? format(dateRange.to, 'MMM d, yyyy') : 'Select end'}
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setShowCustom(false)}>
+                    Cancel
+                  </Button>
+                  <Button size="sm" onClick={handleApplyCustom} disabled={!dateRange.from || !dateRange.to}>
+                    Apply
+                  </Button>
+                </div>
               </div>
-            </div>
-          </PopoverContent>
-        </Popover>
+            </PopoverContent>
+          </Popover>
+        )}
       </div>
       <div className="flex flex-col items-center text-center">
         {fullValue ? (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="text-base font-semibold text-foreground tabular-nums cursor-help">{formatted}</span>
+                <span className={cn(
+                  "font-semibold text-foreground tabular-nums cursor-help",
+                  highlighted ? "text-xl" : "text-base"
+                )}>{formatted}</span>
               </TooltipTrigger>
               <TooltipContent>
                 <span className="text-sm font-medium">{fullValue}</span>
@@ -276,11 +312,15 @@ function MetricTile({
             </Tooltip>
           </TooltipProvider>
         ) : (
-          <span className="text-base font-semibold text-foreground tabular-nums">{formatted}</span>
+          <span className={cn(
+            "font-semibold text-foreground tabular-nums",
+            highlighted ? "text-xl" : "text-base"
+          )}>{formatted}</span>
         )}
         {change !== undefined && (
           <span className={cn(
-            "text-[9px] font-medium flex items-center justify-center gap-0.5 mt-0.5",
+            "font-medium flex items-center justify-center gap-0.5 mt-0.5",
+            highlighted ? "text-[10px]" : "text-[9px]",
             change > 0 ? "text-emerald-400" : change < 0 ? "text-rose-400" : "text-muted-foreground"
           )}>
             {change > 0 ? <TrendingUp className="size-2.5" /> : change < 0 ? <TrendingDown className="size-2.5" /> : null}
@@ -1066,31 +1106,40 @@ export default function DashboardPage() {
         {/* Left Column - Metrics */}
         <div className="lg:col-span-2 space-y-3">
           
-          {/* Compact Metrics Grid */}
+          {/* Top Row - Submissions & Conversions */}
           <div className="grid grid-cols-4 gap-2">
-            {/* Submissions */}
             <MetricTile label="Units Submitted" value={metrics.unitsSubmitted} change={metrics.unitsSubmittedChange} dateValue={unitsSubmittedDate} onDateChange={setUnitsSubmittedDate} />
             <MetricTile label="Debt Submitted" value={metrics.debtLoadSubmitted} change={metrics.debtLoadSubmittedChange} format="currency" dateValue={debtLoadSubmittedDate} onDateChange={setDebtLoadSubmittedDate} />
-            {/* Conversions */}
             <MetricTile label="Conv. Rate" value={metrics.conversionRate} change={metrics.conversionRateChange} format="percentage" dateValue={convRateDate} onDateChange={setConvRateDate} />
-            <MetricTile label="Qual. Conv." value={metrics.qualifiedConversionRate} change={metrics.qualifiedConversionRateChange} format="percentage" dateValue={qualConvDate} onDateChange={setQualConvDate} />
-            {/* Enrollments */}
-            <MetricTile label="Units Enrolled" value={metrics.unitsEnrolled} change={metrics.unitsEnrolledChange} dateValue={unitsEnrolledDate} onDateChange={setUnitsEnrolledDate} />
-            <MetricTile label="Debt Enrolled" value={metrics.debtLoadEnrolled} change={metrics.debtLoadEnrolledChange} format="currency" dateValue={debtLoadEnrolledDate} onDateChange={setDebtLoadEnrolledDate} />
-            {/* FPC */}
+            <MetricTile label="Ancillary Sales" value={metrics.ancillaryCount} change={metrics.ancillaryCountChange} dateValue={ancillaryDate} onDateChange={setAncillaryDate} />
+          </div>
+
+          {/* Highlighted KPIs - Units Enrolled, Debt Enrolled, Qualified Conv. */}
+          <div className="grid grid-cols-3 gap-3">
+            <MetricTile label="Units Enrolled" value={metrics.unitsEnrolled} change={metrics.unitsEnrolledChange} dateValue={unitsEnrolledDate} onDateChange={setUnitsEnrolledDate} highlighted />
+            <MetricTile label="Debt Enrolled" value={metrics.debtLoadEnrolled} change={metrics.debtLoadEnrolledChange} format="currency" dateValue={debtLoadEnrolledDate} onDateChange={setDebtLoadEnrolledDate} highlighted />
+            <MetricTile label="Qual. Conv." value={metrics.qualifiedConversionRate} change={metrics.qualifiedConversionRateChange} format="percentage" dateValue={qualConvDate} onDateChange={setQualConvDate} highlighted />
+          </div>
+
+          {/* Middle Row - FPC & Averages */}
+          <div className="grid grid-cols-4 gap-2">
             <MetricTile label="Units FPC" value={metrics.unitsFPC} change={metrics.unitsFPCChange} dateValue={unitsFpcDate} onDateChange={setUnitsFpcDate} />
             <MetricTile label="Debt FPC" value={metrics.debtLoadFPC} change={metrics.debtLoadFPCChange} format="currency" dateValue={debtLoadFpcDate} onDateChange={setDebtLoadFpcDate} />
-            {/* Ancillary */}
-            <MetricTile label="Ancillary Sales" value={metrics.ancillaryCount} change={metrics.ancillaryCountChange} dateValue={ancillaryDate} onDateChange={setAncillaryDate} />
-            {/* Averages */}
             <MetricTile label="Avg Debt/File" value={metrics.avgDebtLoadPerFile} change={metrics.avgDebtLoadPerFileChange} format="currency" dateValue={avgDebtPerFileDate} onDateChange={setAvgDebtPerFileDate} />
             <MetricTile label="Avg Daily Debt" value={metrics.avgDailyEnrolledDebt} change={metrics.avgDailyEnrolledDebtChange} format="currency" dateValue={avgDailyDebtDate} onDateChange={setAvgDailyDebtDate} />
+          </div>
+
+          {/* Bottom Row - Clients & Daily Stats */}
+          <div className="grid grid-cols-4 gap-2">
             <MetricTile label="Avg Daily Units" value={metrics.avgDailyEnrolledUnits} change={metrics.avgDailyEnrolledUnitsChange} decimals={1} dateValue={avgDailyUnitsDate} onDateChange={setAvgDailyUnitsDate} />
-            {/* Clients */}
             <MetricTile label="Clients Enrolled" value={metrics.clientsEnrolled} change={metrics.clientsEnrolledChange} dateValue={clientsEnrolledDate} onDateChange={setClientsEnrolledDate} />
             <MetricTile label="Clients Active" value={metrics.clientsActive} change={metrics.clientsActiveChange} dateValue={clientsActiveDate} onDateChange={setClientsActiveDate} />
             <MetricTile label="Clients Cancelled" value={metrics.clientsCancelled} change={metrics.clientsCancelledChange} dateValue={clientsCancelledDate} onDateChange={setClientsCancelledDate} />
-            <MetricTile label="Cancellation %" value={metrics.cancellationRate} change={metrics.cancellationRateChange} format="percentage" dateValue={cancellationRateDate} onDateChange={setCancellationRateDate} />
+          </div>
+
+          {/* Cancellation Rate - No date slicer (calculated from Clients Cancelled / Clients Enrolled) */}
+          <div className="grid grid-cols-4 gap-2">
+            <MetricTile label="Cancellation %" value={metrics.cancellationRate} change={metrics.cancellationRateChange} format="percentage" hideDateSlicer />
           </div>
 
           {/* Chart */}
