@@ -137,7 +137,7 @@ export function AgentPerformanceTable({
                 const isPacingBehind = agent.pacing < 80
                 return (
                   <TableRow key={agent.agentId} className="border-border/50 hover:bg-muted/30">
-                    <TableCell className="text-left pl-4">
+                    <TableCell className="text-left pl-2">
                       <div className="flex items-center gap-2">
                         <Avatar className="size-7">
                           <AvatarImage src={agent.avatar} alt={agent.agentName} />
