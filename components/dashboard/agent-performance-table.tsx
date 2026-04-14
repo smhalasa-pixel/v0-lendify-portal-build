@@ -121,7 +121,7 @@ export function AgentPerformanceTable({
           <Table>
             <TableHeader>
               <TableRow className="border-border/50">
-                <TableHead className="text-[10px] uppercase tracking-wider text-left pl-4">Agent</TableHead>
+                <TableHead className="text-[10px] uppercase tracking-wider text-center">Agent</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider text-center">Units</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider text-center">Debt Enrolled</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider text-center">Conv. Rate</TableHead>

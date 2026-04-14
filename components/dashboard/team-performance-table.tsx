@@ -117,10 +117,11 @@ export function TeamPerformanceTable({
             <TableHeader>
               <TableRow className="border-border/50 hover:bg-transparent">
                 <TableHead className="text-[10px] uppercase tracking-wider w-12 text-center">#</TableHead>
-                <TableHead className="text-[10px] uppercase tracking-wider text-left pl-4">Team</TableHead>
+                <TableHead className="text-[10px] uppercase tracking-wider text-center">Team</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider text-center">Units</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider text-center">Debt Enrolled</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider text-center">Conv. Rate</TableHead>
+                <TableHead className="text-[10px] uppercase tracking-wider text-center">Ancillary</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider text-center">Grade</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider text-center">Pacing</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider text-center">Trend</TableHead>
@@ -130,7 +131,7 @@ export function TeamPerformanceTable({
             <TableBody>
               {sortedData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center text-muted-foreground py-12">
+                  <TableCell colSpan={10} className="text-center text-muted-foreground py-12">
                     No team data available
                   </TableCell>
                 </TableRow>
@@ -185,6 +186,9 @@ export function TeamPerformanceTable({
                       </TableCell>
                       <TableCell className="text-center">
                         <span className="text-sm font-medium">{team.conversionRate.toFixed(1)}%</span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span className="text-sm font-medium">{team.ancillaryCount}</span>
                       </TableCell>
                       <TableCell className="text-center">
                         <TooltipProvider delayDuration={100}>
