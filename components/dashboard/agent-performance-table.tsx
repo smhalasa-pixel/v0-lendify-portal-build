@@ -121,7 +121,7 @@ export function AgentPerformanceTable({
           <Table>
             <TableHeader>
               <TableRow className="border-border/50">
-                <TableHead className="text-[10px] uppercase tracking-wider text-center">Agent</TableHead>
+                <TableHead className="text-[10px] uppercase tracking-wider text-left pl-4">Agent</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider text-center">Units</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider text-center">Debt Enrolled</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider text-center">Conv. Rate</TableHead>
@@ -137,8 +137,8 @@ export function AgentPerformanceTable({
                 const isPacingBehind = agent.pacing < 80
                 return (
                   <TableRow key={agent.agentId} className="border-border/50 hover:bg-muted/30">
-                    <TableCell className="text-center">
-                      <div className="flex items-center justify-center gap-2">
+                    <TableCell className="text-left pl-4">
+                      <div className="flex items-center gap-2">
                         <Avatar className="size-7">
                           <AvatarImage src={agent.avatar} alt={agent.agentName} />
                           <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
