@@ -159,7 +159,7 @@ export function TeamPerformanceTable({
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="text-left pl-2">
+                      <TableCell className="text-left">
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-foreground">
                             {team.teamName}
