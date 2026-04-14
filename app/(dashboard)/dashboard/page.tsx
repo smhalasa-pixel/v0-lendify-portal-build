@@ -1133,9 +1133,9 @@ export default function DashboardPage() {
 
           {/* Averages Row */}
           <div className="grid grid-cols-3 gap-2">
-            <MetricTile label="Avg Debt/File" value={metrics.avgDebtLoadPerFile} change={metrics.avgDebtLoadPerFileChange} format="currency" dateValue={avgDebtPerFileDate} onDateChange={setAvgDebtPerFileDate} />
-            <MetricTile label="Avg Daily Debt" value={metrics.avgDailyEnrolledDebt} change={metrics.avgDailyEnrolledDebtChange} format="currency" dateValue={avgDailyDebtDate} onDateChange={setAvgDailyDebtDate} />
             <MetricTile label="Avg Daily Units" value={metrics.avgDailyEnrolledUnits} change={metrics.avgDailyEnrolledUnitsChange} decimals={1} dateValue={avgDailyUnitsDate} onDateChange={setAvgDailyUnitsDate} />
+            <MetricTile label="Avg Daily Debt" value={metrics.avgDailyEnrolledDebt} change={metrics.avgDailyEnrolledDebtChange} format="currency" dateValue={avgDailyDebtDate} onDateChange={setAvgDailyDebtDate} />
+            <MetricTile label="Avg Debt/File" value={metrics.avgDebtLoadPerFile} change={metrics.avgDebtLoadPerFileChange} format="currency" dateValue={avgDebtPerFileDate} onDateChange={setAvgDebtPerFileDate} />
           </div>
 
           {/* Clients Row - All client metrics together */}
