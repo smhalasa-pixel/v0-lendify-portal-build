@@ -89,19 +89,19 @@ const mainNavItems = [
     title: 'Commissions',
     href: '/commissions',
     icon: DollarSign,
-    roles: ['agent', 'leadership', 'supervisor', 'executive', 'admin'] as UserRole[],
+    roles: ['agent', 'leadership', 'supervisor', 'admin'] as UserRole[],
   },
   {
     title: 'Clawbacks',
     href: '/clawbacks',
     icon: AlertTriangle,
-    roles: ['agent', 'leadership', 'supervisor', 'executive', 'admin'] as UserRole[],
+    roles: ['agent', 'leadership', 'supervisor', 'admin'] as UserRole[],
   },
   {
     title: 'Tickets',
     href: '/tickets',
     icon: Ticket,
-    roles: ['agent', 'leadership', 'supervisor', 'executive', 'admin'] as UserRole[],
+    roles: ['agent', 'leadership', 'supervisor', 'admin'] as UserRole[],
   },
 ]
 
