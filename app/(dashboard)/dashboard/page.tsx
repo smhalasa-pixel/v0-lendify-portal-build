@@ -189,6 +189,7 @@ function MetricTile({
   dateValue,
   onDateChange,
   highlighted = false,
+  subtleHighlight = false,
   hideDateSlicer = false,
 }: { 
   label: string
@@ -199,6 +200,7 @@ function MetricTile({
   dateValue?: string
   onDateChange?: (val: string) => void
   highlighted?: boolean
+  subtleHighlight?: boolean
   hideDateSlicer?: boolean
 }) {
   const [showCustom, setShowCustom] = React.useState(false)
@@ -246,12 +248,14 @@ function MetricTile({
       "rounded-lg p-2.5 transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-primary/10 hover:z-10 cursor-default",
       highlighted 
         ? "bg-gradient-to-br from-primary/20 via-primary/10 to-background border-2 border-primary/40 p-3" 
-        : "bg-card/50 border border-border/30"
+        : subtleHighlight
+          ? "bg-gradient-to-br from-primary/10 via-background to-background border border-primary/20 p-2.5"
+          : "bg-card/50 border border-border/30"
     )}>
       <div className="flex items-center justify-between gap-1 mb-1">
         <span className={cn(
           "text-muted-foreground truncate flex-1",
-          highlighted ? "text-xs font-medium" : "text-[10px]"
+          highlighted ? "text-xs font-medium" : subtleHighlight ? "text-[11px] font-medium" : "text-[10px]"
         )}>{label}</span>
         {!hideDateSlicer && dateValue && onDateChange && (
           <Popover open={showCustom} onOpenChange={setShowCustom}>
@@ -1106,12 +1110,11 @@ export default function DashboardPage() {
         {/* Left Column - Metrics */}
         <div className="lg:col-span-2 space-y-3">
           
-          {/* Top Row - Submissions & Conversions */}
-          <div className="grid grid-cols-4 gap-2">
-            <MetricTile label="Units Submitted" value={metrics.unitsSubmitted} change={metrics.unitsSubmittedChange} dateValue={unitsSubmittedDate} onDateChange={setUnitsSubmittedDate} />
-            <MetricTile label="Debt Submitted" value={metrics.debtLoadSubmitted} change={metrics.debtLoadSubmittedChange} format="currency" dateValue={debtLoadSubmittedDate} onDateChange={setDebtLoadSubmittedDate} />
-            <MetricTile label="Conv. Rate" value={metrics.conversionRate} change={metrics.conversionRateChange} format="percentage" dateValue={convRateDate} onDateChange={setConvRateDate} />
-            <MetricTile label="Ancillary Sales" value={metrics.ancillaryCount} change={metrics.ancillaryCountChange} dateValue={ancillaryDate} onDateChange={setAncillaryDate} />
+          {/* Top Row - Submissions (subtle highlight) */}
+          <div className="grid grid-cols-3 gap-2">
+            <MetricTile label="Units Submitted" value={metrics.unitsSubmitted} change={metrics.unitsSubmittedChange} dateValue={unitsSubmittedDate} onDateChange={setUnitsSubmittedDate} subtleHighlight />
+            <MetricTile label="Debt Submitted" value={metrics.debtLoadSubmitted} change={metrics.debtLoadSubmittedChange} format="currency" dateValue={debtLoadSubmittedDate} onDateChange={setDebtLoadSubmittedDate} subtleHighlight />
+            <MetricTile label="Conv. Rate" value={metrics.conversionRate} change={metrics.conversionRateChange} format="percentage" dateValue={convRateDate} onDateChange={setConvRateDate} subtleHighlight />
           </div>
 
           {/* Highlighted KPIs - Units Enrolled, Debt Enrolled, Qualified Conv. */}
@@ -1121,7 +1124,7 @@ export default function DashboardPage() {
             <MetricTile label="Qual. Conv." value={metrics.qualifiedConversionRate} change={metrics.qualifiedConversionRateChange} format="percentage" dateValue={qualConvDate} onDateChange={setQualConvDate} highlighted />
           </div>
 
-          {/* Middle Row - FPC & Averages */}
+          {/* FPC & Averages Row */}
           <div className="grid grid-cols-4 gap-2">
             <MetricTile label="Units FPC" value={metrics.unitsFPC} change={metrics.unitsFPCChange} dateValue={unitsFpcDate} onDateChange={setUnitsFpcDate} />
             <MetricTile label="Debt FPC" value={metrics.debtLoadFPC} change={metrics.debtLoadFPCChange} format="currency" dateValue={debtLoadFpcDate} onDateChange={setDebtLoadFpcDate} />
@@ -1129,19 +1132,18 @@ export default function DashboardPage() {
             <MetricTile label="Avg Daily Debt" value={metrics.avgDailyEnrolledDebt} change={metrics.avgDailyEnrolledDebtChange} format="currency" dateValue={avgDailyDebtDate} onDateChange={setAvgDailyDebtDate} />
           </div>
 
-          {/* Row - Daily & Clients */}
+          {/* Averages & Ancillary Row */}
           <div className="grid grid-cols-4 gap-2">
             <MetricTile label="Avg Daily Units" value={metrics.avgDailyEnrolledUnits} change={metrics.avgDailyEnrolledUnitsChange} decimals={1} dateValue={avgDailyUnitsDate} onDateChange={setAvgDailyUnitsDate} />
+            <MetricTile label="Ancillary Sales" value={metrics.ancillaryCount} change={metrics.ancillaryCountChange} dateValue={ancillaryDate} onDateChange={setAncillaryDate} />
+          </div>
+
+          {/* Clients Row - All client metrics together */}
+          <div className="grid grid-cols-4 gap-2">
             <MetricTile label="Clients Enrolled" value={metrics.clientsEnrolled} change={metrics.clientsEnrolledChange} dateValue={clientsEnrolledDate} onDateChange={setClientsEnrolledDate} />
             <MetricTile label="Clients Active" value={metrics.clientsActive} change={metrics.clientsActiveChange} dateValue={clientsActiveDate} onDateChange={setClientsActiveDate} />
             <MetricTile label="Clients Cancelled" value={metrics.clientsCancelled} change={metrics.clientsCancelledChange} dateValue={clientsCancelledDate} onDateChange={setClientsCancelledDate} />
-          </div>
-
-          {/* Bottom Row - Cancellation (no date slicer, calculated from Clients Cancelled / Clients Enrolled) */}
-          <div className="grid grid-cols-4 gap-2">
-            <div className="col-start-2 col-span-2">
-              <MetricTile label="Cancellation %" value={metrics.cancellationRate} change={metrics.cancellationRateChange} format="percentage" hideDateSlicer />
-            </div>
+            <MetricTile label="Cancellation %" value={metrics.cancellationRate} change={metrics.cancellationRateChange} format="percentage" hideDateSlicer />
           </div>
 
           {/* Chart */}
