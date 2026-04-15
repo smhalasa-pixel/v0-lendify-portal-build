@@ -36,6 +36,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useAuth } from '@/lib/auth-context'
+import { useSettings } from '@/lib/settings-context'
 import { dataService } from '@/lib/mock-data'
 import { VolumeChart } from '@/components/dashboard/volume-chart'
 import { ClientSearch } from '@/components/dashboard/client-search'
@@ -338,7 +339,8 @@ function MetricTile({
 
 export default function DashboardPage() {
   const { user } = useAuth()
-
+  const settings = useSettings()
+  
   const isAgent = user?.role === 'agent'
   const isLeadership = user?.role === 'leadership'
   const isSupervisor = user?.role === 'supervisor'
@@ -346,6 +348,17 @@ export default function DashboardPage() {
   const isAdmin = user?.role === 'admin'
   // Admin and Executive see the same dashboard view
   const hasExecutiveView = isExecutive || isAdmin
+
+  // Get widget visibility based on user role
+  const widgets = React.useMemo(() => {
+    if (!user?.role) return []
+    return settings.getWidgetsForRole(user.role)
+  }, [user?.role, settings])
+
+  const isWidgetEnabled = React.useCallback((widgetId: string) => {
+    const widget = widgets.find(w => w.id === widgetId)
+    return widget?.enabled ?? true
+  }, [widgets])
 
   // Get all team leads and supervisors for filter options - dynamically from dataService
   const teamLeads = React.useMemo(() => dataService.getTeamLeads(), [])
@@ -1081,46 +1094,56 @@ export default function DashboardPage() {
         <div className="lg:col-span-2 space-y-3">
           
           {/* Top Row - Submissions (subtle highlight) */}
-          <div className="grid grid-cols-3 gap-2">
-            <MetricTile label="Units Submitted" value={metrics.unitsSubmitted} change={metrics.unitsSubmittedChange} dateValue={unitsSubmittedDate} onDateChange={setUnitsSubmittedDate} subtleHighlight />
-            <MetricTile label="Debt Submitted" value={metrics.debtLoadSubmitted} change={metrics.debtLoadSubmittedChange} format="currency" dateValue={debtLoadSubmittedDate} onDateChange={setDebtLoadSubmittedDate} subtleHighlight />
-            <MetricTile label="Conv. Rate" value={metrics.conversionRate} change={metrics.conversionRateChange} format="percentage" dateValue={convRateDate} onDateChange={setConvRateDate} subtleHighlight />
-          </div>
+          {isWidgetEnabled('kpi-submissions') && (
+            <div className="grid grid-cols-3 gap-2">
+              <MetricTile label="Units Submitted" value={metrics.unitsSubmitted} change={metrics.unitsSubmittedChange} dateValue={unitsSubmittedDate} onDateChange={setUnitsSubmittedDate} subtleHighlight />
+              <MetricTile label="Debt Submitted" value={metrics.debtLoadSubmitted} change={metrics.debtLoadSubmittedChange} format="currency" dateValue={debtLoadSubmittedDate} onDateChange={setDebtLoadSubmittedDate} subtleHighlight />
+              <MetricTile label="Conv. Rate" value={metrics.conversionRate} change={metrics.conversionRateChange} format="percentage" dateValue={convRateDate} onDateChange={setConvRateDate} subtleHighlight />
+            </div>
+          )}
 
           {/* Highlighted KPIs - Units Enrolled, Debt Enrolled, Qualified Conv. */}
-          <div className="grid grid-cols-3 gap-3">
-            <MetricTile label="Units Enrolled" value={metrics.unitsEnrolled} change={metrics.unitsEnrolledChange} dateValue={unitsEnrolledDate} onDateChange={setUnitsEnrolledDate} highlighted />
-            <MetricTile label="Debt Enrolled" value={metrics.debtLoadEnrolled} change={metrics.debtLoadEnrolledChange} format="currency" dateValue={debtLoadEnrolledDate} onDateChange={setDebtLoadEnrolledDate} highlighted />
-            <MetricTile label="Qual. Conv." value={metrics.qualifiedConversionRate} change={metrics.qualifiedConversionRateChange} format="percentage" dateValue={qualConvDate} onDateChange={setQualConvDate} highlighted />
-          </div>
+          {isWidgetEnabled('kpi-enrolled') && (
+            <div className="grid grid-cols-3 gap-3">
+              <MetricTile label="Units Enrolled" value={metrics.unitsEnrolled} change={metrics.unitsEnrolledChange} dateValue={unitsEnrolledDate} onDateChange={setUnitsEnrolledDate} highlighted />
+              <MetricTile label="Debt Enrolled" value={metrics.debtLoadEnrolled} change={metrics.debtLoadEnrolledChange} format="currency" dateValue={debtLoadEnrolledDate} onDateChange={setDebtLoadEnrolledDate} highlighted />
+              <MetricTile label="Qual. Conv." value={metrics.qualifiedConversionRate} change={metrics.qualifiedConversionRateChange} format="percentage" dateValue={qualConvDate} onDateChange={setQualConvDate} highlighted />
+            </div>
+          )}
 
           {/* FPC & Ancillary Row (dim highlight) */}
-          <div className="grid grid-cols-3 gap-2">
-            <MetricTile label="Units FPC" value={metrics.unitsFPC} change={metrics.unitsFPCChange} dateValue={unitsFpcDate} onDateChange={setUnitsFpcDate} subtleHighlight />
-            <MetricTile label="Debt FPC" value={metrics.debtLoadFPC} change={metrics.debtLoadFPCChange} format="currency" dateValue={debtLoadFpcDate} onDateChange={setDebtLoadFpcDate} subtleHighlight />
-            <MetricTile label="Ancillary Sales" value={metrics.ancillaryCount} change={metrics.ancillaryCountChange} dateValue={ancillaryDate} onDateChange={setAncillaryDate} subtleHighlight />
-          </div>
+          {isWidgetEnabled('kpi-fpc') && (
+            <div className="grid grid-cols-3 gap-2">
+              <MetricTile label="Units FPC" value={metrics.unitsFPC} change={metrics.unitsFPCChange} dateValue={unitsFpcDate} onDateChange={setUnitsFpcDate} subtleHighlight />
+              <MetricTile label="Debt FPC" value={metrics.debtLoadFPC} change={metrics.debtLoadFPCChange} format="currency" dateValue={debtLoadFpcDate} onDateChange={setDebtLoadFpcDate} subtleHighlight />
+              <MetricTile label="Ancillary Sales" value={metrics.ancillaryCount} change={metrics.ancillaryCountChange} dateValue={ancillaryDate} onDateChange={setAncillaryDate} subtleHighlight />
+            </div>
+          )}
 
           {/* Averages Row */}
-          <div className="grid grid-cols-3 gap-2">
-            <MetricTile label="Avg Daily Units" value={metrics.avgDailyEnrolledUnits} change={metrics.avgDailyEnrolledUnitsChange} decimals={1} dateValue={avgDailyUnitsDate} onDateChange={setAvgDailyUnitsDate} />
-            <MetricTile label="Avg Daily Debt" value={metrics.avgDailyEnrolledDebt} change={metrics.avgDailyEnrolledDebtChange} format="currency" dateValue={avgDailyDebtDate} onDateChange={setAvgDailyDebtDate} />
-            <MetricTile label="Avg Debt/File" value={metrics.avgDebtLoadPerFile} change={metrics.avgDebtLoadPerFileChange} format="currency" dateValue={avgDebtPerFileDate} onDateChange={setAvgDebtPerFileDate} />
-          </div>
+          {isWidgetEnabled('kpi-averages') && (
+            <div className="grid grid-cols-3 gap-2">
+              <MetricTile label="Avg Daily Units" value={metrics.avgDailyEnrolledUnits} change={metrics.avgDailyEnrolledUnitsChange} decimals={1} dateValue={avgDailyUnitsDate} onDateChange={setAvgDailyUnitsDate} />
+              <MetricTile label="Avg Daily Debt" value={metrics.avgDailyEnrolledDebt} change={metrics.avgDailyEnrolledDebtChange} format="currency" dateValue={avgDailyDebtDate} onDateChange={setAvgDailyDebtDate} />
+              <MetricTile label="Avg Debt/File" value={metrics.avgDebtLoadPerFile} change={metrics.avgDebtLoadPerFileChange} format="currency" dateValue={avgDebtPerFileDate} onDateChange={setAvgDebtPerFileDate} />
+            </div>
+          )}
 
           {/* Clients Row - All client metrics together */}
-          <div className="grid grid-cols-4 gap-2">
-            <MetricTile label="Clients Enrolled" value={metrics.clientsEnrolled} change={metrics.clientsEnrolledChange} dateValue={clientsEnrolledDate} onDateChange={setClientsEnrolledDate} />
-            <MetricTile label="Clients Active" value={metrics.clientsActive} change={metrics.clientsActiveChange} dateValue={clientsActiveDate} onDateChange={setClientsActiveDate} />
-            <MetricTile label="Clients Cancelled" value={metrics.clientsCancelled} change={metrics.clientsCancelledChange} dateValue={clientsCancelledDate} onDateChange={setClientsCancelledDate} />
-            <MetricTile label="Cancellation %" value={metrics.cancellationRate} change={metrics.cancellationRateChange} format="percentage" hideDateSlicer />
-          </div>
+          {isWidgetEnabled('kpi-clients') && (
+            <div className="grid grid-cols-4 gap-2">
+              <MetricTile label="Clients Enrolled" value={metrics.clientsEnrolled} change={metrics.clientsEnrolledChange} dateValue={clientsEnrolledDate} onDateChange={setClientsEnrolledDate} />
+              <MetricTile label="Clients Active" value={metrics.clientsActive} change={metrics.clientsActiveChange} dateValue={clientsActiveDate} onDateChange={setClientsActiveDate} />
+              <MetricTile label="Clients Cancelled" value={metrics.clientsCancelled} change={metrics.clientsCancelledChange} dateValue={clientsCancelledDate} onDateChange={setClientsCancelledDate} />
+              <MetricTile label="Cancellation %" value={metrics.cancellationRate} change={metrics.cancellationRateChange} format="percentage" hideDateSlicer />
+            </div>
+          )}
 
           {/* Chart */}
-          <VolumeChart data={volumeData} />
+          {isWidgetEnabled('volume-chart') && <VolumeChart data={volumeData} />}
           
           {/* EPF KPIs - Executive and Admin only */}
-          {hasExecutiveView && (
+          {hasExecutiveView && isWidgetEnabled('kpi-epf') && (
             <div className="grid grid-cols-2 gap-2">
               <MetricTile label="EPFs Collected" value={metrics.epfsCollected} change={metrics.epfsCollectedChange} dateValue={epfsCollectedDate} onDateChange={setEpfsCollectedDate} />
               <MetricTile label="EPFs Scheduled" value={metrics.epfsScheduled} change={metrics.epfsScheduledChange} dateValue={epfsScheduledDate} onDateChange={setEpfsScheduledDate} />
@@ -1132,6 +1155,7 @@ export default function DashboardPage() {
         <div className="space-y-3">
           
           {/* Monthly Targets - Featured Card */}
+          {isWidgetEnabled('monthly-targets') && (
           <Card className="relative overflow-hidden border-2 border-primary/40 bg-gradient-to-br from-primary/10 via-background to-primary/5">
             {/* Glow effect */}
             <div className="absolute -top-12 -right-12 size-32 rounded-full blur-3xl opacity-20 bg-primary" />
@@ -1213,17 +1237,20 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
+          )}
 
-{/* Client Search */}
-      <ClientSearch data={clients} />
+          {/* Client Search */}
+          {isWidgetEnabled('client-search') && <ClientSearch data={clients} />}
 
           {/* Announcements */}
-          <AnnouncementsList announcements={announcements} userId={user?.id} limit={3} />
+          {isWidgetEnabled('announcements') && (
+            <AnnouncementsList announcements={announcements} userId={user?.id} limit={3} />
+          )}
         </div>
       </div>
 
       {/* Data Tables - Based on filter and view selection */}
-      {!isAgent && (
+      {!isAgent && isWidgetEnabled('performance-tables') && (
         <div className="space-y-4">
           {/* View Toggle */}
           <div className="flex items-center justify-center">
@@ -1274,8 +1301,8 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Lead Source Performance - Admin Only */}
-      {user?.role === 'admin' && (
+{/* Lead Source Performance - Admin Only */}
+  {user?.role === 'admin' && isWidgetEnabled('lead-source-table') && (
         <Card className="mt-6">
           <CardHeader>
             <div className="flex items-center justify-between">
