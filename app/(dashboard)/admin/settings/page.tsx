@@ -65,8 +65,8 @@ export default function AdminSettingsPage() {
   const [widgets, setWidgets] = React.useState<WidgetConfig[]>(defaultWidgets)
   const [hasChanges, setHasChanges] = React.useState(false)
 
-  // Redirect non-executives
-  if (user?.role !== 'executive') {
+  // Redirect non-admins
+  if (user?.role !== 'admin') {
     return (
       <div className="p-6 flex items-center justify-center min-h-[60vh]">
         <Card className="max-w-md w-full">
@@ -74,7 +74,7 @@ export default function AdminSettingsPage() {
             <Shield className="size-12 mx-auto text-muted-foreground mb-4" />
             <h2 className="text-xl font-semibold mb-2">Access Restricted</h2>
             <p className="text-muted-foreground">
-              Settings are only accessible to executives.
+              Settings are only accessible to administrators.
             </p>
           </CardContent>
         </Card>
