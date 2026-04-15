@@ -1,49 +1,50 @@
 'use client'
 
 import * as React from 'react'
-import type { UserRole } from './types'
 
-// Dashboard widget definitions - must match actual dashboard sections
+// Dashboard widget definitions
 export interface DashboardWidget {
   id: string
   name: string
   description: string
+  icon: string
   enabled: boolean
-  order: number
-  category: 'metrics' | 'charts' | 'tables' | 'other'
+  category: 'metrics' | 'charts' | 'tables' | 'sidebar'
 }
 
-// Default widgets configuration
-const defaultWidgets: DashboardWidget[] = [
+// Master widget list - defines all available widgets
+export const masterWidgetList: Omit<DashboardWidget, 'enabled'>[] = [
   // Metrics
-  { id: 'kpi-submissions', name: 'Submissions KPIs', description: 'Units Submitted, Debt Submitted, Conv. Rate', enabled: true, order: 1, category: 'metrics' },
-  { id: 'kpi-enrolled', name: 'Enrolled KPIs (Highlighted)', description: 'Units Enrolled, Debt Enrolled, Qual. Conv.', enabled: true, order: 2, category: 'metrics' },
-  { id: 'kpi-fpc', name: 'FPC & Ancillary KPIs', description: 'Units FPC, Debt FPC, Ancillary Sales', enabled: true, order: 3, category: 'metrics' },
-  { id: 'kpi-averages', name: 'Averages KPIs', description: 'Avg Daily Units, Avg Daily Debt, Avg Debt/File', enabled: true, order: 4, category: 'metrics' },
-  { id: 'kpi-clients', name: 'Client KPIs', description: 'Clients Enrolled, Active, Cancelled, Cancellation %', enabled: true, order: 5, category: 'metrics' },
-  { id: 'kpi-epf', name: 'EPF KPIs (Executive)', description: 'EPFs Collected, EPFs Scheduled', enabled: true, order: 6, category: 'metrics' },
+  { id: 'kpi-submissions', name: 'Submissions', description: 'Units Submitted, Debt Submitted, Conv. Rate', icon: 'TrendingUp', category: 'metrics' },
+  { id: 'kpi-enrolled', name: 'Enrolled', description: 'Units Enrolled, Debt Enrolled, Qual. Conv.', icon: 'BarChart3', category: 'metrics' },
+  { id: 'kpi-fpc', name: 'FPC & Ancillary', description: 'Units FPC, Debt FPC, Ancillary Sales', icon: 'Target', category: 'metrics' },
+  { id: 'kpi-averages', name: 'Averages', description: 'Avg Daily Units, Avg Daily Debt, Avg Debt/File', icon: 'Calculator', category: 'metrics' },
+  { id: 'kpi-clients', name: 'Clients', description: 'Clients Enrolled, Active, Cancelled, Cancellation %', icon: 'Users', category: 'metrics' },
+  { id: 'kpi-epf', name: 'EPF Metrics', description: 'EPFs Collected, EPFs Scheduled', icon: 'DollarSign', category: 'metrics' },
   
   // Charts
-  { id: 'volume-chart', name: 'Volume Chart', description: 'Interactive volume trends over time', enabled: true, order: 7, category: 'charts' },
+  { id: 'volume-chart', name: 'Volume Chart', description: 'Interactive volume trends over time', icon: 'LineChart', category: 'charts' },
   
-  // Right column
-  { id: 'monthly-targets', name: 'Monthly Targets', description: 'Progress towards monthly goals', enabled: true, order: 8, category: 'other' },
-  { id: 'client-search', name: 'Client Search', description: 'Quick client lookup tool', enabled: true, order: 9, category: 'other' },
-  { id: 'announcements', name: 'Announcements', description: 'Company announcements feed', enabled: true, order: 10, category: 'other' },
+  // Sidebar
+  { id: 'monthly-targets', name: 'Monthly Targets', description: 'Progress towards monthly goals', icon: 'Target', category: 'sidebar' },
+  { id: 'client-search', name: 'Client Search', description: 'Quick client lookup tool', icon: 'Search', category: 'sidebar' },
+  { id: 'announcements', name: 'Announcements', description: 'Company announcements feed', icon: 'Megaphone', category: 'sidebar' },
   
   // Tables
-  { id: 'performance-tables', name: 'Performance Tables', description: 'Teams/Agents performance data', enabled: true, order: 11, category: 'tables' },
-  { id: 'lead-source-table', name: 'Lead Source Performance', description: 'Lead source metrics (Admin only)', enabled: true, order: 12, category: 'tables' },
+  { id: 'performance-tables', name: 'Performance Tables', description: 'Agent/Team performance data', icon: 'Table', category: 'tables' },
+  { id: 'lead-source-table', name: 'Lead Source Table', description: 'Lead source metrics (Admin only)', icon: 'PieChart', category: 'tables' },
 ]
+
+// Default all widgets enabled
+const defaultEnabledWidgets = (): DashboardWidget[] => 
+  masterWidgetList.map(w => ({ ...w, enabled: true }))
 
 // Notification settings
 export interface NotificationSettings {
-  // Email notifications
   emailCommissionEarned: boolean
   emailClawbackAlert: boolean
   emailNewAnnouncement: boolean
   emailWeeklySummary: boolean
-  // In-app notifications
   inAppPipelineUpdates: boolean
   inAppLeaderboardChanges: boolean
   inAppKnowledgeBaseUpdates: boolean
@@ -76,7 +77,7 @@ const defaultSystemSettings: SystemSettings = {
   maintenanceMode: false,
 }
 
-// Appearance settings (per user)
+// Appearance settings
 export interface AppearanceSettings {
   theme: 'light' | 'dark' | 'system'
   accentColor: 'gold' | 'emerald' | 'blue' | 'purple'
@@ -91,32 +92,34 @@ const defaultAppearanceSettings: AppearanceSettings = {
   showAvatars: true,
 }
 
-// User-specific preferences
-export interface UserPreferences {
+// User preferences
+interface UserPreferences {
   widgets: DashboardWidget[]
   notifications: NotificationSettings
   appearance: AppearanceSettings
 }
 
 interface SettingsContextType {
-  // User-specific layout (per userId)
+  // System-wide widget availability (admin controls this)
+  systemWidgets: DashboardWidget[]
+  updateSystemWidget: (widgetId: string, enabled: boolean) => void
+  resetSystemWidgets: () => void
+  isWidgetAvailableSystemWide: (widgetId: string) => boolean
+  
+  // User-specific preferences (respects system settings)
   getWidgetsForUser: (userId: string) => DashboardWidget[]
-  updateWidgetsForUser: (userId: string, widgets: DashboardWidget[]) => void
-  resetWidgetsForUser: (userId: string) => void
+  updateUserWidget: (userId: string, widgetId: string, enabled: boolean) => void
+  resetUserWidgets: (userId: string) => void
   
-  // Legacy: role-based (for admin to set defaults per role)
-  getDefaultWidgetsForRole: (role: UserRole) => DashboardWidget[]
-  updateDefaultWidgetsForRole: (role: UserRole, widgets: DashboardWidget[]) => void
-  
-  // User-specific notifications
+  // User notifications
   getNotificationsForUser: (userId: string) => NotificationSettings
-  updateNotificationsForUser: (userId: string, settings: Partial<NotificationSettings>) => void
+  updateNotificationForUser: (userId: string, key: keyof NotificationSettings, value: boolean) => void
   
-  // User-specific appearance
+  // User appearance
   getAppearanceForUser: (userId: string) => AppearanceSettings
-  updateAppearanceForUser: (userId: string, settings: Partial<AppearanceSettings>) => void
+  updateAppearanceForUser: (userId: string, key: keyof AppearanceSettings, value: AppearanceSettings[keyof AppearanceSettings]) => void
   
-  // System settings (admin only)
+  // System settings
   system: SystemSettings
   updateSystem: (settings: Partial<SystemSettings>) => void
 }
@@ -124,113 +127,137 @@ interface SettingsContextType {
 const SettingsContext = React.createContext<SettingsContextType | undefined>(undefined)
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
-  // User-specific preferences (keyed by userId)
-  const [userPreferences, setUserPreferences] = React.useState<Record<string, UserPreferences>>({})
+  // System-wide widget availability (admin controls)
+  const [systemWidgets, setSystemWidgets] = React.useState<DashboardWidget[]>(defaultEnabledWidgets())
   
-  // Role-based defaults (admin can configure these)
-  const [roleDefaults, setRoleDefaults] = React.useState<Record<UserRole, DashboardWidget[]>>({
-    agent: [...defaultWidgets],
-    leadership: [...defaultWidgets],
-    supervisor: [...defaultWidgets],
-    executive: [...defaultWidgets],
-    admin: [...defaultWidgets],
-  })
+  // User preferences (keyed by userId)
+  const [userPreferences, setUserPreferences] = React.useState<Record<string, UserPreferences>>({})
   
   // System settings
   const [system, setSystem] = React.useState<SystemSettings>(defaultSystemSettings)
 
-  // Get widgets for a specific user
+  // Check if widget is available system-wide
+  const isWidgetAvailableSystemWide = React.useCallback((widgetId: string): boolean => {
+    const widget = systemWidgets.find(w => w.id === widgetId)
+    return widget?.enabled ?? false
+  }, [systemWidgets])
+
+  // Update system widget (admin)
+  const updateSystemWidget = React.useCallback((widgetId: string, enabled: boolean) => {
+    setSystemWidgets(prev => prev.map(w => 
+      w.id === widgetId ? { ...w, enabled } : w
+    ))
+  }, [])
+
+  // Reset system widgets to all enabled
+  const resetSystemWidgets = React.useCallback(() => {
+    setSystemWidgets(defaultEnabledWidgets())
+  }, [])
+
+  // Get widgets for user (respects system settings)
   const getWidgetsForUser = React.useCallback((userId: string): DashboardWidget[] => {
-    return userPreferences[userId]?.widgets || [...defaultWidgets]
-  }, [userPreferences])
+    const userWidgets = userPreferences[userId]?.widgets || defaultEnabledWidgets()
+    
+    // Merge with system settings - if system disables a widget, user can't see it
+    return userWidgets.map(uw => {
+      const systemWidget = systemWidgets.find(sw => sw.id === uw.id)
+      // Widget is only enabled if BOTH system and user have it enabled
+      return {
+        ...uw,
+        enabled: (systemWidget?.enabled ?? false) && uw.enabled
+      }
+    })
+  }, [userPreferences, systemWidgets])
 
-  // Update widgets for a specific user
-  const updateWidgetsForUser = React.useCallback((userId: string, widgets: DashboardWidget[]) => {
-    setUserPreferences(prev => ({
-      ...prev,
-      [userId]: {
-        ...(prev[userId] || { 
-          widgets: [...defaultWidgets], 
-          notifications: { ...defaultNotifications },
-          appearance: { ...defaultAppearanceSettings }
-        }),
-        widgets,
-      },
-    }))
+  // Update user widget preference
+  const updateUserWidget = React.useCallback((userId: string, widgetId: string, enabled: boolean) => {
+    setUserPreferences(prev => {
+      const current = prev[userId] || {
+        widgets: defaultEnabledWidgets(),
+        notifications: { ...defaultNotifications },
+        appearance: { ...defaultAppearanceSettings },
+      }
+      return {
+        ...prev,
+        [userId]: {
+          ...current,
+          widgets: current.widgets.map(w => 
+            w.id === widgetId ? { ...w, enabled } : w
+          ),
+        },
+      }
+    })
   }, [])
 
-  // Reset widgets for a specific user
-  const resetWidgetsForUser = React.useCallback((userId: string) => {
-    setUserPreferences(prev => ({
-      ...prev,
-      [userId]: {
-        ...(prev[userId] || { 
-          widgets: [...defaultWidgets], 
-          notifications: { ...defaultNotifications },
-          appearance: { ...defaultAppearanceSettings }
-        }),
-        widgets: [...defaultWidgets],
-      },
-    }))
+  // Reset user widgets
+  const resetUserWidgets = React.useCallback((userId: string) => {
+    setUserPreferences(prev => {
+      const current = prev[userId]
+      if (!current) return prev
+      return {
+        ...prev,
+        [userId]: {
+          ...current,
+          widgets: defaultEnabledWidgets(),
+        },
+      }
+    })
   }, [])
 
-  // Get default widgets for a role (admin feature)
-  const getDefaultWidgetsForRole = React.useCallback((role: UserRole): DashboardWidget[] => {
-    return roleDefaults[role] || defaultWidgets
-  }, [roleDefaults])
-
-  // Update default widgets for a role (admin feature)
-  const updateDefaultWidgetsForRole = React.useCallback((role: UserRole, widgets: DashboardWidget[]) => {
-    setRoleDefaults(prev => ({
-      ...prev,
-      [role]: widgets,
-    }))
-  }, [])
-
-  // Get notifications for a user
+  // Get notifications for user
   const getNotificationsForUser = React.useCallback((userId: string): NotificationSettings => {
     return userPreferences[userId]?.notifications || { ...defaultNotifications }
   }, [userPreferences])
 
-  // Update notifications for a user
-  const updateNotificationsForUser = React.useCallback((userId: string, settings: Partial<NotificationSettings>) => {
-    setUserPreferences(prev => ({
-      ...prev,
-      [userId]: {
-        ...(prev[userId] || { 
-          widgets: [...defaultWidgets], 
-          notifications: { ...defaultNotifications },
-          appearance: { ...defaultAppearanceSettings }
-        }),
-        notifications: {
-          ...(prev[userId]?.notifications || defaultNotifications),
-          ...settings,
+  // Update notification for user
+  const updateNotificationForUser = React.useCallback((userId: string, key: keyof NotificationSettings, value: boolean) => {
+    setUserPreferences(prev => {
+      const current = prev[userId] || {
+        widgets: defaultEnabledWidgets(),
+        notifications: { ...defaultNotifications },
+        appearance: { ...defaultAppearanceSettings },
+      }
+      return {
+        ...prev,
+        [userId]: {
+          ...current,
+          notifications: {
+            ...current.notifications,
+            [key]: value,
+          },
         },
-      },
-    }))
+      }
+    })
   }, [])
 
-  // Get appearance for a user
+  // Get appearance for user
   const getAppearanceForUser = React.useCallback((userId: string): AppearanceSettings => {
     return userPreferences[userId]?.appearance || { ...defaultAppearanceSettings }
   }, [userPreferences])
 
-  // Update appearance for a user
-  const updateAppearanceForUser = React.useCallback((userId: string, settings: Partial<AppearanceSettings>) => {
-    setUserPreferences(prev => ({
-      ...prev,
-      [userId]: {
-        ...(prev[userId] || { 
-          widgets: [...defaultWidgets], 
-          notifications: { ...defaultNotifications },
-          appearance: { ...defaultAppearanceSettings }
-        }),
-        appearance: {
-          ...(prev[userId]?.appearance || defaultAppearanceSettings),
-          ...settings,
+  // Update appearance for user
+  const updateAppearanceForUser = React.useCallback((
+    userId: string, 
+    key: keyof AppearanceSettings, 
+    value: AppearanceSettings[keyof AppearanceSettings]
+  ) => {
+    setUserPreferences(prev => {
+      const current = prev[userId] || {
+        widgets: defaultEnabledWidgets(),
+        notifications: { ...defaultNotifications },
+        appearance: { ...defaultAppearanceSettings },
+      }
+      return {
+        ...prev,
+        [userId]: {
+          ...current,
+          appearance: {
+            ...current.appearance,
+            [key]: value,
+          },
         },
-      },
-    }))
+      }
+    })
   }, [])
 
   // Update system settings
@@ -241,13 +268,15 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   return (
     <SettingsContext.Provider
       value={{
+        systemWidgets,
+        updateSystemWidget,
+        resetSystemWidgets,
+        isWidgetAvailableSystemWide,
         getWidgetsForUser,
-        updateWidgetsForUser,
-        resetWidgetsForUser,
-        getDefaultWidgetsForRole,
-        updateDefaultWidgetsForRole,
+        updateUserWidget,
+        resetUserWidgets,
         getNotificationsForUser,
-        updateNotificationsForUser,
+        updateNotificationForUser,
         getAppearanceForUser,
         updateAppearanceForUser,
         system,
@@ -266,6 +295,3 @@ export function useSettings() {
   }
   return context
 }
-
-// Export default widgets for reference
-export { defaultWidgets }

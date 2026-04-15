@@ -2,15 +2,15 @@
 
 import * as React from 'react'
 import { useAuth } from '@/lib/auth-context'
-import { useSettings, defaultWidgets, type DashboardWidget } from '@/lib/settings-context'
+import { useSettings, masterWidgetList } from '@/lib/settings-context'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { Badge } from '@/components/ui/badge'
 import {
   Select,
   SelectContent,
@@ -23,27 +23,43 @@ import {
   Shield,
   Building2,
   LayoutGrid,
-  GripVertical,
-  ChevronUp,
-  ChevronDown,
   RotateCcw,
-  Save,
-  Eye,
-  EyeOff,
+  TrendingUp,
+  BarChart3,
+  Target,
+  Calculator,
+  Users,
+  DollarSign,
+  LineChart,
+  Search,
+  Megaphone,
+  Table,
+  PieChart,
   Check,
   AlertTriangle,
+  Eye,
+  EyeOff,
 } from 'lucide-react'
-import type { UserRole } from '@/lib/types'
+
+// Icon mapping
+const iconMap: Record<string, React.ElementType> = {
+  TrendingUp,
+  BarChart3,
+  Target,
+  Calculator,
+  Users,
+  DollarSign,
+  LineChart,
+  Search,
+  Megaphone,
+  Table,
+  PieChart,
+}
 
 export default function AdminSettingsPage() {
   const { user } = useAuth()
   const settings = useSettings()
-  
-  // Selected role for layout defaults
-  const [selectedRole, setSelectedRole] = React.useState<UserRole>('agent')
-  const [roleWidgets, setRoleWidgets] = React.useState<DashboardWidget[]>([])
-  const [hasLayoutChanges, setHasLayoutChanges] = React.useState(false)
-  const [layoutSaved, setLayoutSaved] = React.useState(false)
+  const [saved, setSaved] = React.useState<string | null>(null)
 
   // System settings local state
   const [companyName, setCompanyName] = React.useState(settings.system.companyName)
@@ -51,13 +67,15 @@ export default function AdminSettingsPage() {
   const [fiscalYearStart, setFiscalYearStart] = React.useState(settings.system.fiscalYearStart)
   const [demoMode, setDemoMode] = React.useState(settings.system.demoMode)
   const [maintenanceMode, setMaintenanceMode] = React.useState(settings.system.maintenanceMode)
-  const [systemSaved, setSystemSaved] = React.useState(false)
 
-  // Load role widgets when role changes
+  // Sync local state when settings change
   React.useEffect(() => {
-    setRoleWidgets([...settings.getDefaultWidgetsForRole(selectedRole)])
-    setHasLayoutChanges(false)
-  }, [selectedRole, settings])
+    setCompanyName(settings.system.companyName)
+    setSupportEmail(settings.system.supportEmail)
+    setFiscalYearStart(settings.system.fiscalYearStart)
+    setDemoMode(settings.system.demoMode)
+    setMaintenanceMode(settings.system.maintenanceMode)
+  }, [settings.system])
 
   // Redirect non-admins
   if (user?.role !== 'admin') {
@@ -76,55 +94,23 @@ export default function AdminSettingsPage() {
     )
   }
 
-  // Toggle widget for role
-  const toggleWidget = (widgetId: string) => {
-    setRoleWidgets(prev => prev.map(w => 
-      w.id === widgetId ? { ...w, enabled: !w.enabled } : w
-    ))
-    setHasLayoutChanges(true)
-    setLayoutSaved(false)
+  // Show saved indicator
+  const showSaved = (section: string) => {
+    setSaved(section)
+    setTimeout(() => setSaved(null), 1500)
   }
 
-  // Move widget up
-  const moveWidgetUp = (widgetId: string) => {
-    const idx = roleWidgets.findIndex(w => w.id === widgetId)
-    if (idx > 0) {
-      const newWidgets = [...roleWidgets]
-      const temp = newWidgets[idx - 1]
-      newWidgets[idx - 1] = { ...newWidgets[idx], order: newWidgets[idx - 1].order }
-      newWidgets[idx] = { ...temp, order: roleWidgets[idx].order }
-      setRoleWidgets(newWidgets)
-      setHasLayoutChanges(true)
-      setLayoutSaved(false)
-    }
+  // Toggle system widget
+  const toggleSystemWidget = (widgetId: string) => {
+    const current = settings.systemWidgets.find(w => w.id === widgetId)
+    settings.updateSystemWidget(widgetId, !current?.enabled)
+    showSaved('widgets')
   }
 
-  // Move widget down
-  const moveWidgetDown = (widgetId: string) => {
-    const idx = roleWidgets.findIndex(w => w.id === widgetId)
-    if (idx < roleWidgets.length - 1) {
-      const newWidgets = [...roleWidgets]
-      const temp = newWidgets[idx + 1]
-      newWidgets[idx + 1] = { ...newWidgets[idx], order: newWidgets[idx + 1].order }
-      newWidgets[idx] = { ...temp, order: roleWidgets[idx].order }
-      setRoleWidgets(newWidgets)
-      setHasLayoutChanges(true)
-      setLayoutSaved(false)
-    }
-  }
-
-  // Save role layout defaults
-  const saveRoleLayout = () => {
-    settings.updateDefaultWidgetsForRole(selectedRole, roleWidgets)
-    setHasLayoutChanges(false)
-    setLayoutSaved(true)
-    setTimeout(() => setLayoutSaved(false), 2000)
-  }
-
-  // Reset role layout to defaults
-  const resetRoleLayout = () => {
-    setRoleWidgets([...defaultWidgets])
-    setHasLayoutChanges(true)
+  // Reset all system widgets
+  const resetSystemWidgets = () => {
+    settings.resetSystemWidgets()
+    showSaved('widgets')
   }
 
   // Save system settings
@@ -136,67 +122,170 @@ export default function AdminSettingsPage() {
       demoMode,
       maintenanceMode,
     })
-    setSystemSaved(true)
-    setTimeout(() => setSystemSaved(false), 2000)
+    showSaved('system')
   }
 
   // Group widgets by category
-  const widgetsByCategory = React.useMemo(() => {
-    const grouped: Record<string, DashboardWidget[]> = {
-      metrics: [],
-      charts: [],
-      other: [],
-      tables: [],
-    }
-    roleWidgets.forEach(w => {
-      if (grouped[w.category]) {
-        grouped[w.category].push(w)
-      }
-    })
-    return grouped
-  }, [roleWidgets])
-
-  const categoryLabels: Record<string, string> = {
-    metrics: 'KPI Metrics',
-    charts: 'Charts',
-    other: 'Sidebar Widgets',
-    tables: 'Data Tables',
+  const widgetsByCategory = {
+    metrics: masterWidgetList.filter(w => w.category === 'metrics'),
+    charts: masterWidgetList.filter(w => w.category === 'charts'),
+    sidebar: masterWidgetList.filter(w => w.category === 'sidebar'),
+    tables: masterWidgetList.filter(w => w.category === 'tables'),
   }
 
-  const roleLabels: Record<UserRole, string> = {
-    agent: 'Agent',
-    leadership: 'Team Lead',
-    supervisor: 'Supervisor',
-    executive: 'Executive',
-    admin: 'Admin',
+  const categoryInfo = {
+    metrics: { title: 'KPI Metrics', description: 'Performance indicators', icon: BarChart3 },
+    charts: { title: 'Charts', description: 'Visual charts and graphs', icon: LineChart },
+    sidebar: { title: 'Sidebar Widgets', description: 'Right column widgets', icon: LayoutGrid },
+    tables: { title: 'Data Tables', description: 'Performance tables', icon: Table },
   }
+
+  // Count enabled/disabled
+  const enabledCount = settings.systemWidgets.filter(w => w.enabled).length
+  const totalCount = settings.systemWidgets.length
 
   return (
-    <div className="p-6 space-y-6 max-w-5xl mx-auto">
+    <div className="p-6 space-y-6 max-w-4xl mx-auto">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold">System Settings</h1>
-        <p className="text-muted-foreground">Configure system-wide settings and default layouts for roles</p>
+        <p className="text-muted-foreground">Configure system-wide settings for all users</p>
       </div>
 
-      <Tabs defaultValue="general" className="space-y-6">
+      <Tabs defaultValue="widgets" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2 max-w-md">
+          <TabsTrigger value="widgets" className="gap-2">
+            <LayoutGrid className="size-4" />
+            Dashboard Widgets
+          </TabsTrigger>
           <TabsTrigger value="general" className="gap-2">
             <Building2 className="size-4" />
             General
           </TabsTrigger>
-          <TabsTrigger value="role-defaults" className="gap-2">
-            <LayoutGrid className="size-4" />
-            Role Defaults
-          </TabsTrigger>
         </TabsList>
 
-        {/* General System Settings */}
-        <TabsContent value="general" className="space-y-6">
+        {/* Widget Availability */}
+        <TabsContent value="widgets" className="space-y-4">
+          {/* Info Banner */}
+          <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
+            <div className="flex gap-3">
+              <Shield className="size-5 text-primary shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium text-sm">System-Wide Widget Control</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Widgets you disable here will be hidden for ALL users. Users cannot enable widgets you have disabled.
+                  This is useful for hiding metrics or features that are not relevant to your organization.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">{enabledCount} of {totalCount} widgets enabled</p>
+              <p className="text-xs text-muted-foreground">Click to enable/disable for all users</p>
+            </div>
+            <div className="flex items-center gap-2">
+              {saved === 'widgets' && (
+                <span className="text-sm text-green-500 flex items-center gap-1">
+                  <Check className="size-4" /> Saved
+                </span>
+              )}
+              <Button variant="outline" size="sm" onClick={resetSystemWidgets}>
+                <RotateCcw className="size-4 mr-2" />
+                Enable All
+              </Button>
+            </div>
+          </div>
+
+          {Object.entries(widgetsByCategory).map(([category, widgets]) => {
+            const info = categoryInfo[category as keyof typeof categoryInfo]
+            const CategoryIcon = info.icon
+            const categoryWidgets = widgets.map(w => ({
+              ...w,
+              enabled: settings.systemWidgets.find(sw => sw.id === w.id)?.enabled ?? true
+            }))
+            const categoryEnabled = categoryWidgets.filter(w => w.enabled).length
+
+            return (
+              <Card key={category}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <CategoryIcon className="size-4 text-primary" />
+                      {info.title}
+                    </CardTitle>
+                    <Badge variant={categoryEnabled === widgets.length ? "default" : "secondary"}>
+                      {categoryEnabled}/{widgets.length} enabled
+                    </Badge>
+                  </div>
+                  <CardDescription>{info.description}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {categoryWidgets.map(widget => {
+                      const Icon = iconMap[widget.icon] || BarChart3
+
+                      return (
+                        <button
+                          key={widget.id}
+                          onClick={() => toggleSystemWidget(widget.id)}
+                          className={cn(
+                            "relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all text-center",
+                            widget.enabled
+                              ? "border-green-500/50 bg-green-500/10 hover:bg-green-500/15"
+                              : "border-red-500/30 bg-red-500/5 hover:bg-red-500/10"
+                          )}
+                        >
+                          {/* Status indicator */}
+                          <div className={cn(
+                            "absolute top-2 right-2 size-5 rounded-full flex items-center justify-center",
+                            widget.enabled ? "bg-green-500/20 text-green-500" : "bg-red-500/20 text-red-500"
+                          )}>
+                            {widget.enabled ? <Eye className="size-3" /> : <EyeOff className="size-3" />}
+                          </div>
+
+                          {/* Icon */}
+                          <div className={cn(
+                            "size-10 rounded-lg flex items-center justify-center",
+                            widget.enabled 
+                              ? "bg-green-500/20 text-green-600" 
+                              : "bg-red-500/10 text-red-400"
+                          )}>
+                            <Icon className="size-5" />
+                          </div>
+
+                          {/* Name */}
+                          <div>
+                            <p className={cn(
+                              "font-medium text-sm",
+                              widget.enabled ? "text-foreground" : "text-muted-foreground line-through"
+                            )}>
+                              {widget.name}
+                            </p>
+                            <p className={cn(
+                              "text-[10px] mt-0.5",
+                              widget.enabled ? "text-green-600" : "text-red-400"
+                            )}>
+                              {widget.enabled ? "Available to all" : "Hidden from all"}
+                            </p>
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </TabsContent>
+
+        {/* General Settings */}
+        <TabsContent value="general" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Company Information</CardTitle>
-              <CardDescription>Basic company settings used across the platform</CardDescription>
+              <CardDescription>Basic company settings</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
@@ -219,7 +308,7 @@ export default function AdminSettingsPage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="fiscalYear">Fiscal Year Start</Label>
+                <Label>Fiscal Year Start</Label>
                 <Select value={fiscalYearStart} onValueChange={(v) => setFiscalYearStart(v as typeof fiscalYearStart)}>
                   <SelectTrigger className="w-48">
                     <SelectValue />
@@ -238,20 +327,15 @@ export default function AdminSettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle>System Modes</CardTitle>
-              <CardDescription>Control system behavior and access</CardDescription>
+              <CardDescription>Control system behavior</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
                   <Label>Demo Mode</Label>
-                  <p className="text-sm text-muted-foreground">
-                    When enabled, the system uses mock data for demonstration
-                  </p>
+                  <p className="text-sm text-muted-foreground">Use mock data for demonstration</p>
                 </div>
-                <Switch
-                  checked={demoMode}
-                  onCheckedChange={setDemoMode}
-                />
+                <Switch checked={demoMode} onCheckedChange={setDemoMode} />
               </div>
               <Separator />
               <div className="flex items-center justify-between">
@@ -259,19 +343,12 @@ export default function AdminSettingsPage() {
                   <div>
                     <Label className="flex items-center gap-2">
                       Maintenance Mode
-                      {maintenanceMode && (
-                        <Badge variant="destructive" className="text-[10px]">Active</Badge>
-                      )}
+                      {maintenanceMode && <Badge variant="destructive" className="text-[10px]">Active</Badge>}
                     </Label>
-                    <p className="text-sm text-muted-foreground">
-                      When enabled, only admins can access the system
-                    </p>
+                    <p className="text-sm text-muted-foreground">Only admins can access the system</p>
                   </div>
                 </div>
-                <Switch
-                  checked={maintenanceMode}
-                  onCheckedChange={setMaintenanceMode}
-                />
+                <Switch checked={maintenanceMode} onCheckedChange={setMaintenanceMode} />
               </div>
               {maintenanceMode && (
                 <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
@@ -284,164 +361,16 @@ export default function AdminSettingsPage() {
             </CardContent>
           </Card>
 
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
+            {saved === 'system' && (
+              <span className="text-sm text-green-500 flex items-center gap-1 mr-2">
+                <Check className="size-4" /> Saved
+              </span>
+            )}
             <Button onClick={saveSystemSettings}>
-              {systemSaved ? (
-                <>
-                  <Check className="size-4 mr-2" />
-                  Saved
-                </>
-              ) : (
-                <>
-                  <Save className="size-4 mr-2" />
-                  Save Changes
-                </>
-              )}
+              Save Changes
             </Button>
           </div>
-        </TabsContent>
-
-        {/* Role Default Layouts */}
-        <TabsContent value="role-defaults" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                  <CardTitle>Default Dashboard Layout by Role</CardTitle>
-                  <CardDescription>
-                    Set default widget visibility for new users. Users can customize their own view in My Settings.
-                  </CardDescription>
-                </div>
-                <Select value={selectedRole} onValueChange={(v) => setSelectedRole(v as UserRole)}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(roleLabels).map(([role, label]) => (
-                      <SelectItem key={role} value={role}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between">
-                <Badge variant="outline" className="text-sm">
-                  Editing defaults for: {roleLabels[selectedRole]}
-                </Badge>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={resetRoleLayout}>
-                    <RotateCcw className="size-4 mr-2" />
-                    Reset
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    onClick={saveRoleLayout} 
-                    disabled={!hasLayoutChanges}
-                    className={cn(layoutSaved && "bg-green-600 hover:bg-green-600")}
-                  >
-                    {layoutSaved ? (
-                      <>
-                        <Check className="size-4 mr-2" />
-                        Saved
-                      </>
-                    ) : (
-                      <>
-                        <Save className="size-4 mr-2" />
-                        Save Defaults
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-
-              {Object.entries(widgetsByCategory).map(([category, categoryWidgets]) => (
-                categoryWidgets.length > 0 && (
-                  <div key={category} className="space-y-3">
-                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-                      {categoryLabels[category]}
-                    </h3>
-                    <div className="space-y-2">
-                      {categoryWidgets.map((widget, idx) => (
-                        <div
-                          key={widget.id}
-                          className={cn(
-                            "flex items-center gap-3 p-3 rounded-lg border transition-colors",
-                            widget.enabled 
-                              ? "bg-card border-border" 
-                              : "bg-muted/30 border-border/50 opacity-60"
-                          )}
-                        >
-                          <GripVertical className="size-4 text-muted-foreground cursor-grab" />
-                          
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">{widget.name}</span>
-                              {widget.id === 'kpi-epf' && (
-                                <Badge variant="secondary" className="text-[10px]">Executive+</Badge>
-                              )}
-                              {widget.id === 'lead-source-table' && (
-                                <Badge variant="secondary" className="text-[10px]">Admin</Badge>
-                              )}
-                            </div>
-                            <p className="text-sm text-muted-foreground truncate">
-                              {widget.description}
-                            </p>
-                          </div>
-
-                          <div className="flex items-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-8"
-                              onClick={() => moveWidgetUp(widget.id)}
-                              disabled={idx === 0}
-                            >
-                              <ChevronUp className="size-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-8"
-                              onClick={() => moveWidgetDown(widget.id)}
-                              disabled={idx === categoryWidgets.length - 1}
-                            >
-                              <ChevronDown className="size-4" />
-                            </Button>
-                          </div>
-
-                          <Button
-                            variant={widget.enabled ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => toggleWidget(widget.id)}
-                            className="w-20"
-                          >
-                            {widget.enabled ? (
-                              <>
-                                <Eye className="size-3 mr-1" />
-                                Show
-                              </>
-                            ) : (
-                              <>
-                                <EyeOff className="size-3 mr-1" />
-                                Hide
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )
-              ))}
-
-              <div className="rounded-lg border border-dashed p-4 bg-muted/30">
-                <p className="text-sm text-muted-foreground text-center">
-                  These are default settings for new users. Each user can customize their own layout in My Settings.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
       </Tabs>
     </div>
