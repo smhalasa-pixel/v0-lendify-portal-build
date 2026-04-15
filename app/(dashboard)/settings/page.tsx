@@ -8,22 +8,91 @@ import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
 import {
   LayoutGrid,
   Bell,
   Palette,
-  GripVertical,
-  ChevronUp,
-  ChevronDown,
   RotateCcw,
   Save,
-  Eye,
-  EyeOff,
   Check,
+  BarChart3,
+  TrendingUp,
+  Users,
+  Target,
+  Search,
+  Megaphone,
+  Table,
+  PieChart,
 } from 'lucide-react'
+
+// Widget card component with visual icon
+function WidgetCard({ 
+  widget, 
+  onToggle,
+  icon: Icon,
+}: { 
+  widget: DashboardWidget
+  onToggle: () => void
+  icon: React.ElementType
+}) {
+  return (
+    <button
+      onClick={onToggle}
+      className={cn(
+        "relative flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all text-center",
+        "hover:scale-[1.02] active:scale-[0.98]",
+        widget.enabled
+          ? "border-primary bg-primary/10 shadow-sm"
+          : "border-border bg-muted/30 opacity-60 hover:opacity-80"
+      )}
+    >
+      {/* Status indicator */}
+      <div className={cn(
+        "absolute top-2 right-2 size-3 rounded-full transition-colors",
+        widget.enabled ? "bg-green-500" : "bg-muted-foreground/30"
+      )} />
+      
+      {/* Icon */}
+      <div className={cn(
+        "size-12 rounded-lg flex items-center justify-center transition-colors",
+        widget.enabled ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
+      )}>
+        <Icon className="size-6" />
+      </div>
+      
+      {/* Name */}
+      <div>
+        <p className={cn(
+          "font-medium text-sm",
+          widget.enabled ? "text-foreground" : "text-muted-foreground"
+        )}>
+          {widget.name}
+        </p>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          {widget.enabled ? "Visible" : "Hidden"}
+        </p>
+      </div>
+    </button>
+  )
+}
+
+// Widget icons mapping
+const widgetIcons: Record<string, React.ElementType> = {
+  'kpi-submissions': TrendingUp,
+  'kpi-enrolled': BarChart3,
+  'kpi-fpc': Target,
+  'kpi-averages': PieChart,
+  'kpi-clients': Users,
+  'kpi-epf': BarChart3,
+  'volume-chart': BarChart3,
+  'monthly-targets': Target,
+  'client-search': Search,
+  'announcements': Megaphone,
+  'performance-tables': Table,
+  'lead-source-table': Table,
+}
 
 export default function UserSettingsPage() {
   const { user } = useAuth()
@@ -54,34 +123,6 @@ export default function UserSettingsPage() {
     ))
     setHasChanges(true)
     setSaved(false)
-  }
-
-  // Move widget up
-  const moveWidgetUp = (widgetId: string) => {
-    const idx = widgets.findIndex(w => w.id === widgetId)
-    if (idx > 0) {
-      const newWidgets = [...widgets]
-      const temp = newWidgets[idx - 1]
-      newWidgets[idx - 1] = { ...newWidgets[idx], order: newWidgets[idx - 1].order }
-      newWidgets[idx] = { ...temp, order: widgets[idx].order }
-      setWidgets(newWidgets)
-      setHasChanges(true)
-      setSaved(false)
-    }
-  }
-
-  // Move widget down
-  const moveWidgetDown = (widgetId: string) => {
-    const idx = widgets.findIndex(w => w.id === widgetId)
-    if (idx < widgets.length - 1) {
-      const newWidgets = [...widgets]
-      const temp = newWidgets[idx + 1]
-      newWidgets[idx + 1] = { ...newWidgets[idx], order: newWidgets[idx + 1].order }
-      newWidgets[idx] = { ...temp, order: widgets[idx].order }
-      setWidgets(newWidgets)
-      setHasChanges(true)
-      setSaved(false)
-    }
   }
 
   // Save layout
@@ -117,28 +158,15 @@ export default function UserSettingsPage() {
     }
   }
 
-  // Group widgets by category
-  const widgetsByCategory = React.useMemo(() => {
-    const grouped: Record<string, DashboardWidget[]> = {
-      metrics: [],
-      charts: [],
-      other: [],
-      tables: [],
-    }
-    widgets.forEach(w => {
-      if (grouped[w.category]) {
-        grouped[w.category].push(w)
-      }
-    })
-    return grouped
-  }, [widgets])
+  // Get widgets by section for easier display
+  const kpiWidgets = widgets.filter(w => w.category === 'metrics')
+  const chartWidgets = widgets.filter(w => w.category === 'charts')
+  const sidebarWidgets = widgets.filter(w => w.category === 'other')
+  const tableWidgets = widgets.filter(w => w.category === 'tables')
 
-  const categoryLabels: Record<string, string> = {
-    metrics: 'KPI Metrics',
-    charts: 'Charts',
-    other: 'Sidebar Widgets',
-    tables: 'Data Tables',
-  }
+  // Count enabled widgets
+  const enabledCount = widgets.filter(w => w.enabled).length
+  const totalCount = widgets.length
 
   if (!user) {
     return (
@@ -149,7 +177,7 @@ export default function UserSettingsPage() {
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-5xl mx-auto">
+    <div className="p-6 space-y-6 max-w-4xl mx-auto">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold">My Settings</h1>
@@ -174,119 +202,139 @@ export default function UserSettingsPage() {
 
         {/* Layout Builder */}
         <TabsContent value="layout" className="space-y-6">
+          {/* Action Bar */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">
+                Click any widget to show or hide it on your dashboard
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {enabledCount} of {totalCount} widgets visible
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={resetLayout}>
+                <RotateCcw className="size-4 mr-2" />
+                Reset All
+              </Button>
+              <Button 
+                size="sm" 
+                onClick={saveLayout} 
+                disabled={!hasChanges}
+                className={cn(saved && "bg-green-600 hover:bg-green-600")}
+              >
+                {saved ? (
+                  <>
+                    <Check className="size-4 mr-2" />
+                    Saved!
+                  </>
+                ) : (
+                  <>
+                    <Save className="size-4 mr-2" />
+                    Save
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {/* KPI Metrics Section */}
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Dashboard Layout</CardTitle>
-                <CardDescription>
-                  Customize which widgets appear on your dashboard and their order
-                </CardDescription>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={resetLayout}>
-                  <RotateCcw className="size-4 mr-2" />
-                  Reset
-                </Button>
-                <Button 
-                  size="sm" 
-                  onClick={saveLayout} 
-                  disabled={!hasChanges}
-                  className={cn(saved && "bg-green-600 hover:bg-green-600")}
-                >
-                  {saved ? (
-                    <>
-                      <Check className="size-4 mr-2" />
-                      Saved
-                    </>
-                  ) : (
-                    <>
-                      <Save className="size-4 mr-2" />
-                      Save Changes
-                    </>
-                  )}
-                </Button>
-              </div>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <BarChart3 className="size-4 text-primary" />
+                KPI Metrics
+              </CardTitle>
+              <CardDescription>
+                Performance indicators displayed at the top of your dashboard
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              {Object.entries(widgetsByCategory).map(([category, categoryWidgets]) => (
-                categoryWidgets.length > 0 && (
-                  <div key={category} className="space-y-3">
-                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-                      {categoryLabels[category]}
-                    </h3>
-                    <div className="space-y-2">
-                      {categoryWidgets.map((widget, idx) => (
-                        <div
-                          key={widget.id}
-                          className={cn(
-                            "flex items-center gap-3 p-3 rounded-lg border transition-colors",
-                            widget.enabled 
-                              ? "bg-card border-border" 
-                              : "bg-muted/30 border-border/50 opacity-60"
-                          )}
-                        >
-                          <GripVertical className="size-4 text-muted-foreground cursor-grab" />
-                          
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">{widget.name}</span>
-                              {widget.id === 'kpi-epf' && (
-                                <Badge variant="secondary" className="text-[10px]">Executive+</Badge>
-                              )}
-                              {widget.id === 'lead-source-table' && (
-                                <Badge variant="secondary" className="text-[10px]">Admin</Badge>
-                              )}
-                            </div>
-                            <p className="text-sm text-muted-foreground truncate">
-                              {widget.description}
-                            </p>
-                          </div>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {kpiWidgets.map(widget => (
+                  <WidgetCard
+                    key={widget.id}
+                    widget={widget}
+                    onToggle={() => toggleWidget(widget.id)}
+                    icon={widgetIcons[widget.id] || BarChart3}
+                  />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
 
-                          <div className="flex items-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-8"
-                              onClick={() => moveWidgetUp(widget.id)}
-                              disabled={idx === 0}
-                            >
-                              <ChevronUp className="size-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-8"
-                              onClick={() => moveWidgetDown(widget.id)}
-                              disabled={idx === categoryWidgets.length - 1}
-                            >
-                              <ChevronDown className="size-4" />
-                            </Button>
-                          </div>
+          {/* Charts Section */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <PieChart className="size-4 text-primary" />
+                Charts
+              </CardTitle>
+              <CardDescription>
+                Visual charts and graphs on your dashboard
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {chartWidgets.map(widget => (
+                  <WidgetCard
+                    key={widget.id}
+                    widget={widget}
+                    onToggle={() => toggleWidget(widget.id)}
+                    icon={widgetIcons[widget.id] || BarChart3}
+                  />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
 
-                          <Button
-                            variant={widget.enabled ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => toggleWidget(widget.id)}
-                            className="w-20"
-                          >
-                            {widget.enabled ? (
-                              <>
-                                <Eye className="size-3 mr-1" />
-                                Show
-                              </>
-                            ) : (
-                              <>
-                                <EyeOff className="size-3 mr-1" />
-                                Hide
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )
-              ))}
+          {/* Sidebar Widgets Section */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <LayoutGrid className="size-4 text-primary" />
+                Sidebar Widgets
+              </CardTitle>
+              <CardDescription>
+                Widgets displayed in the right column of your dashboard
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {sidebarWidgets.map(widget => (
+                  <WidgetCard
+                    key={widget.id}
+                    widget={widget}
+                    onToggle={() => toggleWidget(widget.id)}
+                    icon={widgetIcons[widget.id] || LayoutGrid}
+                  />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Data Tables Section */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Table className="size-4 text-primary" />
+                Data Tables
+              </CardTitle>
+              <CardDescription>
+                Performance tables at the bottom of your dashboard
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {tableWidgets.map(widget => (
+                  <WidgetCard
+                    key={widget.id}
+                    widget={widget}
+                    onToggle={() => toggleWidget(widget.id)}
+                    icon={widgetIcons[widget.id] || Table}
+                  />
+                ))}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -401,7 +449,7 @@ export default function UserSettingsPage() {
                     key={theme}
                     onClick={() => updateAppearance('theme', theme)}
                     className={cn(
-                      "p-4 rounded-lg border-2 transition-all text-center capitalize",
+                      "p-4 rounded-xl border-2 transition-all text-center capitalize font-medium",
                       appearance?.theme === theme
                         ? "border-primary bg-primary/10"
                         : "border-border hover:border-primary/50"
@@ -431,14 +479,14 @@ export default function UserSettingsPage() {
                     key={accent.id}
                     onClick={() => updateAppearance('accentColor', accent.id)}
                     className={cn(
-                      "p-4 rounded-lg border-2 transition-all flex flex-col items-center gap-2",
+                      "p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2",
                       appearance?.accentColor === accent.id
                         ? "border-primary bg-primary/10"
                         : "border-border hover:border-primary/50"
                     )}
                   >
-                    <div className={cn("size-6 rounded-full", accent.color)} />
-                    <span className="text-sm">{accent.label}</span>
+                    <div className={cn("size-8 rounded-full", accent.color)} />
+                    <span className="text-sm font-medium">{accent.label}</span>
                   </button>
                 ))}
               </div>
