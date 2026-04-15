@@ -13,7 +13,7 @@ export interface DashboardWidget {
   category: 'metrics' | 'charts' | 'tables' | 'other'
 }
 
-// Default widgets configuration for each role
+// Default widgets configuration
 const defaultWidgets: DashboardWidget[] = [
   // Metrics
   { id: 'kpi-submissions', name: 'Submissions KPIs', description: 'Units Submitted, Debt Submitted, Conv. Rate', enabled: true, order: 1, category: 'metrics' },
@@ -59,8 +59,8 @@ const defaultNotifications: NotificationSettings = {
   inAppKnowledgeBaseUpdates: true,
 }
 
-// General settings
-export interface GeneralSettings {
+// System settings (admin only)
+export interface SystemSettings {
   companyName: string
   supportEmail: string
   fiscalYearStart: 'january' | 'april' | 'july' | 'october'
@@ -68,7 +68,7 @@ export interface GeneralSettings {
   maintenanceMode: boolean
 }
 
-const defaultGeneralSettings: GeneralSettings = {
+const defaultSystemSettings: SystemSettings = {
   companyName: 'Lendify Associates',
   supportEmail: 'support@lendify.com',
   fiscalYearStart: 'january',
@@ -76,7 +76,7 @@ const defaultGeneralSettings: GeneralSettings = {
   maintenanceMode: false,
 }
 
-// Appearance settings
+// Appearance settings (per user)
 export interface AppearanceSettings {
   theme: 'light' | 'dark' | 'system'
   accentColor: 'gold' | 'emerald' | 'blue' | 'purple'
@@ -91,36 +91,44 @@ const defaultAppearanceSettings: AppearanceSettings = {
   showAvatars: true,
 }
 
-// Layout configuration per role
-export interface RoleLayoutConfig {
-  role: UserRole
+// User-specific preferences
+export interface UserPreferences {
   widgets: DashboardWidget[]
+  notifications: NotificationSettings
+  appearance: AppearanceSettings
 }
 
 interface SettingsContextType {
-  // Layout
-  getWidgetsForRole: (role: UserRole) => DashboardWidget[]
-  updateWidgetsForRole: (role: UserRole, widgets: DashboardWidget[]) => void
-  resetWidgetsForRole: (role: UserRole) => void
+  // User-specific layout (per userId)
+  getWidgetsForUser: (userId: string) => DashboardWidget[]
+  updateWidgetsForUser: (userId: string, widgets: DashboardWidget[]) => void
+  resetWidgetsForUser: (userId: string) => void
   
-  // Notifications
-  notifications: NotificationSettings
-  updateNotifications: (settings: Partial<NotificationSettings>) => void
+  // Legacy: role-based (for admin to set defaults per role)
+  getDefaultWidgetsForRole: (role: UserRole) => DashboardWidget[]
+  updateDefaultWidgetsForRole: (role: UserRole, widgets: DashboardWidget[]) => void
   
-  // General
-  general: GeneralSettings
-  updateGeneral: (settings: Partial<GeneralSettings>) => void
+  // User-specific notifications
+  getNotificationsForUser: (userId: string) => NotificationSettings
+  updateNotificationsForUser: (userId: string, settings: Partial<NotificationSettings>) => void
   
-  // Appearance
-  appearance: AppearanceSettings
-  updateAppearance: (settings: Partial<AppearanceSettings>) => void
+  // User-specific appearance
+  getAppearanceForUser: (userId: string) => AppearanceSettings
+  updateAppearanceForUser: (userId: string, settings: Partial<AppearanceSettings>) => void
+  
+  // System settings (admin only)
+  system: SystemSettings
+  updateSystem: (settings: Partial<SystemSettings>) => void
 }
 
 const SettingsContext = React.createContext<SettingsContextType | undefined>(undefined)
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
-  // Role-specific layouts
-  const [roleLayouts, setRoleLayouts] = React.useState<Record<UserRole, DashboardWidget[]>>({
+  // User-specific preferences (keyed by userId)
+  const [userPreferences, setUserPreferences] = React.useState<Record<string, UserPreferences>>({})
+  
+  // Role-based defaults (admin can configure these)
+  const [roleDefaults, setRoleDefaults] = React.useState<Record<UserRole, DashboardWidget[]>>({
     agent: [...defaultWidgets],
     leadership: [...defaultWidgets],
     supervisor: [...defaultWidgets],
@@ -128,52 +136,122 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     admin: [...defaultWidgets],
   })
   
-  const [notifications, setNotifications] = React.useState<NotificationSettings>(defaultNotifications)
-  const [general, setGeneral] = React.useState<GeneralSettings>(defaultGeneralSettings)
-  const [appearance, setAppearance] = React.useState<AppearanceSettings>(defaultAppearanceSettings)
+  // System settings
+  const [system, setSystem] = React.useState<SystemSettings>(defaultSystemSettings)
 
-  const getWidgetsForRole = React.useCallback((role: UserRole): DashboardWidget[] => {
-    return roleLayouts[role] || defaultWidgets
-  }, [roleLayouts])
+  // Get widgets for a specific user
+  const getWidgetsForUser = React.useCallback((userId: string): DashboardWidget[] => {
+    return userPreferences[userId]?.widgets || [...defaultWidgets]
+  }, [userPreferences])
 
-  const updateWidgetsForRole = React.useCallback((role: UserRole, widgets: DashboardWidget[]) => {
-    setRoleLayouts(prev => ({
+  // Update widgets for a specific user
+  const updateWidgetsForUser = React.useCallback((userId: string, widgets: DashboardWidget[]) => {
+    setUserPreferences(prev => ({
+      ...prev,
+      [userId]: {
+        ...(prev[userId] || { 
+          widgets: [...defaultWidgets], 
+          notifications: { ...defaultNotifications },
+          appearance: { ...defaultAppearanceSettings }
+        }),
+        widgets,
+      },
+    }))
+  }, [])
+
+  // Reset widgets for a specific user
+  const resetWidgetsForUser = React.useCallback((userId: string) => {
+    setUserPreferences(prev => ({
+      ...prev,
+      [userId]: {
+        ...(prev[userId] || { 
+          widgets: [...defaultWidgets], 
+          notifications: { ...defaultNotifications },
+          appearance: { ...defaultAppearanceSettings }
+        }),
+        widgets: [...defaultWidgets],
+      },
+    }))
+  }, [])
+
+  // Get default widgets for a role (admin feature)
+  const getDefaultWidgetsForRole = React.useCallback((role: UserRole): DashboardWidget[] => {
+    return roleDefaults[role] || defaultWidgets
+  }, [roleDefaults])
+
+  // Update default widgets for a role (admin feature)
+  const updateDefaultWidgetsForRole = React.useCallback((role: UserRole, widgets: DashboardWidget[]) => {
+    setRoleDefaults(prev => ({
       ...prev,
       [role]: widgets,
     }))
   }, [])
 
-  const resetWidgetsForRole = React.useCallback((role: UserRole) => {
-    setRoleLayouts(prev => ({
+  // Get notifications for a user
+  const getNotificationsForUser = React.useCallback((userId: string): NotificationSettings => {
+    return userPreferences[userId]?.notifications || { ...defaultNotifications }
+  }, [userPreferences])
+
+  // Update notifications for a user
+  const updateNotificationsForUser = React.useCallback((userId: string, settings: Partial<NotificationSettings>) => {
+    setUserPreferences(prev => ({
       ...prev,
-      [role]: [...defaultWidgets],
+      [userId]: {
+        ...(prev[userId] || { 
+          widgets: [...defaultWidgets], 
+          notifications: { ...defaultNotifications },
+          appearance: { ...defaultAppearanceSettings }
+        }),
+        notifications: {
+          ...(prev[userId]?.notifications || defaultNotifications),
+          ...settings,
+        },
+      },
     }))
   }, [])
 
-  const updateNotifications = React.useCallback((settings: Partial<NotificationSettings>) => {
-    setNotifications(prev => ({ ...prev, ...settings }))
+  // Get appearance for a user
+  const getAppearanceForUser = React.useCallback((userId: string): AppearanceSettings => {
+    return userPreferences[userId]?.appearance || { ...defaultAppearanceSettings }
+  }, [userPreferences])
+
+  // Update appearance for a user
+  const updateAppearanceForUser = React.useCallback((userId: string, settings: Partial<AppearanceSettings>) => {
+    setUserPreferences(prev => ({
+      ...prev,
+      [userId]: {
+        ...(prev[userId] || { 
+          widgets: [...defaultWidgets], 
+          notifications: { ...defaultNotifications },
+          appearance: { ...defaultAppearanceSettings }
+        }),
+        appearance: {
+          ...(prev[userId]?.appearance || defaultAppearanceSettings),
+          ...settings,
+        },
+      },
+    }))
   }, [])
 
-  const updateGeneral = React.useCallback((settings: Partial<GeneralSettings>) => {
-    setGeneral(prev => ({ ...prev, ...settings }))
-  }, [])
-
-  const updateAppearance = React.useCallback((settings: Partial<AppearanceSettings>) => {
-    setAppearance(prev => ({ ...prev, ...settings }))
+  // Update system settings
+  const updateSystem = React.useCallback((settings: Partial<SystemSettings>) => {
+    setSystem(prev => ({ ...prev, ...settings }))
   }, [])
 
   return (
     <SettingsContext.Provider
       value={{
-        getWidgetsForRole,
-        updateWidgetsForRole,
-        resetWidgetsForRole,
-        notifications,
-        updateNotifications,
-        general,
-        updateGeneral,
-        appearance,
-        updateAppearance,
+        getWidgetsForUser,
+        updateWidgetsForUser,
+        resetWidgetsForUser,
+        getDefaultWidgetsForRole,
+        updateDefaultWidgetsForRole,
+        getNotificationsForUser,
+        updateNotificationsForUser,
+        getAppearanceForUser,
+        updateAppearanceForUser,
+        system,
+        updateSystem,
       }}
     >
       {children}

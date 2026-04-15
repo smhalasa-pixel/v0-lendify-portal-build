@@ -19,6 +19,7 @@ import {
   Shield,
   ClipboardList,
   Ticket,
+  SlidersHorizontal,
 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
@@ -102,6 +103,12 @@ const mainNavItems = [
     href: '/tickets',
     icon: Ticket,
     roles: ['agent', 'leadership', 'supervisor', 'admin'] as UserRole[],
+  },
+  {
+    title: 'My Settings',
+    href: '/settings',
+    icon: SlidersHorizontal,
+    roles: ['agent', 'leadership', 'supervisor', 'executive', 'admin'] as UserRole[],
   },
 ]
 

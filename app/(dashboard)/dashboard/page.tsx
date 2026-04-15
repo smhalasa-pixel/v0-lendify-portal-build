@@ -349,11 +349,11 @@ export default function DashboardPage() {
   // Admin and Executive see the same dashboard view
   const hasExecutiveView = isExecutive || isAdmin
 
-  // Get widget visibility based on user role
+  // Get widget visibility based on user's personal settings
   const widgets = React.useMemo(() => {
-    if (!user?.role) return []
-    return settings.getWidgetsForRole(user.role)
-  }, [user?.role, settings])
+    if (!user?.id) return []
+    return settings.getWidgetsForUser(user.id)
+  }, [user?.id, settings])
 
   const isWidgetEnabled = React.useCallback((widgetId: string) => {
     const widget = widgets.find(w => w.id === widgetId)
