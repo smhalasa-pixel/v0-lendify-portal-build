@@ -77,7 +77,7 @@ const mainNavItems = [
     title: 'To Do List',
     href: '/tasks',
     icon: ClipboardList,
-    roles: ['agent', 'leadership', 'supervisor', 'executive', 'admin'] as UserRole[],
+    roles: ['agent', 'leadership', 'supervisor', 'admin'] as UserRole[],
   },
   {
     title: 'Leaderboards',

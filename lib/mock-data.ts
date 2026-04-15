@@ -1801,6 +1801,9 @@ export const dataService = {
   },
 
   // Tickets
+  // Hierarchy: Agent tickets go to Team Lead, Team Lead tickets go to Supervisor
+  // Supervisors have visibility over all tickets from teams they manage
+  // Admin has full visibility and control
   getTickets: (userId: string): Ticket[] => {
     const user = mockUsers.find(u => u.id === userId)
     if (!user) return []
@@ -1815,14 +1818,21 @@ export const dataService = {
       // User can see tickets escalated to them
       if (ticket.escalatedToId === userId) return true
       
-      // Leadership can see tickets from their team members
-      if (user.role === 'leadership' && ticket.createdByTeamId === user.teamId) return true
+      // Leadership (Team Lead) can see tickets from agents on their team
+      if (user.role === 'leadership' && ticket.createdByTeamId === user.teamId && ticket.createdByRole === 'agent') return true
       
-      // Supervisors can see tickets from teams they manage
-      if (user.role === 'supervisor' && user.teamIds?.includes(ticket.createdByTeamId || '')) return true
+      // Supervisors can see:
+      // 1. Tickets from team leads on teams they manage
+      // 2. All tickets from teams they manage (for visibility)
+      if (user.role === 'supervisor') {
+        // Supervisor sees tickets from teams they manage
+        if (user.teamIds?.includes(ticket.createdByTeamId || '')) return true
+        // Supervisor sees tickets escalated by team leads
+        if (ticket.createdByRole === 'leadership') return true
+      }
       
-      // Executives and admins can see all tickets
-      if (user.role === 'executive' || user.role === 'admin') return true
+      // Admin can see all tickets
+      if (user.role === 'admin') return true
       
       return false
     }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
@@ -1900,19 +1910,30 @@ export const dataService = {
   },
 
   // Get users available for escalation based on role hierarchy
+  // Agent -> Team Lead, Team Lead -> Supervisor/Admin, Supervisor -> Admin
   getEscalationTargets: (userId: string): User[] => {
     const user = mockUsers.find(u => u.id === userId)
     if (!user) return []
 
     const roleHierarchy: Record<UserRole, UserRole[]> = {
-      'agent': ['leadership'],
-      'leadership': ['supervisor', 'admin'],
-      'supervisor': ['executive', 'admin'],
-      'executive': ['admin'],
-      'admin': [],
+      'agent': ['leadership'], // Agents escalate to their team lead
+      'leadership': ['supervisor', 'admin'], // Team leads escalate to supervisors or admin
+      'supervisor': ['admin'], // Supervisors escalate to admin only
+      'executive': [], // Executives don't use tickets
+      'admin': [], // Admin is top level
     }
 
     const targetRoles = roleHierarchy[user.role] || []
+    
+    // For agents, only show team leads from their team
+    if (user.role === 'agent') {
+      return mockUsers.filter(u => 
+        u.role === 'leadership' && 
+        u.teamId === user.teamId && 
+        u.status === 'active'
+      )
+    }
+    
     return mockUsers.filter(u => targetRoles.includes(u.role) && u.status === 'active')
   },
 }

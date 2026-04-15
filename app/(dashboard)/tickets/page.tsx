@@ -191,8 +191,8 @@ export default function TicketsPage() {
     setIsDetailOpen(true)
   }
 
-  const canEscalate = user && (user.role === 'leadership' || user.role === 'supervisor' || user.role === 'executive')
-  const canChangeStatus = user && user.role !== 'agent'
+  const canEscalate = user && (user.role === 'leadership' || user.role === 'supervisor' || user.role === 'admin')
+  const canChangeStatus = user && (user.role === 'leadership' || user.role === 'supervisor' || user.role === 'admin')
 
   return (
     <div className="flex flex-col gap-6 p-6 max-w-7xl mx-auto">

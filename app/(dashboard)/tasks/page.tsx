@@ -115,25 +115,37 @@ function getTaskStatus(task: Task): Task['status'] {
 
 export default function TasksPage() {
   const { user } = useAuth()
-  const canManageTasks = useHasAccess(['leadership', 'executive'])
+  // All roles can create tasks, but assignment options vary by role
+  const canCreateTasks = useHasAccess(['agent', 'leadership', 'supervisor', 'admin'])
   
   const [tasks, setTasks] = React.useState<Task[]>([])
   const [filter, setFilter] = React.useState<'all' | 'pending' | 'completed'>('all')
   const [search, setSearch] = React.useState('')
   const [createDialogOpen, setCreateDialogOpen] = React.useState(false)
   
-  // New task form state
+  // New task form state - will be updated when user loads
   const [newTask, setNewTask] = React.useState({
     title: '',
     description: '',
     priority: 'medium' as Task['priority'],
     category: 'other' as Task['category'],
-    assignmentType: 'department' as Task['assignmentType'],
+    assignmentType: 'individual' as Task['assignmentType'],
     assignedToId: '',
     assignedToTeamId: '',
     dueDate: undefined as Date | undefined,
     dueTime: '',
   })
+  
+  // Set role-appropriate defaults when user loads
+  React.useEffect(() => {
+    if (user) {
+      setNewTask(prev => ({
+        ...prev,
+        assignmentType: user.role === 'agent' || user.role === 'leadership' ? 'individual' : 'department',
+        assignedToId: user.role === 'agent' ? user.id : '',
+      }))
+    }
+  }, [user])
 
   // Load tasks
   React.useEffect(() => {
@@ -154,6 +166,65 @@ export default function TasksPage() {
     })
     return Array.from(teamMap.entries()).map(([id, name]) => ({ id, name }))
   }, [allUsers])
+
+  // Role-based assignment options
+  // Agent: can only assign to themselves
+  // Leadership (Team Lead): can assign to agents on their team
+  // Supervisor: can assign to any agent or team
+  // Admin: full access
+  const assignableUsers = React.useMemo(() => {
+    if (!user) return []
+    
+    if (user.role === 'agent') {
+      // Agents can only assign tasks to themselves
+      return allUsers.filter(u => u.id === user.id)
+    }
+    
+    if (user.role === 'leadership') {
+      // Team leads can assign to agents on their team
+      return allUsers.filter(u => u.role === 'agent' && u.teamId === user.teamId)
+    }
+    
+    if (user.role === 'supervisor' || user.role === 'admin') {
+      // Supervisors and admins can assign to any agent
+      return allUsers.filter(u => u.role === 'agent')
+    }
+    
+    return []
+  }, [user, allUsers])
+
+  const assignableTeams = React.useMemo(() => {
+    if (!user) return []
+    
+    // Only supervisors and admins can assign to teams
+    if (user.role === 'supervisor' || user.role === 'admin') {
+      return teams
+    }
+    
+    return []
+  }, [user, teams])
+
+  // Determine available assignment types based on role
+  const availableAssignmentTypes = React.useMemo(() => {
+    if (!user) return []
+    
+    if (user.role === 'agent') {
+      // Agents can only assign to themselves (individual only)
+      return ['individual']
+    }
+    
+    if (user.role === 'leadership') {
+      // Team leads can assign to individuals on their team
+      return ['individual']
+    }
+    
+    if (user.role === 'supervisor' || user.role === 'admin') {
+      // Supervisors and admins can assign to individuals, teams, or department
+      return ['individual', 'team', 'department']
+    }
+    
+    return []
+  }, [user])
 
   // Filter tasks
   const filteredTasks = React.useMemo(() => {
@@ -197,8 +268,11 @@ export default function TasksPage() {
   const handleCreateTask = () => {
     if (!user || !newTask.title || !newTask.dueDate) return
 
+    // For agents, automatically assign to themselves
+    const effectiveAssignedToId = user.role === 'agent' ? user.id : newTask.assignedToId
+    
     const assignedUser = newTask.assignmentType === 'individual' 
-      ? allUsers.find(u => u.id === newTask.assignedToId)
+      ? allUsers.find(u => u.id === effectiveAssignedToId)
       : undefined
     const assignedTeam = newTask.assignmentType === 'team'
       ? teams.find(t => t.id === newTask.assignedToTeamId)
@@ -223,13 +297,14 @@ export default function TasksPage() {
 
     setTasks(dataService.getTasks(user.id, user.teamId))
     setCreateDialogOpen(false)
+    // Reset form with role-appropriate defaults
     setNewTask({
       title: '',
       description: '',
       priority: 'medium',
       category: 'other',
-      assignmentType: 'department',
-      assignedToId: '',
+      assignmentType: user.role === 'agent' || user.role === 'leadership' ? 'individual' : 'department',
+      assignedToId: user.role === 'agent' ? user.id : '',
       assignedToTeamId: '',
       dueDate: undefined,
       dueTime: '',
@@ -261,7 +336,7 @@ export default function TasksPage() {
             Manage your tasks and assignments
           </p>
         </div>
-        {canManageTasks && (
+        {canCreateTasks && (
           <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
             <DialogTrigger asChild>
               <Button size="sm" className="gap-2">
@@ -338,7 +413,7 @@ export default function TasksPage() {
                     onValueChange={(v) => setNewTask(prev => ({ 
                       ...prev, 
                       assignmentType: v as Task['assignmentType'],
-                      assignedToId: '',
+                      assignedToId: user?.role === 'agent' ? user.id : '',
                       assignedToTeamId: '',
                     }))}
                   >
@@ -346,28 +421,34 @@ export default function TasksPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="department">
-                        <div className="flex items-center gap-2">
-                          <Building2 className="size-4" />
-                          Entire Department
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="team">
-                        <div className="flex items-center gap-2">
-                          <Users className="size-4" />
-                          Specific Team
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="individual">
-                        <div className="flex items-center gap-2">
-                          <User className="size-4" />
-                          Individual Agent
-                        </div>
-                      </SelectItem>
+                      {availableAssignmentTypes.includes('department') && (
+                        <SelectItem value="department">
+                          <div className="flex items-center gap-2">
+                            <Building2 className="size-4" />
+                            Entire Department
+                          </div>
+                        </SelectItem>
+                      )}
+                      {availableAssignmentTypes.includes('team') && (
+                        <SelectItem value="team">
+                          <div className="flex items-center gap-2">
+                            <Users className="size-4" />
+                            Specific Team
+                          </div>
+                        </SelectItem>
+                      )}
+                      {availableAssignmentTypes.includes('individual') && (
+                        <SelectItem value="individual">
+                          <div className="flex items-center gap-2">
+                            <User className="size-4" />
+                            {user?.role === 'agent' ? 'Myself' : 'Individual Agent'}
+                          </div>
+                        </SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
-                {newTask.assignmentType === 'team' && (
+                {newTask.assignmentType === 'team' && assignableTeams.length > 0 && (
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Select Team</label>
                     <Select
@@ -378,7 +459,7 @@ export default function TasksPage() {
                         <SelectValue placeholder="Select a team..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {teams.map(team => (
+                        {assignableTeams.map(team => (
                           <SelectItem key={team.id} value={team.id}>
                             {team.name}
                           </SelectItem>
@@ -387,7 +468,7 @@ export default function TasksPage() {
                     </Select>
                   </div>
                 )}
-                {newTask.assignmentType === 'individual' && (
+                {newTask.assignmentType === 'individual' && user?.role !== 'agent' && (
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Select Agent</label>
                     <Select
@@ -398,9 +479,9 @@ export default function TasksPage() {
                         <SelectValue placeholder="Select an agent..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {allUsers.filter(u => u.role === 'agent').map(agent => (
+                        {assignableUsers.map(agent => (
                           <SelectItem key={agent.id} value={agent.id}>
-                            {agent.name} ({agent.teamName})
+                            {agent.name} {agent.teamName ? `(${agent.teamName})` : ''}
                           </SelectItem>
                         ))}
                       </SelectContent>
