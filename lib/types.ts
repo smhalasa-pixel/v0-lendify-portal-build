@@ -4,6 +4,17 @@ export type UserRole = 'agent' | 'leadership' | 'supervisor' | 'executive' | 'ad
 
 export type Region = 'dubai' | 'jordan'
 
+export interface Team {
+  id: string
+  name: string
+  leaderId?: string // Team lead (leadership role)
+  leaderName?: string
+  supervisorId?: string // Supervisor who oversees this team
+  supervisorName?: string
+  memberCount: number
+  createdAt: string
+}
+
 export interface User {
   id: string
   email: string

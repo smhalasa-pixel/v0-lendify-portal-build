@@ -3,6 +3,7 @@
 
 import type {
   User,
+  Team,
   Commission,
   Clawback,
   Announcement,
@@ -131,6 +132,30 @@ export const mockUsers: User[] = [
     // No region - admins see all
     hireDate: '2017-01-01',
     status: 'active',
+  },
+]
+
+// Mock Teams
+export const mockTeams: Team[] = [
+  {
+    id: 'team-1',
+    name: 'West Coast Team',
+    leaderId: 'user-2',
+    leaderName: 'Michael Chen',
+    supervisorId: 'user-7',
+    supervisorName: 'Alex Thompson',
+    memberCount: 3, // Sarah, David, Michael
+    createdAt: '2020-01-01',
+  },
+  {
+    id: 'team-2',
+    name: 'East Coast Team',
+    leaderId: 'user-6',
+    leaderName: 'James Taylor',
+    supervisorId: 'user-7',
+    supervisorName: 'Alex Thompson',
+    memberCount: 2, // Emily, James
+    createdAt: '2019-06-15',
   },
 ]
 
@@ -1394,14 +1419,210 @@ export const dataService = {
   
   getAgents: (): User[] => mockUsers.filter(u => u.role === 'agent'),
   
-  getTeams: (): { id: string; name: string }[] => {
-    const teamsMap = new Map<string, string>()
-    mockUsers.forEach(u => {
-      if (u.teamId && u.teamName) {
-        teamsMap.set(u.teamId, u.teamName)
+  getTeams: (): Team[] => {
+    return mockTeams
+  },
+
+  getTeamById: (teamId: string): Team | undefined => {
+    return mockTeams.find(t => t.id === teamId)
+  },
+
+  createTeam: (team: Omit<Team, 'id' | 'createdAt' | 'memberCount'>): Team => {
+    const newTeam: Team = {
+      ...team,
+      id: `team-${randomId()}`,
+      memberCount: 0,
+      createdAt: new Date().toISOString(),
+    }
+    mockTeams.push(newTeam)
+    return newTeam
+  },
+
+  updateTeam: (teamId: string, updates: Partial<Team>): Team | undefined => {
+    const team = mockTeams.find(t => t.id === teamId)
+    if (team) {
+      Object.assign(team, updates)
+      // Update team name in users if changed
+      if (updates.name) {
+        mockUsers.forEach(u => {
+          if (u.teamId === teamId) {
+            u.teamName = updates.name
+          }
+          if (u.teamIds?.includes(teamId)) {
+            const idx = u.teamIds.indexOf(teamId)
+            if (u.teamNames && idx !== -1) {
+              u.teamNames[idx] = updates.name!
+            }
+          }
+        })
       }
-    })
-    return Array.from(teamsMap.entries()).map(([id, name]) => ({ id, name }))
+      return team
+    }
+    return undefined
+  },
+
+  assignTeamLead: (teamId: string, leaderId: string): void => {
+    const team = mockTeams.find(t => t.id === teamId)
+    const leader = mockUsers.find(u => u.id === leaderId)
+    if (team && leader) {
+      // Remove old leader's team assignment if different
+      if (team.leaderId && team.leaderId !== leaderId) {
+        const oldLeader = mockUsers.find(u => u.id === team.leaderId)
+        if (oldLeader) {
+          oldLeader.teamId = undefined
+          oldLeader.teamName = undefined
+        }
+      }
+      // Update team
+      team.leaderId = leader.id
+      team.leaderName = leader.name
+      // Update user
+      leader.role = 'leadership'
+      leader.teamId = teamId
+      leader.teamName = team.name
+    }
+  },
+
+  assignTeamSupervisor: (teamId: string, supervisorId: string): void => {
+    const team = mockTeams.find(t => t.id === teamId)
+    const supervisor = mockUsers.find(u => u.id === supervisorId)
+    if (team && supervisor) {
+      // Update team
+      team.supervisorId = supervisor.id
+      team.supervisorName = supervisor.name
+      // Update supervisor's teamIds
+      if (!supervisor.teamIds) supervisor.teamIds = []
+      if (!supervisor.teamNames) supervisor.teamNames = []
+      if (!supervisor.teamIds.includes(teamId)) {
+        supervisor.teamIds.push(teamId)
+        supervisor.teamNames.push(team.name)
+      }
+    }
+  },
+
+  removeTeamSupervisor: (teamId: string): void => {
+    const team = mockTeams.find(t => t.id === teamId)
+    if (team && team.supervisorId) {
+      const supervisor = mockUsers.find(u => u.id === team.supervisorId)
+      if (supervisor && supervisor.teamIds) {
+        const idx = supervisor.teamIds.indexOf(teamId)
+        if (idx !== -1) {
+          supervisor.teamIds.splice(idx, 1)
+          supervisor.teamNames?.splice(idx, 1)
+        }
+      }
+      team.supervisorId = undefined
+      team.supervisorName = undefined
+    }
+  },
+
+  // User CRUD
+  createUser: (userData: Omit<User, 'id'>): User => {
+    const newUser: User = {
+      ...userData,
+      id: `user-${randomId()}`,
+    }
+    mockUsers.push(newUser)
+    // Update team member count if assigned to a team
+    if (newUser.teamId) {
+      const team = mockTeams.find(t => t.id === newUser.teamId)
+      if (team) team.memberCount++
+    }
+    return newUser
+  },
+
+  updateUser: (userId: string, updates: Partial<User>): User | undefined => {
+    const user = mockUsers.find(u => u.id === userId)
+    if (user) {
+      // Handle team change
+      if (updates.teamId !== undefined && updates.teamId !== user.teamId) {
+        // Decrease old team count
+        if (user.teamId) {
+          const oldTeam = mockTeams.find(t => t.id === user.teamId)
+          if (oldTeam) oldTeam.memberCount--
+        }
+        // Increase new team count
+        if (updates.teamId) {
+          const newTeam = mockTeams.find(t => t.id === updates.teamId)
+          if (newTeam) {
+            newTeam.memberCount++
+            updates.teamName = newTeam.name
+          }
+        } else {
+          updates.teamName = undefined
+        }
+      }
+      Object.assign(user, updates)
+      return user
+    }
+    return undefined
+  },
+
+  deleteUser: (userId: string): boolean => {
+    const idx = mockUsers.findIndex(u => u.id === userId)
+    if (idx !== -1) {
+      const user = mockUsers[idx]
+      // Update team member count
+      if (user.teamId) {
+        const team = mockTeams.find(t => t.id === user.teamId)
+        if (team) team.memberCount--
+      }
+      // If user was a team lead, clear that
+      const ledTeam = mockTeams.find(t => t.leaderId === userId)
+      if (ledTeam) {
+        ledTeam.leaderId = undefined
+        ledTeam.leaderName = undefined
+      }
+      // If user was a supervisor, clear from teams
+      mockTeams.forEach(t => {
+        if (t.supervisorId === userId) {
+          t.supervisorId = undefined
+          t.supervisorName = undefined
+        }
+      })
+      mockUsers.splice(idx, 1)
+      return true
+    }
+    return false
+  },
+
+  // Assign user to team
+  assignUserToTeam: (userId: string, teamId: string | null): void => {
+    const user = mockUsers.find(u => u.id === userId)
+    if (user) {
+      // Update old team count
+      if (user.teamId) {
+        const oldTeam = mockTeams.find(t => t.id === user.teamId)
+        if (oldTeam) oldTeam.memberCount--
+      }
+      // Update new team
+      if (teamId) {
+        const newTeam = mockTeams.find(t => t.id === teamId)
+        if (newTeam) {
+          user.teamId = teamId
+          user.teamName = newTeam.name
+          newTeam.memberCount++
+        }
+      } else {
+        user.teamId = undefined
+        user.teamName = undefined
+      }
+    }
+  },
+
+  // Get team members
+  getTeamMembers: (teamId: string): User[] => {
+    return mockUsers.filter(u => u.teamId === teamId)
+  },
+
+  // Get supervisors
+  getSupervisors: (): User[] => {
+    return mockUsers.filter(u => u.role === 'supervisor')
+  },
+
+  // Get team leads
+  getTeamLeads: (): User[] => {
+    return mockUsers.filter(u => u.role === 'leadership')
   },
   
   // Commissions
