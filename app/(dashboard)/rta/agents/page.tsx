@@ -79,9 +79,9 @@ export default function AgentStatusPage() {
   const isAdmin = user?.role === 'admin'
 
   const [isLive, setIsLive] = React.useState(true)
-  const [refreshInterval, setRefreshInterval] = React.useState(5)
+  const [refreshInterval, setRefreshInterval] = React.useState(1) // 1 second true live feed
   const [isRefreshing, setIsRefreshing] = React.useState(false)
-  const [secondsUntilRefresh, setSecondsUntilRefresh] = React.useState(5)
+  const [secondsUntilRefresh, setSecondsUntilRefresh] = React.useState(1)
 
   // Load data with live feed
   React.useEffect(() => {
@@ -233,10 +233,14 @@ export default function AgentStatusPage() {
               </div>
             )}
             <span className="text-sm text-muted-foreground">
-              {isLive ? `Refreshing in ${secondsUntilRefresh}s` : 'Live feed paused'}
+              {isLive ? 'Streaming real-time data' : 'Live feed paused'}
             </span>
-            {isRefreshing && (
-              <RefreshCw className="size-4 text-primary animate-spin" />
+            {isLive && (
+              <div className="flex items-center gap-1">
+                <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" style={{ animationDelay: '0ms' }} />
+                <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" style={{ animationDelay: '150ms' }} />
+                <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" style={{ animationDelay: '300ms' }} />
+              </div>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -249,10 +253,10 @@ export default function AgentStatusPage() {
               className="h-8 rounded-md border bg-background px-2 text-xs"
               disabled={!isLive}
             >
-              <option value={3}>3s</option>
+              <option value={1}>1s (Live)</option>
+              <option value={2}>2s</option>
               <option value={5}>5s</option>
               <option value={10}>10s</option>
-              <option value={30}>30s</option>
             </select>
             <Button
               variant={isLive ? "outline" : "default"}
