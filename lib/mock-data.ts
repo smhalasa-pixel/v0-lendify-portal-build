@@ -31,6 +31,9 @@ import type {
   QAEvaluation,
   EvaluationScore,
   QAMetrics,
+  QAAnalystWorkload,
+  QAAuditQueue,
+  QASLAMetrics,
   ScorecardCategory,
   BreakSession,
   AgentStatus,
@@ -177,6 +180,51 @@ export const mockUsers: User[] = [
     teamId: undefined,
     teamName: undefined,
     hireDate: '2021-04-15',
+    status: 'active',
+  },
+  // QA Analysts
+  {
+    id: 'user-qa-1',
+    email: 'qa.analyst1@lendify.com',
+    name: 'Jennifer Martinez',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jennifer',
+    role: 'qa_analyst',
+    teamId: undefined,
+    teamName: undefined,
+    hireDate: '2022-01-10',
+    status: 'active',
+  },
+  {
+    id: 'user-qa-2',
+    email: 'qa.analyst2@lendify.com',
+    name: 'Kevin Thompson',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Kevin',
+    role: 'qa_analyst',
+    teamId: undefined,
+    teamName: undefined,
+    hireDate: '2022-03-15',
+    status: 'active',
+  },
+  {
+    id: 'user-qa-3',
+    email: 'qa.analyst3@lendify.com',
+    name: 'Amanda Wilson',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Amanda',
+    role: 'qa_analyst',
+    teamId: undefined,
+    teamName: undefined,
+    hireDate: '2022-06-20',
+    status: 'active',
+  },
+  {
+    id: 'user-qa-4',
+    email: 'qa.analyst4@lendify.com',
+    name: 'Daniel Park',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Daniel',
+    role: 'qa_analyst',
+    teamId: undefined,
+    teamName: undefined,
+    hireDate: '2023-02-01',
     status: 'active',
   },
 ]
@@ -1579,6 +1627,259 @@ export const mockEvaluations: QAEvaluation[] = [
   },
 ]
 
+// Mock QA Analyst Workload Data
+export const mockQAAnalystWorkloads: QAAnalystWorkload[] = [
+  {
+    analystId: 'user-qa-senior',
+    analystName: 'Marcus Rodriguez',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Marcus',
+    role: 'qa_senior',
+    pendingAudits: 3,
+    completedToday: 5,
+    completedThisWeek: 28,
+    completedThisMonth: 112,
+    totalAssigned: 115,
+    avgScoreGiven: 82.5,
+    calibrationScore: 98.2,
+    avgTurnaroundHours: 18,
+    slaTarget: 48,
+    slaComplianceRate: 96.5,
+    overdueAudits: 0,
+    dailyTarget: 8,
+    weeklyTarget: 40,
+    monthlyTarget: 160,
+  },
+  {
+    analystId: 'user-qa-trainer',
+    analystName: 'Lisa Chen',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Lisa',
+    role: 'qa_trainer',
+    pendingAudits: 5,
+    completedToday: 4,
+    completedThisWeek: 22,
+    completedThisMonth: 95,
+    totalAssigned: 100,
+    avgScoreGiven: 79.8,
+    calibrationScore: 95.5,
+    avgTurnaroundHours: 22,
+    slaTarget: 48,
+    slaComplianceRate: 94.0,
+    overdueAudits: 1,
+    dailyTarget: 8,
+    weeklyTarget: 40,
+    monthlyTarget: 160,
+  },
+  {
+    analystId: 'user-qa-1',
+    analystName: 'Jennifer Martinez',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jennifer',
+    role: 'qa_analyst',
+    pendingAudits: 12,
+    completedToday: 6,
+    completedThisWeek: 32,
+    completedThisMonth: 135,
+    totalAssigned: 147,
+    avgScoreGiven: 81.2,
+    calibrationScore: 96.8,
+    avgTurnaroundHours: 20,
+    slaTarget: 48,
+    slaComplianceRate: 95.2,
+    overdueAudits: 1,
+    dailyTarget: 10,
+    weeklyTarget: 50,
+    monthlyTarget: 200,
+  },
+  {
+    analystId: 'user-qa-2',
+    analystName: 'Kevin Thompson',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Kevin',
+    role: 'qa_analyst',
+    pendingAudits: 8,
+    completedToday: 7,
+    completedThisWeek: 38,
+    completedThisMonth: 148,
+    totalAssigned: 156,
+    avgScoreGiven: 78.5,
+    calibrationScore: 92.3,
+    avgTurnaroundHours: 24,
+    slaTarget: 48,
+    slaComplianceRate: 91.5,
+    overdueAudits: 2,
+    dailyTarget: 10,
+    weeklyTarget: 50,
+    monthlyTarget: 200,
+  },
+  {
+    analystId: 'user-qa-3',
+    analystName: 'Amanda Wilson',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Amanda',
+    role: 'qa_analyst',
+    pendingAudits: 15,
+    completedToday: 3,
+    completedThisWeek: 25,
+    completedThisMonth: 110,
+    totalAssigned: 125,
+    avgScoreGiven: 83.7,
+    calibrationScore: 97.1,
+    avgTurnaroundHours: 28,
+    slaTarget: 48,
+    slaComplianceRate: 88.0,
+    overdueAudits: 3,
+    dailyTarget: 10,
+    weeklyTarget: 50,
+    monthlyTarget: 200,
+  },
+  {
+    analystId: 'user-qa-4',
+    analystName: 'Daniel Park',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Daniel',
+    role: 'qa_analyst',
+    pendingAudits: 18,
+    completedToday: 2,
+    completedThisWeek: 18,
+    completedThisMonth: 72,
+    totalAssigned: 90,
+    avgScoreGiven: 76.2,
+    calibrationScore: 89.5,
+    avgTurnaroundHours: 36,
+    slaTarget: 48,
+    slaComplianceRate: 82.5,
+    overdueAudits: 5,
+    dailyTarget: 10,
+    weeklyTarget: 50,
+    monthlyTarget: 200,
+  },
+]
+
+// Mock QA Audit Queue
+export const mockAuditQueue: QAAuditQueue[] = [
+  {
+    id: 'audit-1',
+    callId: 'call-001',
+    callDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    callDuration: 845,
+    callType: 'inbound',
+    agentId: 'user-1',
+    agentName: 'Sarah Johnson',
+    agentTeamId: 'team-1',
+    agentTeamName: 'West Coast Team',
+    assignedToId: 'user-qa-1',
+    assignedToName: 'Jennifer Martinez',
+    priority: 'high',
+    dueDate: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(),
+    status: 'pending',
+    assignedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    clientName: 'John Smith',
+    reason: 'Customer complaint follow-up',
+  },
+  {
+    id: 'audit-2',
+    callId: 'call-002',
+    callDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    callDuration: 612,
+    callType: 'outbound',
+    agentId: 'user-4',
+    agentName: 'David Williams',
+    agentTeamId: 'team-1',
+    agentTeamName: 'West Coast Team',
+    assignedToId: 'user-qa-2',
+    assignedToName: 'Kevin Thompson',
+    priority: 'normal',
+    dueDate: new Date(Date.now() + 36 * 60 * 60 * 1000).toISOString(),
+    status: 'in_progress',
+    assignedAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+    clientName: 'Maria Garcia',
+    reason: 'Random QC sample',
+  },
+  {
+    id: 'audit-3',
+    callId: 'call-003',
+    callDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    callDuration: 1023,
+    callType: 'inbound',
+    agentId: 'user-5',
+    agentName: 'Emily Brown',
+    agentTeamId: 'team-2',
+    agentTeamName: 'East Coast Team',
+    assignedToId: 'user-qa-3',
+    assignedToName: 'Amanda Wilson',
+    priority: 'urgent',
+    dueDate: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    status: 'pending',
+    assignedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    clientName: 'Robert Davis',
+    reason: 'Escalation review',
+  },
+  {
+    id: 'audit-4',
+    callId: 'call-004',
+    callDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    callDuration: 458,
+    callType: 'callback',
+    agentId: 'user-8',
+    agentName: 'Jessica Lee',
+    agentTeamId: 'team-2',
+    agentTeamName: 'East Coast Team',
+    priority: 'normal',
+    dueDate: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
+    status: 'pending',
+    clientName: 'Jennifer Wilson',
+    reason: 'New hire QC',
+  },
+  {
+    id: 'audit-5',
+    callId: 'call-005',
+    callDate: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+    callDuration: 723,
+    callType: 'inbound',
+    agentId: 'user-9',
+    agentName: 'Chris Martinez',
+    agentTeamId: 'team-1',
+    agentTeamName: 'West Coast Team',
+    assignedToId: 'user-qa-4',
+    assignedToName: 'Daniel Park',
+    priority: 'high',
+    dueDate: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
+    status: 'pending',
+    assignedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    clientName: 'Michael Brown',
+    reason: 'Compliance flag',
+  },
+  // More unassigned audits
+  {
+    id: 'audit-6',
+    callId: 'call-006',
+    callDate: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+    callDuration: 534,
+    callType: 'outbound',
+    agentId: 'user-1',
+    agentName: 'Sarah Johnson',
+    agentTeamId: 'team-1',
+    agentTeamName: 'West Coast Team',
+    priority: 'normal',
+    dueDate: new Date(Date.now() + 42 * 60 * 60 * 1000).toISOString(),
+    status: 'pending',
+    clientName: 'Lisa Anderson',
+    reason: 'Random QC sample',
+  },
+  {
+    id: 'audit-7',
+    callId: 'call-007',
+    callDate: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
+    callDuration: 892,
+    callType: 'inbound',
+    agentId: 'user-4',
+    agentName: 'David Williams',
+    agentTeamId: 'team-1',
+    agentTeamName: 'West Coast Team',
+    priority: 'normal',
+    dueDate: new Date(Date.now() + 40 * 60 * 60 * 1000).toISOString(),
+    status: 'pending',
+    clientName: 'Thomas Miller',
+    reason: 'Random QC sample',
+  },
+]
+
 // Generate chart data for various time periods
 export function generateVolumeChartData(days: number): ChartDataPoint[] {
   const data: ChartDataPoint[] = []
@@ -2591,6 +2892,10 @@ export const dataService = {
       'supervisor': ['admin'], // Supervisors escalate to admin only
       'executive': [], // Executives don't use tickets
       'admin': [], // Admin is top level
+      'qa_senior': ['admin'], // QA Senior escalates to admin
+      'qa_analyst': ['qa_senior', 'admin'], // QA Analysts escalate to QA Senior
+      'qa_trainer': ['qa_senior', 'admin'], // QA Trainers escalate to QA Senior
+      'rta': ['supervisor', 'admin'], // RTA escalates to supervisors or admin
     }
 
     const targetRoles = roleHierarchy[user.role] || []
@@ -2829,6 +3134,131 @@ export const dataService = {
   // Get agents for QA to evaluate
   getAgentsForQA: (): User[] => {
     return mockUsers.filter(u => u.role === 'agent' && u.status === 'active')
+  },
+
+  // ==========================================
+  // QA WORKLOAD & SLA SYSTEM
+  // ==========================================
+
+  // Get all QA analysts workload data
+  getQAAnalystWorkloads: (): QAAnalystWorkload[] => {
+    return mockQAAnalystWorkloads
+  },
+
+  // Get workload for a specific analyst
+  getQAAnalystWorkload: (analystId: string): QAAnalystWorkload | undefined => {
+    return mockQAAnalystWorkloads.find(w => w.analystId === analystId)
+  },
+
+  // Get audit queue
+  getAuditQueue: (filters?: { 
+    assignedToId?: string; 
+    status?: string; 
+    priority?: string;
+    teamId?: string;
+  }): QAAuditQueue[] => {
+    let queue = [...mockAuditQueue]
+    
+    if (filters?.assignedToId) {
+      queue = queue.filter(a => a.assignedToId === filters.assignedToId)
+    }
+    if (filters?.status) {
+      queue = queue.filter(a => a.status === filters.status)
+    }
+    if (filters?.priority) {
+      queue = queue.filter(a => a.priority === filters.priority)
+    }
+    if (filters?.teamId) {
+      queue = queue.filter(a => a.agentTeamId === filters.teamId)
+    }
+    
+    // Sort by priority (urgent > high > normal) then by due date
+    const priorityOrder = { urgent: 0, high: 1, normal: 2 }
+    queue.sort((a, b) => {
+      const priorityDiff = priorityOrder[a.priority] - priorityOrder[b.priority]
+      if (priorityDiff !== 0) return priorityDiff
+      return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+    })
+    
+    return queue
+  },
+
+  // Get unassigned audits
+  getUnassignedAudits: (): QAAuditQueue[] => {
+    return mockAuditQueue.filter(a => !a.assignedToId && a.status === 'pending')
+  },
+
+  // Assign audit to analyst
+  assignAudit: (auditId: string, analystId: string): void => {
+    const audit = mockAuditQueue.find(a => a.id === auditId)
+    const analyst = mockQAAnalystWorkloads.find(w => w.analystId === analystId)
+    const user = mockUsers.find(u => u.id === analystId)
+    
+    if (audit && analyst && user) {
+      audit.assignedToId = analystId
+      audit.assignedToName = user.name
+      audit.assignedAt = new Date().toISOString()
+      analyst.pendingAudits += 1
+      analyst.totalAssigned += 1
+    }
+  },
+
+  // Get QA SLA metrics
+  getQASLAMetrics: (): QASLAMetrics => {
+    const now = new Date()
+    const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
+    
+    const pendingAudits = mockAuditQueue.filter(a => a.status === 'pending' || a.status === 'in_progress')
+    const overdueAudits = pendingAudits.filter(a => new Date(a.dueDate) < now)
+    const dueTodayAudits = pendingAudits.filter(a => {
+      const dueDate = new Date(a.dueDate)
+      return dueDate >= now && dueDate <= todayEnd
+    })
+    
+    // Calculate avg turnaround from completed audits
+    const completedAudits = mockAuditQueue.filter(a => a.status === 'completed' && a.completedAt && a.assignedAt)
+    let avgTurnaroundTime = 0
+    if (completedAudits.length > 0) {
+      const totalHours = completedAudits.reduce((sum, a) => {
+        const assigned = new Date(a.assignedAt!).getTime()
+        const completed = new Date(a.completedAt!).getTime()
+        return sum + (completed - assigned) / (1000 * 60 * 60)
+      }, 0)
+      avgTurnaroundTime = totalHours / completedAudits.length
+    } else {
+      avgTurnaroundTime = 24 // Default estimate
+    }
+    
+    // Calculate SLA compliance
+    const totalAnalysts = mockQAAnalystWorkloads.length
+    const avgCompliance = mockQAAnalystWorkloads.reduce((sum, w) => sum + w.slaComplianceRate, 0) / totalAnalysts
+    
+    return {
+      totalPendingAudits: pendingAudits.length,
+      overdueAudits: overdueAudits.length,
+      dueTodayAudits: dueTodayAudits.length,
+      avgTurnaroundTime: Math.round(avgTurnaroundTime * 10) / 10,
+      slaTarget: 48,
+      slaComplianceRate: Math.round(avgCompliance * 10) / 10,
+      auditsByPriority: [
+        { priority: 'urgent', count: pendingAudits.filter(a => a.priority === 'urgent').length },
+        { priority: 'high', count: pendingAudits.filter(a => a.priority === 'high').length },
+        { priority: 'normal', count: pendingAudits.filter(a => a.priority === 'normal').length },
+      ],
+      auditsByStatus: [
+        { status: 'pending', count: mockAuditQueue.filter(a => a.status === 'pending').length },
+        { status: 'in_progress', count: mockAuditQueue.filter(a => a.status === 'in_progress').length },
+        { status: 'completed', count: mockAuditQueue.filter(a => a.status === 'completed').length },
+      ],
+    }
+  },
+
+  // Get QA analysts (users with qa roles)
+  getQAAnalysts: (): User[] => {
+    return mockUsers.filter(u => 
+      (u.role === 'qa_analyst' || u.role === 'qa_trainer' || u.role === 'qa_senior') && 
+      u.status === 'active'
+    )
   },
 
   // ==========================================

@@ -1,6 +1,6 @@
 // Lendify Portal Types
 
-export type UserRole = 'agent' | 'leadership' | 'supervisor' | 'executive' | 'admin' | 'qa_senior' | 'qa_trainer' | 'rta'
+export type UserRole = 'agent' | 'leadership' | 'supervisor' | 'executive' | 'admin' | 'qa_senior' | 'qa_analyst' | 'qa_trainer' | 'rta'
 
 export type Region = 'dubai' | 'jordan'
 
@@ -550,4 +550,62 @@ export interface QAMetrics {
   scoreDistribution: { grade: string; count: number; percentage: number }[]
   categoryScores: { category: ScorecardCategory; avgScore: number }[]
   trendData: { date: string; avgScore: number; evaluationCount: number }[]
+}
+
+// QA Analyst Workload Types
+export interface QAAnalystWorkload {
+  analystId: string
+  analystName: string
+  avatar: string
+  role: 'qa_analyst' | 'qa_trainer' | 'qa_senior'
+  // Workload metrics
+  pendingAudits: number
+  completedToday: number
+  completedThisWeek: number
+  completedThisMonth: number
+  totalAssigned: number
+  // Quality metrics
+  avgScoreGiven: number
+  calibrationScore: number // How aligned with team avg
+  // SLA metrics
+  avgTurnaroundHours: number
+  slaTarget: number // hours
+  slaComplianceRate: number // percentage
+  overdueAudits: number
+  // Targets
+  dailyTarget: number
+  weeklyTarget: number
+  monthlyTarget: number
+}
+
+export interface QAAuditQueue {
+  id: string
+  callId: string
+  callDate: string
+  callDuration: number
+  callType: 'inbound' | 'outbound' | 'transfer' | 'callback'
+  agentId: string
+  agentName: string
+  agentTeamId: string
+  agentTeamName: string
+  assignedToId?: string
+  assignedToName?: string
+  priority: 'normal' | 'high' | 'urgent'
+  dueDate: string
+  status: 'pending' | 'in_progress' | 'completed'
+  assignedAt?: string
+  completedAt?: string
+  clientName?: string
+  reason?: string // Why this call was flagged for QA
+}
+
+export interface QASLAMetrics {
+  totalPendingAudits: number
+  overdueAudits: number
+  dueTodayAudits: number
+  avgTurnaroundTime: number // hours
+  slaTarget: number // hours
+  slaComplianceRate: number
+  auditsByPriority: { priority: string; count: number }[]
+  auditsByStatus: { status: string; count: number }[]
 }
