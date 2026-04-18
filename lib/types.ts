@@ -1,8 +1,113 @@
 // Lendify Portal Types
 
-export type UserRole = 'agent' | 'leadership' | 'supervisor' | 'executive' | 'admin' | 'qa_senior' | 'qa_trainer'
+export type UserRole = 'agent' | 'leadership' | 'supervisor' | 'executive' | 'admin' | 'qa_senior' | 'qa_trainer' | 'rta'
 
 export type Region = 'dubai' | 'jordan'
+
+// ==========================================
+// BREAK & RTA SYSTEM TYPES
+// ==========================================
+
+export type BreakType = 'lunch' | 'bio' | 'prayer' | 'meeting' | 'coaching' | 'training' | 'personal' | 'system_issue'
+
+export type AgentActivityStatus = 'active' | 'on_break' | 'offline' | 'away' | 'in_call'
+
+export interface BreakSession {
+  id: string
+  agentId: string
+  agentName: string
+  teamId: string
+  teamName: string
+  breakType: BreakType
+  startTime: string
+  endTime?: string
+  scheduledDuration: number // in minutes
+  actualDuration?: number // in minutes
+  isOvertime: boolean
+  overtimeMinutes?: number
+  approvedBy?: string // leadership/supervisor who approved extended break
+  notes?: string
+}
+
+export interface AgentStatus {
+  agentId: string
+  agentName: string
+  avatar?: string
+  teamId: string
+  teamName: string
+  supervisorId?: string
+  supervisorName?: string
+  leaderId?: string
+  leaderName?: string
+  status: AgentActivityStatus
+  currentBreak?: BreakSession
+  lastStatusChange: string
+  totalBreakTimeToday: number // in minutes
+  scheduledBreakTime: number // in minutes (allowed per day)
+  shiftstartTime: string
+  shiftEndTime: string
+  isInfraction: boolean
+  infractionReason?: string
+}
+
+export interface RTAInfraction {
+  id: string
+  agentId: string
+  agentName: string
+  teamId: string
+  teamName: string
+  leaderId?: string
+  leaderName?: string
+  supervisorId?: string
+  supervisorName?: string
+  type: 'extended_break' | 'unauthorized_break' | 'excessive_breaks' | 'late_return' | 'early_logout' | 'missed_shift'
+  description: string
+  severity: 'low' | 'medium' | 'high' | 'critical'
+  breakSessionId?: string
+  occurredAt: string
+  acknowledgedAt?: string
+  acknowledgedBy?: string
+  resolvedAt?: string
+  resolvedBy?: string
+  resolution?: string
+  status: 'pending' | 'acknowledged' | 'resolved' | 'escalated'
+  notifiedLeadership: boolean
+  notifiedAt?: string
+}
+
+export interface RTANotification {
+  id: string
+  infractionId: string
+  recipientId: string
+  recipientName: string
+  recipientRole: UserRole
+  message: string
+  sentAt: string
+  readAt?: string
+  isRead: boolean
+}
+
+export const BREAK_DURATIONS: Record<BreakType, number> = {
+  lunch: 60,
+  bio: 10,
+  prayer: 15,
+  meeting: 30,
+  coaching: 30,
+  training: 60,
+  personal: 15,
+  system_issue: 15,
+}
+
+export const BREAK_LABELS: Record<BreakType, string> = {
+  lunch: 'Lunch Break',
+  bio: 'Bio Break',
+  prayer: 'Prayer Break',
+  meeting: 'Meeting',
+  coaching: 'Coaching Session',
+  training: 'Training',
+  personal: 'Personal Break',
+  system_issue: 'System Issue',
+}
 
 export interface Team {
   id: string

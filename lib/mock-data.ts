@@ -32,6 +32,13 @@ import type {
   EvaluationScore,
   QAMetrics,
   ScorecardCategory,
+  BreakSession,
+  AgentStatus,
+  RTAInfraction,
+  RTANotification,
+  BreakType,
+  AgentActivityStatus,
+  BREAK_DURATIONS,
 } from './types'
 
 // Helper functions
@@ -160,6 +167,17 @@ export const mockUsers: User[] = [
     teamId: undefined,
     teamName: undefined,
     hireDate: '2020-06-01',
+    status: 'active',
+  },
+  {
+    id: 'user-rta',
+    email: 'rta.monitor@lendify.com',
+    name: 'Rachel Adams',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Rachel',
+    role: 'rta',
+    teamId: undefined,
+    teamName: undefined,
+    hireDate: '2021-04-15',
     status: 'active',
   },
 ]
@@ -2813,4 +2831,511 @@ export const dataService = {
   getAgentsForQA: (): User[] => {
     return mockUsers.filter(u => u.role === 'agent' && u.status === 'active')
   },
+
+  // ==========================================
+  // BREAK & RTA SYSTEM
+  // ==========================================
+
+  // Get current agent statuses (for RTA dashboard)
+  getAgentStatuses: (filters?: { teamId?: string; supervisorId?: string; status?: AgentActivityStatus }): AgentStatus[] => {
+    let statuses = [...mockAgentStatuses]
+    
+    if (filters?.teamId) {
+      statuses = statuses.filter(s => s.teamId === filters.teamId)
+    }
+    if (filters?.supervisorId) {
+      // Get teams managed by this supervisor
+      const supervisorTeams = mockTeams.filter(t => t.supervisorId === filters.supervisorId).map(t => t.id)
+      statuses = statuses.filter(s => supervisorTeams.includes(s.teamId))
+    }
+    if (filters?.status) {
+      statuses = statuses.filter(s => s.status === filters.status)
+    }
+    
+    return statuses
+  },
+
+  getAgentStatusById: (agentId: string): AgentStatus | undefined => {
+    return mockAgentStatuses.find(s => s.agentId === agentId)
+  },
+
+  // Start a break
+  startBreak: (agentId: string, breakType: BreakType, notes?: string): BreakSession => {
+    const agent = mockUsers.find(u => u.id === agentId)
+    if (!agent) throw new Error('Agent not found')
+    
+    const breakSession: BreakSession = {
+      id: `break-${randomId()}`,
+      agentId,
+      agentName: agent.name,
+      teamId: agent.teamId || '',
+      teamName: agent.teamName || '',
+      breakType,
+      startTime: new Date().toISOString(),
+      scheduledDuration: BREAK_DURATIONS[breakType],
+      isOvertime: false,
+      notes,
+    }
+    
+    mockBreakSessions.push(breakSession)
+    
+    // Update agent status
+    const status = mockAgentStatuses.find(s => s.agentId === agentId)
+    if (status) {
+      status.status = 'on_break'
+      status.currentBreak = breakSession
+      status.lastStatusChange = new Date().toISOString()
+    }
+    
+    return breakSession
+  },
+
+  // End a break
+  endBreak: (breakSessionId: string): BreakSession | undefined => {
+    const breakSession = mockBreakSessions.find(b => b.id === breakSessionId)
+    if (!breakSession) return undefined
+    
+    const endTime = new Date()
+    const startTime = new Date(breakSession.startTime)
+    const actualDuration = Math.round((endTime.getTime() - startTime.getTime()) / 60000)
+    
+    breakSession.endTime = endTime.toISOString()
+    breakSession.actualDuration = actualDuration
+    breakSession.isOvertime = actualDuration > breakSession.scheduledDuration
+    breakSession.overtimeMinutes = breakSession.isOvertime ? actualDuration - breakSession.scheduledDuration : 0
+    
+    // Update agent status
+    const status = mockAgentStatuses.find(s => s.agentId === breakSession.agentId)
+    if (status) {
+      status.status = 'active'
+      status.currentBreak = undefined
+      status.lastStatusChange = new Date().toISOString()
+      status.totalBreakTimeToday += actualDuration
+      
+      // Check for infraction (overtime)
+      if (breakSession.isOvertime && breakSession.overtimeMinutes && breakSession.overtimeMinutes > 5) {
+        status.isInfraction = true
+        status.infractionReason = `Extended break: ${breakSession.overtimeMinutes} minutes over limit`
+      }
+    }
+    
+    return breakSession
+  },
+
+  // Get break sessions
+  getBreakSessions: (filters?: { agentId?: string; teamId?: string; date?: string }): BreakSession[] => {
+    let sessions = [...mockBreakSessions]
+    
+    if (filters?.agentId) {
+      sessions = sessions.filter(s => s.agentId === filters.agentId)
+    }
+    if (filters?.teamId) {
+      sessions = sessions.filter(s => s.teamId === filters.teamId)
+    }
+    if (filters?.date) {
+      sessions = sessions.filter(s => s.startTime.startsWith(filters.date))
+    }
+    
+    return sessions.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
+  },
+
+  // Get infractions
+  getInfractions: (filters?: { agentId?: string; teamId?: string; status?: string; severity?: string }): RTAInfraction[] => {
+    let infractions = [...mockInfractions]
+    
+    if (filters?.agentId) {
+      infractions = infractions.filter(i => i.agentId === filters.agentId)
+    }
+    if (filters?.teamId) {
+      infractions = infractions.filter(i => i.teamId === filters.teamId)
+    }
+    if (filters?.status) {
+      infractions = infractions.filter(i => i.status === filters.status)
+    }
+    if (filters?.severity) {
+      infractions = infractions.filter(i => i.severity === filters.severity)
+    }
+    
+    return infractions.sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime())
+  },
+
+  // Create infraction
+  createInfraction: (infraction: Omit<RTAInfraction, 'id' | 'occurredAt' | 'status' | 'notifiedLeadership'>): RTAInfraction => {
+    const newInfraction: RTAInfraction = {
+      ...infraction,
+      id: `infraction-${randomId()}`,
+      occurredAt: new Date().toISOString(),
+      status: 'pending',
+      notifiedLeadership: false,
+    }
+    mockInfractions.push(newInfraction)
+    return newInfraction
+  },
+
+  // Notify leadership about infraction
+  notifyLeadership: (infractionId: string, recipientId: string, message: string): RTANotification => {
+    const infraction = mockInfractions.find(i => i.id === infractionId)
+    if (infraction) {
+      infraction.notifiedLeadership = true
+      infraction.notifiedAt = new Date().toISOString()
+    }
+    
+    const recipient = mockUsers.find(u => u.id === recipientId)
+    const notification: RTANotification = {
+      id: `notif-${randomId()}`,
+      infractionId,
+      recipientId,
+      recipientName: recipient?.name || 'Unknown',
+      recipientRole: recipient?.role || 'leadership',
+      message,
+      sentAt: new Date().toISOString(),
+      isRead: false,
+    }
+    mockRTANotifications.push(notification)
+    return notification
+  },
+
+  // Get RTA notifications
+  getRTANotifications: (recipientId: string): RTANotification[] => {
+    return mockRTANotifications
+      .filter(n => n.recipientId === recipientId)
+      .sort((a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime())
+  },
+
+  // Mark notification as read
+  markNotificationRead: (notificationId: string): void => {
+    const notification = mockRTANotifications.find(n => n.id === notificationId)
+    if (notification) {
+      notification.isRead = true
+      notification.readAt = new Date().toISOString()
+    }
+  },
+
+  // Acknowledge infraction
+  acknowledgeInfraction: (infractionId: string, userId: string): RTAInfraction | undefined => {
+    const infraction = mockInfractions.find(i => i.id === infractionId)
+    if (infraction) {
+      infraction.status = 'acknowledged'
+      infraction.acknowledgedAt = new Date().toISOString()
+      infraction.acknowledgedBy = userId
+    }
+    return infraction
+  },
+
+  // Resolve infraction
+  resolveInfraction: (infractionId: string, userId: string, resolution: string): RTAInfraction | undefined => {
+    const infraction = mockInfractions.find(i => i.id === infractionId)
+    if (infraction) {
+      infraction.status = 'resolved'
+      infraction.resolvedAt = new Date().toISOString()
+      infraction.resolvedBy = userId
+      infraction.resolution = resolution
+    }
+    return infraction
+  },
+
+  // Update agent status
+  updateAgentStatus: (agentId: string, status: AgentActivityStatus): AgentStatus | undefined => {
+    const agentStatus = mockAgentStatuses.find(s => s.agentId === agentId)
+    if (agentStatus) {
+      agentStatus.status = status
+      agentStatus.lastStatusChange = new Date().toISOString()
+    }
+    return agentStatus
+  },
+
+  // RTA Summary stats
+  getRTASummary: (): {
+    totalAgents: number
+    activeAgents: number
+    onBreakAgents: number
+    offlineAgents: number
+    inCallAgents: number
+    awayAgents: number
+    totalInfractions: number
+    pendingInfractions: number
+    criticalInfractions: number
+  } => {
+    const statuses = mockAgentStatuses
+    return {
+      totalAgents: statuses.length,
+      activeAgents: statuses.filter(s => s.status === 'active').length,
+      onBreakAgents: statuses.filter(s => s.status === 'on_break').length,
+      offlineAgents: statuses.filter(s => s.status === 'offline').length,
+      inCallAgents: statuses.filter(s => s.status === 'in_call').length,
+      awayAgents: statuses.filter(s => s.status === 'away').length,
+      totalInfractions: mockInfractions.length,
+      pendingInfractions: mockInfractions.filter(i => i.status === 'pending').length,
+      criticalInfractions: mockInfractions.filter(i => i.severity === 'critical' && i.status !== 'resolved').length,
+    }
+  },
 }
+
+// ==========================================
+// BREAK & RTA MOCK DATA
+// ==========================================
+
+// Mock Break Sessions (today)
+export const mockBreakSessions: BreakSession[] = [
+  {
+    id: 'break-1',
+    agentId: 'user-1',
+    agentName: 'Sarah Johnson',
+    teamId: 'team-1',
+    teamName: 'West Coast Team',
+    breakType: 'lunch',
+    startTime: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    endTime: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
+    scheduledDuration: 60,
+    actualDuration: 58,
+    isOvertime: false,
+  },
+  {
+    id: 'break-2',
+    agentId: 'user-4',
+    agentName: 'David Williams',
+    teamId: 'team-1',
+    teamName: 'West Coast Team',
+    breakType: 'bio',
+    startTime: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+    endTime: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+    scheduledDuration: 10,
+    actualDuration: 15,
+    isOvertime: true,
+    overtimeMinutes: 5,
+  },
+  {
+    id: 'break-3',
+    agentId: 'user-5',
+    agentName: 'Emily Brown',
+    teamId: 'team-2',
+    teamName: 'East Coast Team',
+    breakType: 'prayer',
+    startTime: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+    scheduledDuration: 15,
+    isOvertime: false,
+  },
+]
+
+// Mock Agent Statuses (real-time status)
+export const mockAgentStatuses: AgentStatus[] = [
+  {
+    agentId: 'user-1',
+    agentName: 'Sarah Johnson',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah',
+    teamId: 'team-1',
+    teamName: 'West Coast Team',
+    supervisorId: 'user-7',
+    supervisorName: 'Alex Thompson',
+    leaderId: 'user-2',
+    leaderName: 'Michael Chen',
+    status: 'active',
+    lastStatusChange: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
+    totalBreakTimeToday: 58,
+    scheduledBreakTime: 90,
+    shiftstartTime: '09:00',
+    shiftEndTime: '18:00',
+    isInfraction: false,
+  },
+  {
+    agentId: 'user-4',
+    agentName: 'David Williams',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=David',
+    teamId: 'team-1',
+    teamName: 'West Coast Team',
+    supervisorId: 'user-7',
+    supervisorName: 'Alex Thompson',
+    leaderId: 'user-2',
+    leaderName: 'Michael Chen',
+    status: 'in_call',
+    lastStatusChange: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+    totalBreakTimeToday: 25,
+    scheduledBreakTime: 90,
+    shiftstartTime: '09:00',
+    shiftEndTime: '18:00',
+    isInfraction: true,
+    infractionReason: 'Extended bio break: 5 minutes over limit',
+  },
+  {
+    agentId: 'user-5',
+    agentName: 'Emily Brown',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Emily',
+    teamId: 'team-2',
+    teamName: 'East Coast Team',
+    supervisorId: 'user-7',
+    supervisorName: 'Alex Thompson',
+    leaderId: 'user-6',
+    leaderName: 'Robert Taylor',
+    status: 'on_break',
+    currentBreak: mockBreakSessions[2],
+    lastStatusChange: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+    totalBreakTimeToday: 45,
+    scheduledBreakTime: 90,
+    shiftstartTime: '08:00',
+    shiftEndTime: '17:00',
+    isInfraction: false,
+  },
+  {
+    agentId: 'user-8',
+    agentName: 'Jessica Lee',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jessica',
+    teamId: 'team-2',
+    teamName: 'East Coast Team',
+    supervisorId: 'user-7',
+    supervisorName: 'Alex Thompson',
+    leaderId: 'user-6',
+    leaderName: 'Robert Taylor',
+    status: 'active',
+    lastStatusChange: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
+    totalBreakTimeToday: 30,
+    scheduledBreakTime: 90,
+    shiftstartTime: '08:00',
+    shiftEndTime: '17:00',
+    isInfraction: false,
+  },
+  {
+    agentId: 'user-9',
+    agentName: 'Chris Martinez',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Chris',
+    teamId: 'team-1',
+    teamName: 'West Coast Team',
+    supervisorId: 'user-7',
+    supervisorName: 'Alex Thompson',
+    leaderId: 'user-2',
+    leaderName: 'Michael Chen',
+    status: 'away',
+    lastStatusChange: new Date(Date.now() - 20 * 60 * 1000).toISOString(),
+    totalBreakTimeToday: 60,
+    scheduledBreakTime: 90,
+    shiftstartTime: '09:00',
+    shiftEndTime: '18:00',
+    isInfraction: true,
+    infractionReason: 'Away status without break - 20 minutes',
+  },
+  {
+    agentId: 'user-10',
+    agentName: 'Amanda Wilson',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Amanda',
+    teamId: 'team-2',
+    teamName: 'East Coast Team',
+    supervisorId: 'user-7',
+    supervisorName: 'Alex Thompson',
+    leaderId: 'user-6',
+    leaderName: 'Robert Taylor',
+    status: 'offline',
+    lastStatusChange: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+    totalBreakTimeToday: 0,
+    scheduledBreakTime: 90,
+    shiftstartTime: '13:00',
+    shiftEndTime: '22:00',
+    isInfraction: false,
+  },
+]
+
+// Mock Infractions
+export const mockInfractions: RTAInfraction[] = [
+  {
+    id: 'infraction-1',
+    agentId: 'user-4',
+    agentName: 'David Williams',
+    teamId: 'team-1',
+    teamName: 'West Coast Team',
+    leaderId: 'user-2',
+    leaderName: 'Michael Chen',
+    supervisorId: 'user-7',
+    supervisorName: 'Alex Thompson',
+    type: 'extended_break',
+    description: 'Bio break exceeded by 5 minutes (15 min actual vs 10 min allowed)',
+    severity: 'low',
+    breakSessionId: 'break-2',
+    occurredAt: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+    status: 'pending',
+    notifiedLeadership: false,
+  },
+  {
+    id: 'infraction-2',
+    agentId: 'user-9',
+    agentName: 'Chris Martinez',
+    teamId: 'team-1',
+    teamName: 'West Coast Team',
+    leaderId: 'user-2',
+    leaderName: 'Michael Chen',
+    supervisorId: 'user-7',
+    supervisorName: 'Alex Thompson',
+    type: 'unauthorized_break',
+    description: 'Away status for 20 minutes without logging a break type',
+    severity: 'medium',
+    occurredAt: new Date(Date.now() - 20 * 60 * 1000).toISOString(),
+    status: 'pending',
+    notifiedLeadership: true,
+    notifiedAt: new Date(Date.now() - 18 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'infraction-3',
+    agentId: 'user-5',
+    agentName: 'Emily Brown',
+    teamId: 'team-2',
+    teamName: 'East Coast Team',
+    leaderId: 'user-6',
+    leaderName: 'Robert Taylor',
+    supervisorId: 'user-7',
+    supervisorName: 'Alex Thompson',
+    type: 'late_return',
+    description: 'Returned 12 minutes late from lunch break yesterday',
+    severity: 'medium',
+    occurredAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+    acknowledgedAt: new Date(Date.now() - 23 * 60 * 60 * 1000).toISOString(),
+    acknowledgedBy: 'user-6',
+    status: 'acknowledged',
+    notifiedLeadership: true,
+    notifiedAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'infraction-4',
+    agentId: 'user-1',
+    agentName: 'Sarah Johnson',
+    teamId: 'team-1',
+    teamName: 'West Coast Team',
+    leaderId: 'user-2',
+    leaderName: 'Michael Chen',
+    supervisorId: 'user-7',
+    supervisorName: 'Alex Thompson',
+    type: 'excessive_breaks',
+    description: 'Total break time exceeded daily limit by 25 minutes last week',
+    severity: 'high',
+    occurredAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    acknowledgedAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+    acknowledgedBy: 'user-2',
+    resolvedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    resolvedBy: 'user-7',
+    resolution: 'Verbal warning issued. Agent acknowledged and committed to adhering to break schedule.',
+    status: 'resolved',
+    notifiedLeadership: true,
+    notifiedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+]
+
+// Mock RTA Notifications
+export const mockRTANotifications: RTANotification[] = [
+  {
+    id: 'notif-1',
+    infractionId: 'infraction-2',
+    recipientId: 'user-2',
+    recipientName: 'Michael Chen',
+    recipientRole: 'leadership',
+    message: 'Chris Martinez has been in Away status for 20 minutes without logging a break. Please follow up.',
+    sentAt: new Date(Date.now() - 18 * 60 * 1000).toISOString(),
+    isRead: false,
+  },
+  {
+    id: 'notif-2',
+    infractionId: 'infraction-3',
+    recipientId: 'user-6',
+    recipientName: 'Robert Taylor',
+    recipientRole: 'leadership',
+    message: 'Emily Brown returned 12 minutes late from lunch break. This is a recurring pattern.',
+    sentAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+    readAt: new Date(Date.now() - 23 * 60 * 60 * 1000).toISOString(),
+    isRead: true,
+  },
+]

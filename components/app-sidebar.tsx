@@ -22,6 +22,9 @@ import {
   SlidersHorizontal,
   ClipboardCheck,
   GraduationCap,
+  Radio,
+  Clock,
+  Bell,
 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
@@ -50,6 +53,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import type { UserRole } from '@/lib/types'
+import { BreakControl } from '@/components/break-control'
 
 const mainNavItems = [
   {
@@ -141,6 +145,33 @@ const qaNavItems = [
   },
 ]
 
+const rtaNavItems = [
+  {
+    title: 'RTA Dashboard',
+    href: '/rta',
+    icon: Radio,
+    roles: ['rta', 'admin'] as UserRole[],
+  },
+  {
+    title: 'Agent Status',
+    href: '/rta/agents',
+    icon: Users,
+    roles: ['rta', 'leadership', 'supervisor', 'admin'] as UserRole[],
+  },
+  {
+    title: 'Break History',
+    href: '/rta/breaks',
+    icon: Clock,
+    roles: ['rta', 'admin'] as UserRole[],
+  },
+  {
+    title: 'Infractions',
+    href: '/rta/infractions',
+    icon: AlertTriangle,
+    roles: ['rta', 'leadership', 'supervisor', 'admin'] as UserRole[],
+  },
+]
+
 const adminNavItems = [
   {
     title: 'Admin Panel',
@@ -176,6 +207,8 @@ function getRoleBadgeVariant(role: UserRole) {
       return 'default'
     case 'qa_trainer':
       return 'secondary'
+    case 'rta':
+      return 'default'
     default:
       return 'outline'
   }
@@ -195,6 +228,8 @@ function getRoleLabel(role: UserRole) {
       return 'QA Senior'
     case 'qa_trainer':
       return 'QA & Trainer'
+    case 'rta':
+      return 'RTA Monitor'
     default:
       return 'Sales Agent'
   }
@@ -211,6 +246,11 @@ export function AppSidebar() {
   })
 
   const filteredQANav = qaNavItems.filter(item => {
+    if (!user) return false
+    return item.roles.includes(user.role)
+  })
+
+  const filteredRTANav = rtaNavItems.filter(item => {
     if (!user) return false
     return item.roles.includes(user.role)
   })
@@ -296,6 +336,29 @@ export function AppSidebar() {
           </SidebarGroup>
         )}
 
+        {filteredRTANav.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Real-Time Adherence</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {filteredRTANav.map(item => (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={pathname === item.href || pathname.startsWith(`${item.href}/`)}
+                    >
+                      <Link href={item.href}>
+                        <item.icon className="size-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
         {hasAdminAccess && filteredAdminNav.length > 0 && (
           <SidebarGroup>
             <SidebarGroupLabel>Administration</SidebarGroupLabel>
@@ -318,6 +381,9 @@ export function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
         )}
+
+        {/* Break Control for agents/leaders/supervisors */}
+        <BreakControl />
       </SidebarContent>
 
       <SidebarFooter>
@@ -389,6 +455,14 @@ export function AppSidebar() {
                 <DropdownMenuItem onClick={() => switchRole('qa_trainer')}>
                   <Badge variant="secondary" className="mr-2">QA Trainer</Badge>
                   Lisa Chen
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-xs text-muted-foreground">
+                  RTA Roles
+                </DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => switchRole('rta')}>
+                  <Badge variant="default" className="mr-2">RTA Monitor</Badge>
+                  Rachel Adams
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout} className="text-destructive">
