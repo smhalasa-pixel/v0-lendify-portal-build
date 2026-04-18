@@ -37,8 +37,8 @@ import type {
   RTAInfraction,
   RTANotification,
   AgentActivityStatus,
-  STATUS_DURATIONS,
 } from './types'
+import { STATUS_DURATIONS } from './types'
 
 // Helper functions
 const randomId = () => Math.random().toString(36).substring(2, 15)
