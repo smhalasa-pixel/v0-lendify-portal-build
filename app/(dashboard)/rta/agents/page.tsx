@@ -16,6 +16,8 @@ import {
   Bell,
   MessageSquare,
   MoreHorizontal,
+  LayoutGrid,
+  List,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -48,6 +50,14 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { useAuth } from '@/lib/auth-context'
 import { dataService } from '@/lib/mock-data'
 import type { AgentStatus, AgentActivityStatus, Team } from '@/lib/types'
@@ -72,6 +82,7 @@ export default function AgentStatusPage() {
   const [selectedAgent, setSelectedAgent] = React.useState<AgentStatus | null>(null)
   const [isNotifyOpen, setIsNotifyOpen] = React.useState(false)
   const [notifyMessage, setNotifyMessage] = React.useState('')
+  const [viewMode, setViewMode] = React.useState<'grid' | 'table'>('grid')
 
   const isLeadership = user?.role === 'leadership'
   const isSupervisor = user?.role === 'supervisor'
@@ -456,10 +467,31 @@ export default function AgentStatusPage() {
               </SelectContent>
             </Select>
           )}
+
+          {/* View Toggle */}
+          <div className="flex items-center border rounded-lg p-1 bg-muted/30">
+            <Button
+              variant={viewMode === 'grid' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('grid')}
+              className="h-7 px-2"
+            >
+              <LayoutGrid className="size-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'table' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('table')}
+              className="h-7 px-2"
+            >
+              <List className="size-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* Agent Grid */}
+      {/* Agent Grid View */}
+      {viewMode === 'grid' && (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredAgents.map(agent => {
           const statusConfig = STATUS_CONFIG[agent.status]
@@ -612,6 +644,176 @@ export default function AgentStatusPage() {
           )
         })}
       </div>
+      )}
+
+      {/* Agent Table View */}
+      {viewMode === 'table' && (
+        <Card>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Agent</TableHead>
+                <TableHead>Team</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Duration</TableHead>
+                <TableHead>Daily Break</TableHead>
+                <TableHead>Shift</TableHead>
+                <TableHead>Leader</TableHead>
+                <TableHead className="w-[50px]"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredAgents.map(agent => {
+                const statusConfig = STATUS_CONFIG[agent.status]
+                const StatusIcon = statusConfig.icon
+                const breakDuration = getBreakDuration(agent)
+                const isOvertime = agent.currentBreak && breakDuration && breakDuration > agent.currentBreak.scheduledDuration
+                const breakProgress = agent.totalBreakTimeToday / agent.scheduledBreakTime * 100
+
+                return (
+                  <TableRow 
+                    key={agent.agentId}
+                    className={cn(
+                      agent.isInfraction && "bg-rose-500/5"
+                    )}
+                  >
+                    {/* Agent Info */}
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          <Avatar className="size-8">
+                            <AvatarImage src={agent.avatar} />
+                            <AvatarFallback className="text-xs">
+                              {agent.agentName.split(' ').map(n => n[0]).join('')}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className={cn(
+                            "absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-background",
+                            statusConfig.bgColor
+                          )} />
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">{agent.agentName}</p>
+                          {agent.isInfraction && (
+                            <div className="flex items-center gap-1 text-rose-400">
+                              <AlertTriangle className="size-3" />
+                              <span className="text-[10px]">Infraction</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </TableCell>
+
+                    {/* Team */}
+                    <TableCell>
+                      <span className="text-sm text-muted-foreground">{agent.teamName}</span>
+                    </TableCell>
+
+                    {/* Status */}
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <StatusIcon className={cn("size-4", statusConfig.color)} />
+                        <Badge variant="outline" className={cn("text-xs", statusConfig.color)}>
+                          {statusConfig.label}
+                        </Badge>
+                      </div>
+                    </TableCell>
+
+                    {/* Duration */}
+                    <TableCell>
+                      {agent.status !== 'active' && agent.status !== 'offline' && breakDuration !== null ? (
+                        <div className="flex items-center gap-1">
+                          <span className={cn(
+                            "font-mono font-medium",
+                            isOvertime ? "text-rose-400" : statusConfig.color
+                          )}>
+                            {breakDuration}m
+                          </span>
+                          {agent.currentBreak && (
+                            <span className="text-xs text-muted-foreground">
+                              / {agent.currentBreak.scheduledDuration}m
+                            </span>
+                          )}
+                          {isOvertime && (
+                            <Badge variant="destructive" className="text-[10px] ml-1">
+                              +{breakDuration - (agent.currentBreak?.scheduledDuration || 0)}m
+                            </Badge>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">-</span>
+                      )}
+                    </TableCell>
+
+                    {/* Daily Break Progress */}
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Progress 
+                          value={Math.min(breakProgress, 100)} 
+                          className={cn(
+                            "h-1.5 w-16",
+                            breakProgress > 100 && "[&>div]:bg-rose-500"
+                          )}
+                        />
+                        <span className={cn(
+                          "text-xs tabular-nums",
+                          breakProgress > 100 ? "text-rose-400" : "text-muted-foreground"
+                        )}>
+                          {agent.totalBreakTimeToday}m
+                        </span>
+                      </div>
+                    </TableCell>
+
+                    {/* Shift */}
+                    <TableCell>
+                      <span className="text-sm text-muted-foreground">
+                        {agent.shiftstartTime} - {agent.shiftEndTime}
+                      </span>
+                    </TableCell>
+
+                    {/* Leader */}
+                    <TableCell>
+                      <span className="text-sm text-muted-foreground">{agent.leaderName}</span>
+                    </TableCell>
+
+                    {/* Actions */}
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="size-8">
+                            <MoreHorizontal className="size-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem>
+                            <Eye className="size-4 mr-2" />
+                            View Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem>
+                            <MessageSquare className="size-4 mr-2" />
+                            Send Message
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            onClick={() => {
+                              setSelectedAgent(agent)
+                              setIsNotifyOpen(true)
+                            }}
+                            className="text-amber-500"
+                          >
+                            <Bell className="size-4 mr-2" />
+                            Flag for Review
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
+        </Card>
+      )}
 
       {filteredAgents.length === 0 && (
         <Card className="py-12">
