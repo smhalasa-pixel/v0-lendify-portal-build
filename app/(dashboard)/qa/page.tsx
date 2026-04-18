@@ -8,15 +8,12 @@ import {
   Users, 
   AlertTriangle,
   CheckCircle2,
-  XCircle,
   BarChart3,
   FileText,
   Clock,
   Target,
   Award,
-  Minus,
   AlertCircle,
-  ArrowRight,
   Calendar,
   Timer,
   UserCheck,
@@ -25,6 +22,9 @@ import {
   MoreHorizontal,
   Eye,
   UserPlus,
+  X,
+  Check,
+  RefreshCw,
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -46,10 +46,26 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth-context'
 import { dataService } from '@/lib/mock-data'
+import type { QAAnalystWorkload, QAAuditQueue, QASLAMetrics } from '@/lib/types'
 import Link from 'next/link'
 
 export default function QADashboardPage() {
@@ -58,18 +74,88 @@ export default function QADashboardPage() {
   const isQASenior = user?.role === 'qa_senior' || user?.role === 'admin'
   const isQA = user?.role === 'qa_senior' || user?.role === 'qa_analyst' || user?.role === 'qa_trainer' || user?.role === 'admin'
   
+  // State for data that can change
+  const [analystWorkloads, setAnalystWorkloads] = React.useState<QAAnalystWorkload[]>([])
+  const [slaMetrics, setSlaMetrics] = React.useState<QASLAMetrics | null>(null)
+  const [auditQueue, setAuditQueue] = React.useState<QAAuditQueue[]>([])
+  const [unassignedAudits, setUnassignedAudits] = React.useState<QAAuditQueue[]>([])
+  const [isLoading, setIsLoading] = React.useState(true)
+  
+  // Modal state
+  const [isAssignModalOpen, setIsAssignModalOpen] = React.useState(false)
+  const [selectedAuditToAssign, setSelectedAuditToAssign] = React.useState<QAAuditQueue | null>(null)
+  const [selectedAnalystId, setSelectedAnalystId] = React.useState<string>('')
+  const [isAssigning, setIsAssigning] = React.useState(false)
+  
+  // Analyst detail modal
+  const [isAnalystDetailOpen, setIsAnalystDetailOpen] = React.useState(false)
+  const [selectedAnalyst, setSelectedAnalyst] = React.useState<QAAnalystWorkload | null>(null)
+
+  // Static metrics (don't change during session)
   const metrics = React.useMemo(() => dataService.getQAMetrics(), [])
   const recentEvaluations = React.useMemo(() => dataService.getEvaluations().slice(0, 5), [])
   const pendingEvaluations = React.useMemo(() => 
     dataService.getEvaluations({ status: 'submitted' }).length + 
     dataService.getEvaluations({ status: 'disputed' }).length
   , [])
-  
-  // Senior QA specific data
-  const analystWorkloads = React.useMemo(() => dataService.getQAAnalystWorkloads(), [])
-  const slaMetrics = React.useMemo(() => dataService.getQASLAMetrics(), [])
-  const auditQueue = React.useMemo(() => dataService.getAuditQueue(), [])
-  const unassignedAudits = React.useMemo(() => dataService.getUnassignedAudits(), [])
+
+  // Load data function
+  const loadData = React.useCallback(() => {
+    setAnalystWorkloads(dataService.getQAAnalystWorkloads())
+    setSlaMetrics(dataService.getQASLAMetrics())
+    setAuditQueue(dataService.getAuditQueue())
+    setUnassignedAudits(dataService.getUnassignedAudits())
+    setIsLoading(false)
+  }, [])
+
+  // Initial load
+  React.useEffect(() => {
+    loadData()
+  }, [loadData])
+
+  // Handle opening assign modal
+  const handleOpenAssignModal = (audit: QAAuditQueue) => {
+    setSelectedAuditToAssign(audit)
+    setSelectedAnalystId('')
+    setIsAssignModalOpen(true)
+  }
+
+  // Handle assigning audit to analyst
+  const handleAssignAudit = () => {
+    if (!selectedAuditToAssign || !selectedAnalystId) {
+      return
+    }
+
+    setIsAssigning(true)
+
+    // Simulate API call delay
+    setTimeout(() => {
+      dataService.assignAudit(selectedAuditToAssign.id, selectedAnalystId)
+      
+      // Reload data to reflect changes
+      loadData()
+      
+      setIsAssigning(false)
+      setIsAssignModalOpen(false)
+      setSelectedAuditToAssign(null)
+      setSelectedAnalystId('')
+    }, 500)
+  }
+
+  // Handle viewing analyst details
+  const handleViewAnalystDetails = (analyst: QAAnalystWorkload) => {
+    setSelectedAnalyst(analyst)
+    setIsAnalystDetailOpen(true)
+  }
+
+  // Handle assigning audits to specific analyst
+  const handleAssignToAnalyst = (analyst: QAAnalystWorkload) => {
+    if (unassignedAudits.length > 0) {
+      setSelectedAuditToAssign(unassignedAudits[0])
+      setSelectedAnalystId(analyst.analystId)
+      setIsAssignModalOpen(true)
+    }
+  }
 
   if (!isQA) {
     return (
@@ -120,6 +206,14 @@ export default function QADashboardPage() {
     }
   }
 
+  if (isLoading || !slaMetrics) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-[60vh]">
+        <RefreshCw className="size-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -131,6 +225,10 @@ export default function QADashboardPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={loadData}>
+            <RefreshCw className="size-4 mr-2" />
+            Refresh
+          </Button>
           <Button asChild>
             <Link href="/qa/evaluate">
               <ClipboardCheck className="size-4 mr-2" />
@@ -391,11 +489,14 @@ export default function QADashboardPage() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleViewAnalystDetails(analyst)}>
                                 <Eye className="size-4 mr-2" />
                                 View Details
                               </DropdownMenuItem>
-                              <DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleAssignToAnalyst(analyst)}
+                                disabled={unassignedAudits.length === 0}
+                              >
                                 <UserPlus className="size-4 mr-2" />
                                 Assign Audits
                               </DropdownMenuItem>
@@ -461,7 +562,13 @@ export default function QADashboardPage() {
                           {audit.assignedToName ? (
                             <p className="text-xs text-muted-foreground">{audit.assignedToName}</p>
                           ) : (
-                            <Badge variant="outline" className="text-xs bg-muted">Unassigned</Badge>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleOpenAssignModal(audit)}
+                            >
+                              Assign
+                            </Button>
                           )}
                         </div>
                       </div>
@@ -501,7 +608,11 @@ export default function QADashboardPage() {
                         {audit.callType} call - {Math.floor(audit.callDuration / 60)}m {audit.callDuration % 60}s
                       </p>
                     </div>
-                    <Button size="sm" variant="outline">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleOpenAssignModal(audit)}
+                    >
                       <UserPlus className="size-3 mr-1" />
                       Assign
                     </Button>
@@ -799,6 +910,192 @@ export default function QADashboardPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Assign Audit Modal */}
+      <Dialog open={isAssignModalOpen} onOpenChange={setIsAssignModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Audit</DialogTitle>
+            <DialogDescription>
+              Select a QA analyst to assign this audit to
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedAuditToAssign && (
+            <div className="space-y-4">
+              {/* Audit Info */}
+              <div className="p-4 bg-muted/50 rounded-lg space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">{selectedAuditToAssign.agentName}</span>
+                  {getPriorityBadge(selectedAuditToAssign.priority)}
+                </div>
+                <p className="text-sm text-muted-foreground">{selectedAuditToAssign.reason}</p>
+                <p className="text-xs text-muted-foreground">
+                  {selectedAuditToAssign.callType} call - {Math.floor(selectedAuditToAssign.callDuration / 60)}m {selectedAuditToAssign.callDuration % 60}s
+                </p>
+              </div>
+
+              {/* Analyst Select */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Assign to</label>
+                <Select value={selectedAnalystId} onValueChange={setSelectedAnalystId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select an analyst" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {analystWorkloads.map((analyst) => (
+                      <SelectItem key={analyst.analystId} value={analyst.analystId}>
+                        <div className="flex items-center gap-2">
+                          <span>{analyst.analystName}</span>
+                          <span className="text-muted-foreground text-xs">
+                            ({analyst.pendingAudits} pending)
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAssignModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleAssignAudit}
+              disabled={!selectedAnalystId || isAssigning}
+            >
+              {isAssigning ? (
+                <>
+                  <RefreshCw className="size-4 mr-2 animate-spin" />
+                  Assigning...
+                </>
+              ) : (
+                <>
+                  <Check className="size-4 mr-2" />
+                  Assign Audit
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Analyst Detail Modal */}
+      <Dialog open={isAnalystDetailOpen} onOpenChange={setIsAnalystDetailOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Analyst Details</DialogTitle>
+          </DialogHeader>
+          
+          {selectedAnalyst && (
+            <div className="space-y-6">
+              {/* Analyst Header */}
+              <div className="flex items-center gap-4">
+                <Avatar className="size-16">
+                  <AvatarImage src={selectedAnalyst.avatar} />
+                  <AvatarFallback>
+                    {selectedAnalyst.analystName.split(' ').map(n => n[0]).join('')}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="text-xl font-semibold">{selectedAnalyst.analystName}</h3>
+                  <p className="text-muted-foreground capitalize">
+                    {selectedAnalyst.role.replace('qa_', '').replace('_', ' ')}
+                  </p>
+                </div>
+              </div>
+
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="p-4 bg-muted/50 rounded-lg text-center">
+                  <p className="text-2xl font-bold">{selectedAnalyst.pendingAudits}</p>
+                  <p className="text-xs text-muted-foreground">Pending Audits</p>
+                </div>
+                <div className="p-4 bg-muted/50 rounded-lg text-center">
+                  <p className="text-2xl font-bold text-destructive">{selectedAnalyst.overdueAudits}</p>
+                  <p className="text-xs text-muted-foreground">Overdue</p>
+                </div>
+                <div className="p-4 bg-muted/50 rounded-lg text-center">
+                  <p className="text-2xl font-bold">{selectedAnalyst.completedToday}</p>
+                  <p className="text-xs text-muted-foreground">Today</p>
+                </div>
+                <div className="p-4 bg-muted/50 rounded-lg text-center">
+                  <p className="text-2xl font-bold">{selectedAnalyst.completedThisWeek}</p>
+                  <p className="text-xs text-muted-foreground">This Week</p>
+                </div>
+              </div>
+
+              {/* Performance Metrics */}
+              <div className="space-y-4">
+                <h4 className="font-medium">Performance Metrics</h4>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Monthly Target Progress</span>
+                    <span className="text-sm font-medium">
+                      {selectedAnalyst.completedThisMonth} / {selectedAnalyst.monthlyTarget}
+                    </span>
+                  </div>
+                  <Progress 
+                    value={(selectedAnalyst.completedThisMonth / selectedAnalyst.monthlyTarget) * 100} 
+                    className="h-2"
+                  />
+                  
+                  <div className="grid grid-cols-3 gap-4 pt-2">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Avg Turnaround</p>
+                      <p className={cn(
+                        "text-lg font-semibold",
+                        selectedAnalyst.avgTurnaroundHours <= 24 ? "text-success" : 
+                        selectedAnalyst.avgTurnaroundHours <= 36 ? "text-warning" : "text-destructive"
+                      )}>
+                        {selectedAnalyst.avgTurnaroundHours}h
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">SLA Compliance</p>
+                      <p className={cn(
+                        "text-lg font-semibold",
+                        selectedAnalyst.slaComplianceRate >= 95 ? "text-success" : 
+                        selectedAnalyst.slaComplianceRate >= 85 ? "text-warning" : "text-destructive"
+                      )}>
+                        {selectedAnalyst.slaComplianceRate}%
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Calibration Score</p>
+                      <p className={cn(
+                        "text-lg font-semibold",
+                        selectedAnalyst.calibrationScore >= 95 ? "text-success" : 
+                        selectedAnalyst.calibrationScore >= 90 ? "text-warning" : "text-destructive"
+                      )}>
+                        {selectedAnalyst.calibrationScore}%
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAnalystDetailOpen(false)}>
+              Close
+            </Button>
+            {selectedAnalyst && unassignedAudits.length > 0 && (
+              <Button onClick={() => {
+                setIsAnalystDetailOpen(false)
+                handleAssignToAnalyst(selectedAnalyst)
+              }}>
+                <UserPlus className="size-4 mr-2" />
+                Assign Audits
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -118,7 +118,7 @@ type SortDirection = 'asc' | 'desc'
 export default function ScorecardsPage() {
   const { user } = useAuth()
   
-  const isQA = user?.role === 'qa_senior' || user?.role === 'qa_trainer' || user?.role === 'admin'
+  const isQA = user?.role === 'qa_senior' || user?.role === 'qa_analyst' || user?.role === 'qa_trainer' || user?.role === 'admin'
   const canManage = user?.role === 'qa_senior' || user?.role === 'admin'
   
   const [templates, setTemplates] = React.useState<ScorecardTemplate[]>(() => dataService.getAllScorecardTemplates())

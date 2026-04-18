@@ -69,7 +69,7 @@ export default function EvaluatePage() {
   const { user } = useAuth()
   const router = useRouter()
   
-  const isQA = user?.role === 'qa_senior' || user?.role === 'qa_trainer' || user?.role === 'admin'
+  const isQA = user?.role === 'qa_senior' || user?.role === 'qa_analyst' || user?.role === 'qa_trainer' || user?.role === 'admin'
   
   const templates = React.useMemo(() => dataService.getScorecardTemplates(), [])
   const agents = React.useMemo(() => dataService.getAgentsForQA(), [])

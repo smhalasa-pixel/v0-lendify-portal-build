@@ -58,7 +58,7 @@ import type { QAEvaluation } from '@/lib/types'
 export default function EvaluationsListPage() {
   const { user } = useAuth()
   
-  const isQA = user?.role === 'qa_senior' || user?.role === 'qa_trainer' || user?.role === 'admin'
+  const isQA = user?.role === 'qa_senior' || user?.role === 'qa_analyst' || user?.role === 'qa_trainer' || user?.role === 'admin'
   
   const [search, setSearch] = React.useState('')
   const [statusFilter, setStatusFilter] = React.useState<string>('all')
