@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { TrendingUp, TrendingDown, Minus, AlertTriangle } from 'lucide-react'
+import { TrendingUp, TrendingDown, Minus, AlertTriangle, ClipboardCheck } from 'lucide-react'
 import {
   Table,
   TableBody,
@@ -126,6 +126,7 @@ export function AgentPerformanceTable({
                 <TableHead className="text-[10px] uppercase tracking-wider text-center">Debt Enrolled</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider text-center">Conv. Rate</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider text-center">Ancillary</TableHead>
+                <TableHead className="text-[10px] uppercase tracking-wider text-center">QC Score</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider text-center">Grade</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider text-center">Pacing</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider text-center">Queue</TableHead>
@@ -179,6 +180,50 @@ export function AgentPerformanceTable({
                     </TableCell>
                     <TableCell className="text-center">
                       <span className="text-sm font-medium">{agent.ancillaryCount}</span>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <TooltipProvider delayDuration={100}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="flex flex-col items-center gap-0.5 cursor-help">
+                              <span className={cn(
+                                "text-sm font-semibold",
+                                agent.qcScore >= 85 ? "text-emerald-400" :
+                                agent.qcScore >= 70 ? "text-amber-400" : "text-rose-400"
+                              )}>
+                                {agent.qcScore}%
+                              </span>
+                              <Badge 
+                                variant="outline" 
+                                className={cn("text-[9px] px-1 py-0", getGradeColor(agent.qcGrade))}
+                              >
+                                {agent.qcGrade}
+                              </Badge>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">
+                            <div className="flex flex-col gap-1.5 py-1 text-xs">
+                              <div className="flex items-center gap-2">
+                                <ClipboardCheck className="size-3" />
+                                <span>QC Score: <strong>{agent.qcScore}%</strong></span>
+                              </div>
+                              <div className="flex items-center justify-between gap-4">
+                                <span className="text-muted-foreground">Evaluations:</span>
+                                <span className="font-semibold">{agent.evaluationsCount}</span>
+                              </div>
+                              <div className="flex items-center justify-between gap-4">
+                                <span className="text-muted-foreground">Change:</span>
+                                <span className={cn(
+                                  "font-semibold",
+                                  agent.qcScoreChange >= 0 ? "text-emerald-400" : "text-rose-400"
+                                )}>
+                                  {agent.qcScoreChange >= 0 ? '+' : ''}{agent.qcScoreChange}%
+                                </span>
+                              </div>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </TableCell>
                     <TableCell className="text-center">
                       <TooltipProvider delayDuration={100}>

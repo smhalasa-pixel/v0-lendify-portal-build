@@ -25,6 +25,12 @@ import type {
   TicketStatus,
   TicketCategory,
   UserRole,
+  ScorecardTemplate,
+  ScorecardCriterion,
+  QAEvaluation,
+  EvaluationScore,
+  QAMetrics,
+  ScorecardCategory,
 } from './types'
 
 // Helper functions
@@ -131,6 +137,28 @@ export const mockUsers: User[] = [
     teamName: undefined,
     // No region - admins see all
     hireDate: '2017-01-01',
+    status: 'active',
+  },
+  {
+    id: 'user-qa-senior',
+    email: 'qa.senior@lendify.com',
+    name: 'Marcus Rodriguez',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Marcus',
+    role: 'qa_senior',
+    teamId: undefined,
+    teamName: undefined,
+    hireDate: '2019-03-15',
+    status: 'active',
+  },
+  {
+    id: 'user-qa-trainer',
+    email: 'qa.trainer@lendify.com',
+    name: 'Lisa Chen',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Lisa',
+    role: 'qa_trainer',
+    teamId: undefined,
+    teamName: undefined,
+    hireDate: '2020-06-01',
     status: 'active',
   },
 ]
@@ -1139,6 +1167,239 @@ export const mockTickets: Ticket[] = [
   },
 ]
 
+// ==========================================
+// QA SCORECARD SYSTEM MOCK DATA
+// ==========================================
+
+// Default Scorecard Template
+export const mockScorecardTemplates: ScorecardTemplate[] = [
+  {
+    id: 'scorecard-1',
+    name: 'Sales Call Quality Scorecard',
+    description: 'Standard evaluation template for inbound and outbound sales calls',
+    version: 2,
+    isActive: true,
+    createdById: 'user-qa-senior',
+    createdByName: 'Marcus Rodriguez',
+    createdAt: '2024-01-15T10:00:00Z',
+    updatedAt: '2024-03-01T14:30:00Z',
+    passingScore: 70,
+    categories: [
+      { category: 'opening', weight: 15, criteria: ['crit-1', 'crit-2', 'crit-3'] },
+      { category: 'discovery', weight: 20, criteria: ['crit-4', 'crit-5', 'crit-6'] },
+      { category: 'presentation', weight: 20, criteria: ['crit-7', 'crit-8', 'crit-9'] },
+      { category: 'objection_handling', weight: 15, criteria: ['crit-10', 'crit-11'] },
+      { category: 'closing', weight: 15, criteria: ['crit-12', 'crit-13'] },
+      { category: 'compliance', weight: 10, criteria: ['crit-14', 'crit-15'] },
+      { category: 'professionalism', weight: 5, criteria: ['crit-16', 'crit-17'] },
+    ],
+    criteria: [
+      // Opening
+      { id: 'crit-1', name: 'Professional Greeting', description: 'Agent used proper greeting including name and company', category: 'opening', maxPoints: 10, weight: 5, isRequired: false, isCritical: false },
+      { id: 'crit-2', name: 'Verified Customer Identity', description: 'Agent properly verified customer identity for security', category: 'opening', maxPoints: 10, weight: 5, isRequired: true, isCritical: true },
+      { id: 'crit-3', name: 'Set Call Agenda', description: 'Agent clearly stated purpose and set expectations', category: 'opening', maxPoints: 10, weight: 5, isRequired: false, isCritical: false },
+      // Discovery
+      { id: 'crit-4', name: 'Asked Open-Ended Questions', description: 'Agent used effective questioning techniques', category: 'discovery', maxPoints: 10, weight: 7, isRequired: false, isCritical: false },
+      { id: 'crit-5', name: 'Active Listening', description: 'Agent demonstrated active listening and acknowledged concerns', category: 'discovery', maxPoints: 10, weight: 7, isRequired: false, isCritical: false },
+      { id: 'crit-6', name: 'Identified Pain Points', description: 'Agent successfully identified customer needs and pain points', category: 'discovery', maxPoints: 10, weight: 6, isRequired: false, isCritical: false },
+      // Presentation
+      { id: 'crit-7', name: 'Product Knowledge', description: 'Agent demonstrated thorough product knowledge', category: 'presentation', maxPoints: 10, weight: 7, isRequired: false, isCritical: false },
+      { id: 'crit-8', name: 'Solution Alignment', description: 'Agent aligned solutions to customer needs', category: 'presentation', maxPoints: 10, weight: 7, isRequired: false, isCritical: false },
+      { id: 'crit-9', name: 'Clear Communication', description: 'Agent communicated benefits clearly and concisely', category: 'presentation', maxPoints: 10, weight: 6, isRequired: false, isCritical: false },
+      // Objection Handling
+      { id: 'crit-10', name: 'Acknowledged Concerns', description: 'Agent acknowledged and validated customer concerns', category: 'objection_handling', maxPoints: 10, weight: 7, isRequired: false, isCritical: false },
+      { id: 'crit-11', name: 'Effective Rebuttals', description: 'Agent provided effective and appropriate rebuttals', category: 'objection_handling', maxPoints: 10, weight: 8, isRequired: false, isCritical: false },
+      // Closing
+      { id: 'crit-12', name: 'Asked for Commitment', description: 'Agent made a clear ask for next steps or commitment', category: 'closing', maxPoints: 10, weight: 8, isRequired: false, isCritical: false },
+      { id: 'crit-13', name: 'Proper Call Wrap-Up', description: 'Agent summarized action items and next steps', category: 'closing', maxPoints: 10, weight: 7, isRequired: false, isCritical: false },
+      // Compliance
+      { id: 'crit-14', name: 'Disclosure Compliance', description: 'Agent made all required disclosures', category: 'compliance', maxPoints: 10, weight: 5, isRequired: true, isCritical: true },
+      { id: 'crit-15', name: 'No Misleading Statements', description: 'Agent made no false or misleading statements', category: 'compliance', maxPoints: 10, weight: 5, isRequired: true, isCritical: true },
+      // Professionalism
+      { id: 'crit-16', name: 'Professional Tone', description: 'Agent maintained professional and courteous tone', category: 'professionalism', maxPoints: 10, weight: 2.5, isRequired: false, isCritical: false },
+      { id: 'crit-17', name: 'Empathy Displayed', description: 'Agent showed genuine empathy and care', category: 'professionalism', maxPoints: 10, weight: 2.5, isRequired: false, isCritical: false },
+    ],
+  },
+  {
+    id: 'scorecard-2',
+    name: 'Customer Service Evaluation',
+    description: 'Template for evaluating customer service interactions',
+    version: 1,
+    isActive: true,
+    createdById: 'user-qa-trainer',
+    createdByName: 'Lisa Chen',
+    createdAt: '2024-02-01T09:00:00Z',
+    updatedAt: '2024-02-01T09:00:00Z',
+    passingScore: 75,
+    categories: [
+      { category: 'opening', weight: 20, criteria: ['cs-1', 'cs-2'] },
+      { category: 'professionalism', weight: 30, criteria: ['cs-3', 'cs-4', 'cs-5'] },
+      { category: 'closing', weight: 25, criteria: ['cs-6', 'cs-7'] },
+      { category: 'compliance', weight: 25, criteria: ['cs-8', 'cs-9'] },
+    ],
+    criteria: [
+      { id: 'cs-1', name: 'Greeting Quality', description: 'Professional greeting with proper identification', category: 'opening', maxPoints: 10, weight: 10, isRequired: false, isCritical: false },
+      { id: 'cs-2', name: 'Issue Acknowledgment', description: 'Properly acknowledged customer issue', category: 'opening', maxPoints: 10, weight: 10, isRequired: false, isCritical: false },
+      { id: 'cs-3', name: 'Problem Resolution', description: 'Effectively resolved customer problem', category: 'professionalism', maxPoints: 10, weight: 15, isRequired: false, isCritical: false },
+      { id: 'cs-4', name: 'Patience Demonstrated', description: 'Showed patience with difficult situations', category: 'professionalism', maxPoints: 10, weight: 10, isRequired: false, isCritical: false },
+      { id: 'cs-5', name: 'Clear Explanations', description: 'Provided clear and understandable explanations', category: 'professionalism', maxPoints: 10, weight: 5, isRequired: false, isCritical: false },
+      { id: 'cs-6', name: 'Confirmation of Resolution', description: 'Confirmed issue was resolved to satisfaction', category: 'closing', maxPoints: 10, weight: 15, isRequired: false, isCritical: false },
+      { id: 'cs-7', name: 'Next Steps Provided', description: 'Clearly stated any follow-up or next steps', category: 'closing', maxPoints: 10, weight: 10, isRequired: false, isCritical: false },
+      { id: 'cs-8', name: 'Data Privacy', description: 'Protected customer data appropriately', category: 'compliance', maxPoints: 10, weight: 15, isRequired: true, isCritical: true },
+      { id: 'cs-9', name: 'Policy Adherence', description: 'Followed company policies correctly', category: 'compliance', maxPoints: 10, weight: 10, isRequired: true, isCritical: false },
+    ],
+  },
+]
+
+// Mock QA Evaluations
+export const mockEvaluations: QAEvaluation[] = [
+  {
+    id: 'eval-1',
+    scorecardTemplateId: 'scorecard-1',
+    scorecardTemplateName: 'Sales Call Quality Scorecard',
+    agentId: 'user-1',
+    agentName: 'Sarah Johnson',
+    agentTeamId: 'team-1',
+    agentTeamName: 'West Coast Team',
+    evaluatorId: 'user-qa-senior',
+    evaluatorName: 'Marcus Rodriguez',
+    evaluatorRole: 'qa_senior',
+    callId: 'CALL-2024-001234',
+    callDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    callDuration: 847,
+    callType: 'inbound',
+    clientName: 'John Smith',
+    scores: [
+      { criterionId: 'crit-1', score: 9, passed: true },
+      { criterionId: 'crit-2', score: 10, passed: true },
+      { criterionId: 'crit-3', score: 8, passed: true },
+      { criterionId: 'crit-4', score: 9, passed: true },
+      { criterionId: 'crit-5', score: 10, passed: true },
+      { criterionId: 'crit-6', score: 8, passed: true },
+      { criterionId: 'crit-7', score: 9, passed: true },
+      { criterionId: 'crit-8', score: 9, passed: true },
+      { criterionId: 'crit-9', score: 8, passed: true },
+      { criterionId: 'crit-10', score: 7, passed: true },
+      { criterionId: 'crit-11', score: 8, passed: true },
+      { criterionId: 'crit-12', score: 9, passed: true },
+      { criterionId: 'crit-13', score: 8, passed: true },
+      { criterionId: 'crit-14', score: 10, passed: true },
+      { criterionId: 'crit-15', score: 10, passed: true },
+      { criterionId: 'crit-16', score: 9, passed: true },
+      { criterionId: 'crit-17', score: 8, passed: true },
+    ],
+    totalScore: 88,
+    grade: 'B+',
+    passed: true,
+    hasAutoFail: false,
+    strengths: ['Excellent product knowledge', 'Strong closing technique', 'Great active listening skills'],
+    areasForImprovement: ['Could improve objection handling', 'Set clearer call agenda upfront'],
+    coachingNotes: 'Sarah continues to perform well. Focus on objection handling techniques in next coaching session.',
+    actionItems: ['Review objection handling scripts', 'Practice LAARC method'],
+    status: 'acknowledged',
+    acknowledgedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    submittedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'eval-2',
+    scorecardTemplateId: 'scorecard-1',
+    scorecardTemplateName: 'Sales Call Quality Scorecard',
+    agentId: 'user-4',
+    agentName: 'David Williams',
+    agentTeamId: 'team-1',
+    agentTeamName: 'West Coast Team',
+    evaluatorId: 'user-qa-trainer',
+    evaluatorName: 'Lisa Chen',
+    evaluatorRole: 'qa_trainer',
+    callId: 'CALL-2024-001189',
+    callDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    callDuration: 623,
+    callType: 'outbound',
+    clientName: 'Maria Garcia',
+    scores: [
+      { criterionId: 'crit-1', score: 10, passed: true },
+      { criterionId: 'crit-2', score: 10, passed: true },
+      { criterionId: 'crit-3', score: 9, passed: true },
+      { criterionId: 'crit-4', score: 10, passed: true },
+      { criterionId: 'crit-5', score: 9, passed: true },
+      { criterionId: 'crit-6', score: 9, passed: true },
+      { criterionId: 'crit-7', score: 10, passed: true },
+      { criterionId: 'crit-8', score: 10, passed: true },
+      { criterionId: 'crit-9', score: 9, passed: true },
+      { criterionId: 'crit-10', score: 9, passed: true },
+      { criterionId: 'crit-11', score: 9, passed: true },
+      { criterionId: 'crit-12', score: 10, passed: true },
+      { criterionId: 'crit-13', score: 9, passed: true },
+      { criterionId: 'crit-14', score: 10, passed: true },
+      { criterionId: 'crit-15', score: 10, passed: true },
+      { criterionId: 'crit-16', score: 10, passed: true },
+      { criterionId: 'crit-17', score: 9, passed: true },
+    ],
+    totalScore: 95,
+    grade: 'A',
+    passed: true,
+    hasAutoFail: false,
+    strengths: ['Outstanding call control', 'Perfect compliance adherence', 'Exceptional rapport building'],
+    areasForImprovement: ['None significant - continue current approach'],
+    coachingNotes: 'Excellent performance. Consider for peer coaching role.',
+    status: 'submitted',
+    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    submittedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'eval-3',
+    scorecardTemplateId: 'scorecard-1',
+    scorecardTemplateName: 'Sales Call Quality Scorecard',
+    agentId: 'user-5',
+    agentName: 'Emily Brown',
+    agentTeamId: 'team-2',
+    agentTeamName: 'East Coast Team',
+    evaluatorId: 'user-qa-senior',
+    evaluatorName: 'Marcus Rodriguez',
+    evaluatorRole: 'qa_senior',
+    callId: 'CALL-2024-001156',
+    callDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    callDuration: 1245,
+    callType: 'inbound',
+    clientName: 'Robert Chen',
+    scores: [
+      { criterionId: 'crit-1', score: 7, passed: true },
+      { criterionId: 'crit-2', score: 10, passed: true },
+      { criterionId: 'crit-3', score: 5, passed: true, notes: 'Did not set clear agenda' },
+      { criterionId: 'crit-4', score: 6, passed: true },
+      { criterionId: 'crit-5', score: 7, passed: true },
+      { criterionId: 'crit-6', score: 6, passed: true },
+      { criterionId: 'crit-7', score: 8, passed: true },
+      { criterionId: 'crit-8', score: 7, passed: true },
+      { criterionId: 'crit-9', score: 6, passed: true },
+      { criterionId: 'crit-10', score: 5, passed: true, notes: 'Struggled with pricing objection' },
+      { criterionId: 'crit-11', score: 5, passed: true },
+      { criterionId: 'crit-12', score: 6, passed: true },
+      { criterionId: 'crit-13', score: 7, passed: true },
+      { criterionId: 'crit-14', score: 10, passed: true },
+      { criterionId: 'crit-15', score: 10, passed: true },
+      { criterionId: 'crit-16', score: 8, passed: true },
+      { criterionId: 'crit-17', score: 7, passed: true },
+    ],
+    totalScore: 71,
+    grade: 'C',
+    passed: true,
+    hasAutoFail: false,
+    strengths: ['Compliant with all disclosures', 'Professional demeanor'],
+    areasForImprovement: ['Needs work on discovery questions', 'Objection handling needs improvement', 'Should set clearer call agenda'],
+    coachingNotes: 'Schedule coaching session to review objection handling. Emily struggles with pricing objections specifically.',
+    actionItems: ['Complete objection handling module', 'Shadow top performer calls', 'Role play pricing objections'],
+    status: 'disputed',
+    disputeReason: 'I believe the discovery score should be higher as I identified the main pain point correctly.',
+    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+    submittedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+]
+
 // Generate chart data for various time periods
 export function generateVolumeChartData(days: number): ChartDataPoint[] {
   const data: ChartDataPoint[] = []
@@ -1855,6 +2116,11 @@ export const dataService = {
       const pacingDebtLoad = (debtLoadEnrolled / expectedDebtAtThisPoint) * 100
       const pacing = (pacingUnits + pacingDebtLoad) / 2
       
+      // Generate QC score (60-100 range typical)
+      const qcScore = Math.floor(Math.random() * 30) + 70
+      const qcScoreChange = Math.floor(Math.random() * 10) - 5
+      const qcGrade = qcScore >= 95 ? 'A+' : qcScore >= 90 ? 'A' : qcScore >= 87 ? 'A-' : qcScore >= 83 ? 'B+' : qcScore >= 80 ? 'B' : qcScore >= 77 ? 'B-' : qcScore >= 73 ? 'C+' : qcScore >= 70 ? 'C' : qcScore >= 67 ? 'C-' : qcScore >= 60 ? 'D' : 'F'
+      
       return {
         agentId: agent.id,
         agentName: agent.name,
@@ -1867,6 +2133,10 @@ export const dataService = {
         debtLoadEnrolled,
         conversionRate: leaderboardEntry?.conversionRate || Math.floor(Math.random() * 20) + 55,
         ancillaryCount: Math.floor(Math.random() * 8) + 1, // Random ancillary sales 1-8
+        qcScore,
+        qcScoreChange,
+        qcGrade: qcGrade as AgentPerformance['qcGrade'],
+        evaluationsCount: Math.floor(Math.random() * 8) + 3,
         performanceGrade: leaderboardEntry?.performanceGrade || 'B',
         monthlyTargetUnits,
         monthlyTargetDebtLoad,
@@ -2156,5 +2426,229 @@ export const dataService = {
     }
     
     return mockUsers.filter(u => targetRoles.includes(u.role) && u.status === 'active')
+  },
+
+  // ==========================================
+  // QA SCORECARD SYSTEM METHODS
+  // ==========================================
+
+  // Scorecard Templates
+  getScorecardTemplates: (): ScorecardTemplate[] => {
+    return mockScorecardTemplates.filter(t => t.isActive)
+  },
+
+  getAllScorecardTemplates: (): ScorecardTemplate[] => {
+    return mockScorecardTemplates
+  },
+
+  getScorecardTemplateById: (id: string): ScorecardTemplate | undefined => {
+    return mockScorecardTemplates.find(t => t.id === id)
+  },
+
+  createScorecardTemplate: (template: Omit<ScorecardTemplate, 'id' | 'createdAt' | 'updatedAt' | 'version'>): ScorecardTemplate => {
+    const newTemplate: ScorecardTemplate = {
+      ...template,
+      id: `scorecard-${randomId()}`,
+      version: 1,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+    mockScorecardTemplates.push(newTemplate)
+    return newTemplate
+  },
+
+  updateScorecardTemplate: (id: string, updates: Partial<ScorecardTemplate>): ScorecardTemplate | undefined => {
+    const template = mockScorecardTemplates.find(t => t.id === id)
+    if (template) {
+      Object.assign(template, {
+        ...updates,
+        version: template.version + 1,
+        updatedAt: new Date().toISOString(),
+      })
+      return template
+    }
+    return undefined
+  },
+
+  // QA Evaluations
+  getEvaluations: (filters?: { agentId?: string; teamId?: string; evaluatorId?: string; status?: string }): QAEvaluation[] => {
+    let results = [...mockEvaluations]
+    
+    if (filters?.agentId) {
+      results = results.filter(e => e.agentId === filters.agentId)
+    }
+    if (filters?.teamId) {
+      results = results.filter(e => e.agentTeamId === filters.teamId)
+    }
+    if (filters?.evaluatorId) {
+      results = results.filter(e => e.evaluatorId === filters.evaluatorId)
+    }
+    if (filters?.status) {
+      results = results.filter(e => e.status === filters.status)
+    }
+    
+    return results.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+  },
+
+  getEvaluationById: (id: string): QAEvaluation | undefined => {
+    return mockEvaluations.find(e => e.id === id)
+  },
+
+  createEvaluation: (evaluation: Omit<QAEvaluation, 'id' | 'createdAt' | 'updatedAt'>): QAEvaluation => {
+    const newEvaluation: QAEvaluation = {
+      ...evaluation,
+      id: `eval-${randomId()}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+    mockEvaluations.push(newEvaluation)
+    return newEvaluation
+  },
+
+  updateEvaluation: (id: string, updates: Partial<QAEvaluation>): QAEvaluation | undefined => {
+    const evaluation = mockEvaluations.find(e => e.id === id)
+    if (evaluation) {
+      Object.assign(evaluation, {
+        ...updates,
+        updatedAt: new Date().toISOString(),
+      })
+      return evaluation
+    }
+    return undefined
+  },
+
+  submitEvaluation: (id: string): QAEvaluation | undefined => {
+    const evaluation = mockEvaluations.find(e => e.id === id)
+    if (evaluation) {
+      evaluation.status = 'submitted'
+      evaluation.submittedAt = new Date().toISOString()
+      evaluation.updatedAt = new Date().toISOString()
+      return evaluation
+    }
+    return undefined
+  },
+
+  acknowledgeEvaluation: (id: string): QAEvaluation | undefined => {
+    const evaluation = mockEvaluations.find(e => e.id === id)
+    if (evaluation) {
+      evaluation.status = 'acknowledged'
+      evaluation.acknowledgedAt = new Date().toISOString()
+      evaluation.updatedAt = new Date().toISOString()
+      return evaluation
+    }
+    return undefined
+  },
+
+  disputeEvaluation: (id: string, reason: string): QAEvaluation | undefined => {
+    const evaluation = mockEvaluations.find(e => e.id === id)
+    if (evaluation) {
+      evaluation.status = 'disputed'
+      evaluation.disputeReason = reason
+      evaluation.updatedAt = new Date().toISOString()
+      return evaluation
+    }
+    return undefined
+  },
+
+  resolveDispute: (id: string, resolution: string): QAEvaluation | undefined => {
+    const evaluation = mockEvaluations.find(e => e.id === id)
+    if (evaluation) {
+      evaluation.status = 'resolved'
+      evaluation.disputeResolution = resolution
+      evaluation.updatedAt = new Date().toISOString()
+      return evaluation
+    }
+    return undefined
+  },
+
+  // QA Metrics
+  getQAMetrics: (filters?: { teamId?: string; agentId?: string }): QAMetrics => {
+    let evaluations = [...mockEvaluations].filter(e => e.status !== 'draft')
+    
+    if (filters?.teamId) {
+      evaluations = evaluations.filter(e => e.agentTeamId === filters.teamId)
+    }
+    if (filters?.agentId) {
+      evaluations = evaluations.filter(e => e.agentId === filters.agentId)
+    }
+
+    const totalEvaluations = evaluations.length
+    const avgScore = totalEvaluations > 0 
+      ? evaluations.reduce((sum, e) => sum + e.totalScore, 0) / totalEvaluations 
+      : 0
+    const passedCount = evaluations.filter(e => e.passed).length
+    const passRate = totalEvaluations > 0 ? (passedCount / totalEvaluations) * 100 : 0
+    const autoFailCount = evaluations.filter(e => e.hasAutoFail).length
+    const autoFailRate = totalEvaluations > 0 ? (autoFailCount / totalEvaluations) * 100 : 0
+
+    // Group by agent for top performers and needs coaching
+    const agentScores = new Map<string, { name: string; scores: number[] }>()
+    evaluations.forEach(e => {
+      if (!agentScores.has(e.agentId)) {
+        agentScores.set(e.agentId, { name: e.agentName, scores: [] })
+      }
+      agentScores.get(e.agentId)!.scores.push(e.totalScore)
+    })
+
+    const agentAvgScores = Array.from(agentScores.entries()).map(([agentId, data]) => ({
+      agentId,
+      agentName: data.name,
+      avgScore: data.scores.reduce((a, b) => a + b, 0) / data.scores.length,
+    }))
+
+    const topPerformers = agentAvgScores.sort((a, b) => b.avgScore - a.avgScore).slice(0, 5)
+    const needsCoaching = agentAvgScores.filter(a => a.avgScore < 75).sort((a, b) => a.avgScore - b.avgScore).slice(0, 5)
+
+    // Grade distribution
+    const gradeCount = { 'A+': 0, 'A': 0, 'A-': 0, 'B+': 0, 'B': 0, 'B-': 0, 'C+': 0, 'C': 0, 'C-': 0, 'D': 0, 'F': 0 }
+    evaluations.forEach(e => { gradeCount[e.grade]++ })
+    const scoreDistribution = Object.entries(gradeCount).map(([grade, count]) => ({
+      grade,
+      count,
+      percentage: totalEvaluations > 0 ? (count / totalEvaluations) * 100 : 0,
+    }))
+
+    // Category scores (simplified)
+    const categoryScores: { category: ScorecardCategory; avgScore: number }[] = [
+      { category: 'opening', avgScore: 85 },
+      { category: 'discovery', avgScore: 78 },
+      { category: 'presentation', avgScore: 82 },
+      { category: 'objection_handling', avgScore: 72 },
+      { category: 'closing', avgScore: 80 },
+      { category: 'compliance', avgScore: 95 },
+      { category: 'professionalism', avgScore: 88 },
+    ]
+
+    // Trend data (last 30 days)
+    const trendData: { date: string; avgScore: number; evaluationCount: number }[] = []
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date()
+      date.setDate(date.getDate() - i)
+      const dateStr = date.toISOString().split('T')[0]
+      trendData.push({
+        date: dateStr,
+        avgScore: 75 + Math.random() * 15,
+        evaluationCount: Math.floor(Math.random() * 5) + 1,
+      })
+    }
+
+    return {
+      totalEvaluations,
+      avgScore,
+      avgScoreChange: 2.5,
+      passRate,
+      passRateChange: 1.2,
+      autoFailRate,
+      topPerformers,
+      needsCoaching,
+      scoreDistribution,
+      categoryScores,
+      trendData,
+    }
+  },
+
+  // Get agents for QA to evaluate
+  getAgentsForQA: (): User[] => {
+    return mockUsers.filter(u => u.role === 'agent' && u.status === 'active')
   },
 }

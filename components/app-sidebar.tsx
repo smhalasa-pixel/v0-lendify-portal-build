@@ -20,6 +20,8 @@ import {
   ClipboardList,
   Ticket,
   SlidersHorizontal,
+  ClipboardCheck,
+  GraduationCap,
 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
@@ -108,7 +110,34 @@ const mainNavItems = [
     title: 'My Settings',
     href: '/settings',
     icon: SlidersHorizontal,
-    roles: ['agent', 'leadership', 'supervisor', 'executive', 'admin'] as UserRole[],
+    roles: ['agent', 'leadership', 'supervisor', 'executive', 'admin', 'qa_senior', 'qa_trainer'] as UserRole[],
+  },
+]
+
+const qaNavItems = [
+  {
+    title: 'QA Dashboard',
+    href: '/qa',
+    icon: ClipboardCheck,
+    roles: ['qa_senior', 'qa_trainer', 'admin'] as UserRole[],
+  },
+  {
+    title: 'New Evaluation',
+    href: '/qa/evaluate',
+    icon: ClipboardList,
+    roles: ['qa_senior', 'qa_trainer', 'admin'] as UserRole[],
+  },
+  {
+    title: 'All Evaluations',
+    href: '/qa/evaluations',
+    icon: FileText,
+    roles: ['qa_senior', 'qa_trainer', 'admin'] as UserRole[],
+  },
+  {
+    title: 'Scorecards',
+    href: '/qa/scorecards',
+    icon: GraduationCap,
+    roles: ['qa_senior', 'qa_trainer', 'admin'] as UserRole[],
   },
 ]
 
@@ -143,6 +172,10 @@ function getRoleBadgeVariant(role: UserRole) {
       return 'default'
     case 'leadership':
       return 'secondary'
+    case 'qa_senior':
+      return 'default'
+    case 'qa_trainer':
+      return 'secondary'
     default:
       return 'outline'
   }
@@ -158,6 +191,10 @@ function getRoleLabel(role: UserRole) {
       return 'Supervisor'
     case 'leadership':
       return 'Team Leader'
+    case 'qa_senior':
+      return 'QA Senior'
+    case 'qa_trainer':
+      return 'QA & Trainer'
     default:
       return 'Sales Agent'
   }
@@ -169,6 +206,11 @@ export function AppSidebar() {
   const hasAdminAccess = useHasAccess(['admin'])
 
   const filteredMainNav = mainNavItems.filter(item => {
+    if (!user) return false
+    return item.roles.includes(user.role)
+  })
+
+  const filteredQANav = qaNavItems.filter(item => {
     if (!user) return false
     return item.roles.includes(user.role)
   })
@@ -230,6 +272,29 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {filteredQANav.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Quality Assurance</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {filteredQANav.map(item => (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={pathname === item.href || pathname.startsWith(`${item.href}/`)}
+                    >
+                      <Link href={item.href}>
+                        <item.icon className="size-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         {hasAdminAccess && filteredAdminNav.length > 0 && (
           <SidebarGroup>
@@ -312,6 +377,18 @@ export function AppSidebar() {
                 <DropdownMenuItem onClick={() => switchRole('admin')}>
                   <Badge variant="destructive" className="mr-2">Admin</Badge>
                   System Administrator
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-xs text-muted-foreground">
+                  QA Roles
+                </DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => switchRole('qa_senior')}>
+                  <Badge variant="default" className="mr-2">QA Senior</Badge>
+                  Marcus Rodriguez
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => switchRole('qa_trainer')}>
+                  <Badge variant="secondary" className="mr-2">QA Trainer</Badge>
+                  Lisa Chen
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout} className="text-destructive">

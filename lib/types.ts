@@ -1,6 +1,6 @@
 // Lendify Portal Types
 
-export type UserRole = 'agent' | 'leadership' | 'supervisor' | 'executive' | 'admin'
+export type UserRole = 'agent' | 'leadership' | 'supervisor' | 'executive' | 'admin' | 'qa_senior' | 'qa_trainer'
 
 export type Region = 'dubai' | 'jordan'
 
@@ -205,6 +205,10 @@ export interface TeamMetrics extends DashboardMetrics {
   pacingUnits: number
   pacingDebtLoad: number
   trend: 'up' | 'down' | 'same'
+  // QC Metrics
+  avgQcScore: number
+  avgQcScoreChange: number
+  totalEvaluations: number
 }
 
 export interface AgentPerformance {
@@ -219,6 +223,10 @@ export interface AgentPerformance {
   debtLoadEnrolled: number
   conversionRate: number
   ancillaryCount: number // Ancillary sales count
+  qcScore: number // Quality Control score (0-100)
+  qcScoreChange: number // Change from previous period
+  qcGrade: 'A+' | 'A' | 'A-' | 'B+' | 'B' | 'B-' | 'C+' | 'C' | 'C-' | 'D' | 'F'
+  evaluationsCount: number // Number of QC evaluations this period
   performanceGrade: 'A+' | 'A' | 'A-' | 'B+' | 'B' | 'B-' | 'C+' | 'C' | 'C-' | 'D' | 'F'
   monthlyTargetUnits: number
   monthlyTargetDebtLoad: number
@@ -227,7 +235,7 @@ export interface AgentPerformance {
   pacingDebtLoad: number // pacing percentage for debt load
   trend: 'up' | 'down' | 'same'
   callQueueTier: 'bronze' | 'silver' | 'gold' | 'diamond' | 'platinum' | 'titanium' | 'champion' // Call queue tier
-  }
+}
 
 export interface ChartDataPoint {
   date: string
@@ -344,4 +352,101 @@ export interface Task {
   // Completion tracking for team/department tasks
   completedBy?: string[] // Array of user IDs who completed
   category: 'compliance' | 'training' | 'sales' | 'administrative' | 'other'
+}
+
+// ==========================================
+// QA SCORECARD SYSTEM TYPES
+// ==========================================
+
+export type ScorecardCategory = 'opening' | 'discovery' | 'presentation' | 'objection_handling' | 'closing' | 'compliance' | 'professionalism'
+
+export interface ScorecardCriterion {
+  id: string
+  name: string
+  description: string
+  category: ScorecardCategory
+  maxPoints: number
+  weight: number // Percentage weight (all weights in a scorecard should sum to 100)
+  isRequired: boolean // If failed, automatic fail for entire scorecard
+  isCritical: boolean // If failed, significant penalty
+}
+
+export interface ScorecardTemplate {
+  id: string
+  name: string
+  description: string
+  version: number
+  isActive: boolean
+  createdById: string
+  createdByName: string
+  createdAt: string
+  updatedAt: string
+  criteria: ScorecardCriterion[]
+  passingScore: number // Minimum score to pass (e.g., 70)
+  categories: {
+    category: ScorecardCategory
+    weight: number
+    criteria: string[] // criterion IDs
+  }[]
+}
+
+export interface EvaluationScore {
+  criterionId: string
+  score: number // 0 to maxPoints
+  notes?: string
+  passed: boolean
+}
+
+export interface QAEvaluation {
+  id: string
+  scorecardTemplateId: string
+  scorecardTemplateName: string
+  agentId: string
+  agentName: string
+  agentTeamId: string
+  agentTeamName: string
+  evaluatorId: string
+  evaluatorName: string
+  evaluatorRole: UserRole
+  // Call/Interaction Details
+  callId?: string
+  callDate: string
+  callDuration?: number // in seconds
+  callType: 'inbound' | 'outbound' | 'transfer' | 'callback'
+  clientName?: string
+  // Scoring
+  scores: EvaluationScore[]
+  totalScore: number // Weighted percentage (0-100)
+  grade: 'A+' | 'A' | 'A-' | 'B+' | 'B' | 'B-' | 'C+' | 'C' | 'C-' | 'D' | 'F'
+  passed: boolean
+  hasAutoFail: boolean
+  autoFailReason?: string
+  // Feedback
+  strengths: string[]
+  areasForImprovement: string[]
+  coachingNotes?: string
+  actionItems?: string[]
+  // Status
+  status: 'draft' | 'submitted' | 'acknowledged' | 'disputed' | 'resolved'
+  acknowledgedAt?: string
+  disputeReason?: string
+  disputeResolution?: string
+  // Timestamps
+  createdAt: string
+  updatedAt: string
+  submittedAt?: string
+}
+
+export interface QAMetrics {
+  totalEvaluations: number
+  avgScore: number
+  avgScoreChange: number
+  passRate: number
+  passRateChange: number
+  autoFailRate: number
+  topPerformers: { agentId: string; agentName: string; avgScore: number }[]
+  needsCoaching: { agentId: string; agentName: string; avgScore: number }[]
+  scoreDistribution: { grade: string; count: number; percentage: number }[]
+  categoryScores: { category: ScorecardCategory; avgScore: number }[]
+  trendData: { date: string; avgScore: number; evaluationCount: number }[]
 }

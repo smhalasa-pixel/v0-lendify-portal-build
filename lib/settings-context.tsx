@@ -21,6 +21,7 @@ export const masterWidgetList: Omit<DashboardWidget, 'enabled'>[] = [
   { id: 'kpi-averages', name: 'Averages', description: 'Avg Daily Units, Avg Daily Debt, Avg Debt/File', icon: 'Calculator', category: 'metrics' },
   { id: 'kpi-clients', name: 'Clients', description: 'Clients Enrolled, Active, Cancelled, Cancellation %', icon: 'Users', category: 'metrics' },
   { id: 'kpi-epf', name: 'EPF Metrics', description: 'EPFs Collected, EPFs Scheduled', icon: 'DollarSign', category: 'metrics' },
+  { id: 'kpi-qc-score', name: 'QC Score', description: 'Quality Control Score, Evaluations Count', icon: 'ClipboardCheck', category: 'metrics' },
   
   // Charts
   { id: 'volume-chart', name: 'Volume Chart', description: 'Interactive volume trends over time', icon: 'LineChart', category: 'charts' },
