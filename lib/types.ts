@@ -360,6 +360,8 @@ export interface Task {
 
 export type ScorecardCategory = 'opening' | 'discovery' | 'presentation' | 'objection_handling' | 'closing' | 'compliance' | 'professionalism'
 
+export type ScorecardType = 'opener' | 'closer' | 'account_manager'
+
 export interface ScorecardCriterion {
   id: string
   name: string
@@ -375,6 +377,7 @@ export interface ScorecardTemplate {
   id: string
   name: string
   description: string
+  type: ScorecardType // opener, closer, or account_manager
   version: number
   isActive: boolean
   createdById: string
@@ -383,6 +386,7 @@ export interface ScorecardTemplate {
   updatedAt: string
   criteria: ScorecardCriterion[]
   passingScore: number // Minimum score to pass (e.g., 70)
+  autoFailThreshold: number // Score below this = automatic fail (e.g., 50)
   categories: {
     category: ScorecardCategory
     weight: number

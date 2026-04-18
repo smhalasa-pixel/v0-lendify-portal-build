@@ -74,7 +74,19 @@ import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth-context'
 import { dataService } from '@/lib/mock-data'
-import type { ScorecardTemplate, ScorecardCategory, ScorecardCriterion } from '@/lib/types'
+import type { ScorecardTemplate, ScorecardCategory, ScorecardCriterion, ScorecardType } from '@/lib/types'
+
+const TYPE_LABELS: Record<ScorecardType, string> = {
+  opener: 'Opener Quality Evaluation',
+  closer: 'Closer Quality Evaluation',
+  account_manager: 'Lendify Account Manager Quality Evaluation',
+}
+
+const TYPE_COLORS: Record<ScorecardType, string> = {
+  opener: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
+  closer: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
+  account_manager: 'bg-purple-500/10 text-purple-400 border-purple-500/30',
+}
 
 const CATEGORY_LABELS: Record<ScorecardCategory, string> = {
   opening: 'Opening',
@@ -111,6 +123,7 @@ export default function ScorecardsPage() {
   
   const [templates, setTemplates] = React.useState<ScorecardTemplate[]>(() => dataService.getAllScorecardTemplates())
   const [viewMode, setViewMode] = React.useState<'cards' | 'table'>('cards')
+  const [typeFilter, setTypeFilter] = React.useState<ScorecardType | 'all'>('all')
   const [search, setSearch] = React.useState('')
   const [sortField, setSortField] = React.useState<SortField>('name')
   const [sortDirection, setSortDirection] = React.useState<SortDirection>('asc')
@@ -122,6 +135,11 @@ export default function ScorecardsPage() {
   // Filter and sort templates
   const filteredTemplates = React.useMemo(() => {
     let results = [...templates]
+    
+    // Type filter
+    if (typeFilter !== 'all') {
+      results = results.filter(t => t.type === typeFilter)
+    }
     
     // Search filter
     if (search) {
@@ -280,6 +298,52 @@ export default function ScorecardsPage() {
         </div>
       </div>
 
+      {/* Type Filter Tabs */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant={typeFilter === 'all' ? 'default' : 'outline'}
+            onClick={() => setTypeFilter('all')}
+            className="h-10"
+          >
+            All Templates
+            <Badge variant="secondary" className="ml-2 bg-background/50">
+              {templates.length}
+            </Badge>
+          </Button>
+          <Button
+            variant={typeFilter === 'opener' ? 'default' : 'outline'}
+            onClick={() => setTypeFilter('opener')}
+            className={cn("h-10", typeFilter === 'opener' && "bg-blue-600 hover:bg-blue-700")}
+          >
+            Opener Quality Evaluation
+            <Badge variant="secondary" className="ml-2 bg-background/50">
+              {templates.filter(t => t.type === 'opener').length}
+            </Badge>
+          </Button>
+          <Button
+            variant={typeFilter === 'closer' ? 'default' : 'outline'}
+            onClick={() => setTypeFilter('closer')}
+            className={cn("h-10", typeFilter === 'closer' && "bg-emerald-600 hover:bg-emerald-700")}
+          >
+            Closer Quality Evaluation
+            <Badge variant="secondary" className="ml-2 bg-background/50">
+              {templates.filter(t => t.type === 'closer').length}
+            </Badge>
+          </Button>
+          <Button
+            variant={typeFilter === 'account_manager' ? 'default' : 'outline'}
+            onClick={() => setTypeFilter('account_manager')}
+            className={cn("h-10", typeFilter === 'account_manager' && "bg-purple-600 hover:bg-purple-700")}
+          >
+            Lendify Account Manager Quality Evaluation
+            <Badge variant="secondary" className="ml-2 bg-background/50">
+              {templates.filter(t => t.type === 'account_manager').length}
+            </Badge>
+          </Button>
+        </div>
+      </div>
+
       {/* Search */}
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
@@ -335,6 +399,11 @@ export default function ScorecardsPage() {
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge variant="outline" className={cn("text-xs", TYPE_COLORS[template.type])}>
+                        {TYPE_LABELS[template.type]}
+                      </Badge>
+                    </div>
                     <CardTitle className="text-lg flex items-center gap-2">
                       {template.name}
                       {template.isActive ? (
@@ -449,6 +518,7 @@ export default function ScorecardsPage() {
                       Template Name {getSortIcon('name')}
                     </div>
                   </TableHead>
+                  <TableHead>Type</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead 
                     className="cursor-pointer hover:bg-muted/50 text-center"
@@ -513,7 +583,7 @@ export default function ScorecardsPage() {
               <TableBody>
                 {filteredTemplates.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={11} className="text-center py-12 text-muted-foreground">
+                    <TableCell colSpan={12} className="text-center py-12 text-muted-foreground">
                       No templates found
                     </TableCell>
                   </TableRow>
@@ -529,6 +599,12 @@ export default function ScorecardsPage() {
                           <p className="font-medium">{template.name}</p>
                           <p className="text-xs text-muted-foreground line-clamp-1">{template.description}</p>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={cn("text-xs", TYPE_COLORS[template.type])}>
+                          {template.type === 'opener' ? 'Opener' : 
+                           template.type === 'closer' ? 'Closer' : 'Account Mgr'}
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         {template.isActive ? (
@@ -809,7 +885,9 @@ function TemplateFormDialog({
 
   const [name, setName] = React.useState('')
   const [description, setDescription] = React.useState('')
+  const [type, setType] = React.useState<ScorecardType>('opener')
   const [passingScore, setPassingScore] = React.useState(70)
+  const [autoFailThreshold, setAutoFailThreshold] = React.useState(50)
   const [isActive, setIsActive] = React.useState(true)
   const [criteria, setCriteria] = React.useState<ScorecardCriterion[]>([])
   const [categories, setCategories] = React.useState<{ category: ScorecardCategory; weight: number; criteria: string[] }[]>([])
@@ -819,14 +897,18 @@ function TemplateFormDialog({
     if (template) {
       setName(template.name)
       setDescription(template.description)
+      setType(template.type)
       setPassingScore(template.passingScore)
+      setAutoFailThreshold(template.autoFailThreshold || 50)
       setIsActive(template.isActive)
       setCriteria([...template.criteria])
       setCategories([...template.categories])
     } else {
       setName('')
       setDescription('')
+      setType('opener')
       setPassingScore(70)
+      setAutoFailThreshold(50)
       setIsActive(true)
       setCriteria([])
       setCategories([])
@@ -881,6 +963,7 @@ function TemplateFormDialog({
       id: template?.id || '',
       name,
       description,
+      type,
       version: template?.version || 1,
       isActive,
       createdById: template?.createdById || '',
@@ -888,6 +971,7 @@ function TemplateFormDialog({
       createdAt: template?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       passingScore,
+      autoFailThreshold,
       criteria,
       categories,
     }
@@ -915,6 +999,34 @@ function TemplateFormDialog({
 
           <TabsContent value="basic" className="space-y-4 mt-4">
             <div className="space-y-2">
+              <Label>Evaluation Type</Label>
+              <Select value={type} onValueChange={(v) => setType(v as ScorecardType)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="opener">
+                    <div className="flex items-center gap-2">
+                      <div className="size-2 rounded-full bg-blue-500" />
+                      Opener Quality Evaluation
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="closer">
+                    <div className="flex items-center gap-2">
+                      <div className="size-2 rounded-full bg-emerald-500" />
+                      Closer Quality Evaluation
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="account_manager">
+                    <div className="flex items-center gap-2">
+                      <div className="size-2 rounded-full bg-purple-500" />
+                      Lendify Account Manager Quality Evaluation
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="name">Template Name</Label>
               <Input
                 id="name"
@@ -933,18 +1045,29 @@ function TemplateFormDialog({
                 rows={3}
               />
             </div>
-            <div className="space-y-2">
-              <Label>Passing Score: {passingScore}%</Label>
-              <Slider
-                value={[passingScore]}
-                onValueChange={([val]) => setPassingScore(val)}
-                min={50}
-                max={100}
-                step={5}
-              />
-              <p className="text-xs text-muted-foreground">
-                Agents must score at least {passingScore}% to pass (excluding auto-fail triggers)
-              </p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Passing Score: {passingScore}%</Label>
+                <p className="text-xs text-muted-foreground">Minimum score required to pass evaluation</p>
+                <Slider
+                  value={[passingScore]}
+                  onValueChange={([v]) => setPassingScore(v)}
+                  min={50}
+                  max={95}
+                  step={5}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Auto-Fail Threshold: {autoFailThreshold}%</Label>
+                <p className="text-xs text-muted-foreground">Score below this = automatic failure</p>
+                <Slider
+                  value={[autoFailThreshold]}
+                  onValueChange={([v]) => setAutoFailThreshold(v)}
+                  min={30}
+                  max={70}
+                  step={5}
+                />
+              </div>
             </div>
             <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
               <div>
