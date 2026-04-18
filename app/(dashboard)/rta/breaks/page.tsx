@@ -35,8 +35,8 @@ import {
 } from '@/components/ui/table'
 import { useAuth } from '@/lib/auth-context'
 import { dataService } from '@/lib/mock-data'
-import type { BreakSession, Team, BreakType } from '@/lib/types'
-import { BREAK_LABELS } from '@/lib/types'
+import type { BreakSession, Team, AgentActivityStatus } from '@/lib/types'
+import { STATUS_LABELS } from '@/lib/types'
 
 export default function BreakHistoryPage() {
   const { user } = useAuth()
@@ -44,7 +44,7 @@ export default function BreakHistoryPage() {
   const [teams, setTeams] = React.useState<Team[]>([])
   const [search, setSearch] = React.useState('')
   const [teamFilter, setTeamFilter] = React.useState<string>('all')
-  const [breakTypeFilter, setBreakTypeFilter] = React.useState<string>('all')
+  const [statusTypeFilter, setStatusTypeFilter] = React.useState<string>('all')
   const [overtimeFilter, setOvertimeFilter] = React.useState<string>('all')
 
   const isRTA = user?.role === 'rta'
@@ -84,8 +84,8 @@ export default function BreakHistoryPage() {
       results = results.filter(s => s.teamId === teamFilter)
     }
 
-    if (breakTypeFilter !== 'all') {
-      results = results.filter(s => s.breakType === breakTypeFilter)
+    if (statusTypeFilter !== 'all') {
+      results = results.filter(s => s.statusType === statusTypeFilter)
     }
 
     if (overtimeFilter === 'overtime') {
@@ -97,7 +97,7 @@ export default function BreakHistoryPage() {
     }
 
     return results
-  }, [breakSessions, search, teamFilter, breakTypeFilter, overtimeFilter])
+  }, [breakSessions, search, teamFilter, statusTypeFilter, overtimeFilter])
 
   // Stats
   const stats = React.useMemo(() => {
@@ -134,11 +134,11 @@ export default function BreakHistoryPage() {
   }
 
   const handleExport = () => {
-    const headers = ['Agent', 'Team', 'Break Type', 'Start Time', 'End Time', 'Scheduled', 'Actual', 'Overtime', 'Notes']
+    const headers = ['Agent', 'Team', 'Status Type', 'Start Time', 'End Time', 'Scheduled', 'Actual', 'Overtime', 'Notes']
     const rows = filteredSessions.map(s => [
       s.agentName,
       s.teamName,
-      BREAK_LABELS[s.breakType],
+      STATUS_LABELS[s.statusType],
       new Date(s.startTime).toLocaleString(),
       s.endTime ? new Date(s.endTime).toLocaleString() : 'In Progress',
       `${s.scheduledDuration}m`,
@@ -244,15 +244,15 @@ export default function BreakHistoryPage() {
           />
         </div>
         <div className="flex flex-wrap gap-2">
-          <Select value={breakTypeFilter} onValueChange={setBreakTypeFilter}>
+          <Select value={statusTypeFilter} onValueChange={setStatusTypeFilter}>
             <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Break Type" />
+              <SelectValue placeholder="Status Type" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Types</SelectItem>
-              {(Object.keys(BREAK_LABELS) as BreakType[]).map(type => (
-                <SelectItem key={type} value={type}>{BREAK_LABELS[type]}</SelectItem>
-              ))}
+              <SelectItem value="break">Break</SelectItem>
+              <SelectItem value="restroom">Rest-Room</SelectItem>
+              <SelectItem value="coaching">Coaching</SelectItem>
             </SelectContent>
           </Select>
 
@@ -324,7 +324,7 @@ export default function BreakHistoryPage() {
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline" className="text-xs">
-                      {BREAK_LABELS[session.breakType]}
+                      {STATUS_LABELS[session.statusType]}
                     </Badge>
                   </TableCell>
                   <TableCell>

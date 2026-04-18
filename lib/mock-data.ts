@@ -36,9 +36,8 @@ import type {
   AgentStatus,
   RTAInfraction,
   RTANotification,
-  BreakType,
   AgentActivityStatus,
-  BREAK_DURATIONS,
+  STATUS_DURATIONS,
 } from './types'
 
 // Helper functions
@@ -2859,8 +2858,8 @@ export const dataService = {
     return mockAgentStatuses.find(s => s.agentId === agentId)
   },
 
-  // Start a break
-  startBreak: (agentId: string, breakType: BreakType, notes?: string): BreakSession => {
+  // Start a break/status change
+  startBreak: (agentId: string, statusType: AgentActivityStatus, notes?: string): BreakSession => {
     const agent = mockUsers.find(u => u.id === agentId)
     if (!agent) throw new Error('Agent not found')
     
@@ -2870,9 +2869,9 @@ export const dataService = {
       agentName: agent.name,
       teamId: agent.teamId || '',
       teamName: agent.teamName || '',
-      breakType,
+      statusType,
       startTime: new Date().toISOString(),
-      scheduledDuration: BREAK_DURATIONS[breakType],
+      scheduledDuration: STATUS_DURATIONS[statusType],
       isOvertime: false,
       notes,
     }
@@ -2882,7 +2881,7 @@ export const dataService = {
     // Update agent status
     const status = mockAgentStatuses.find(s => s.agentId === agentId)
     if (status) {
-      status.status = 'on_break'
+      status.status = statusType
       status.currentBreak = breakSession
       status.lastStatusChange = new Date().toISOString()
     }
@@ -3048,10 +3047,10 @@ export const dataService = {
   getRTASummary: (): {
     totalAgents: number
     activeAgents: number
-    onBreakAgents: number
+    breakAgents: number
+    restroomAgents: number
+    coachingAgents: number
     offlineAgents: number
-    inCallAgents: number
-    awayAgents: number
     totalInfractions: number
     pendingInfractions: number
     criticalInfractions: number
@@ -3060,10 +3059,10 @@ export const dataService = {
     return {
       totalAgents: statuses.length,
       activeAgents: statuses.filter(s => s.status === 'active').length,
-      onBreakAgents: statuses.filter(s => s.status === 'on_break').length,
+      breakAgents: statuses.filter(s => s.status === 'break').length,
+      restroomAgents: statuses.filter(s => s.status === 'restroom').length,
+      coachingAgents: statuses.filter(s => s.status === 'coaching').length,
       offlineAgents: statuses.filter(s => s.status === 'offline').length,
-      inCallAgents: statuses.filter(s => s.status === 'in_call').length,
-      awayAgents: statuses.filter(s => s.status === 'away').length,
       totalInfractions: mockInfractions.length,
       pendingInfractions: mockInfractions.filter(i => i.status === 'pending').length,
       criticalInfractions: mockInfractions.filter(i => i.severity === 'critical' && i.status !== 'resolved').length,
@@ -3083,7 +3082,7 @@ export const mockBreakSessions: BreakSession[] = [
     agentName: 'Sarah Johnson',
     teamId: 'team-1',
     teamName: 'West Coast Team',
-    breakType: 'lunch',
+    statusType: 'break',
     startTime: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
     endTime: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
     scheduledDuration: 60,
@@ -3096,7 +3095,7 @@ export const mockBreakSessions: BreakSession[] = [
     agentName: 'David Williams',
     teamId: 'team-1',
     teamName: 'West Coast Team',
-    breakType: 'bio',
+    statusType: 'restroom',
     startTime: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
     endTime: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
     scheduledDuration: 10,
@@ -3110,9 +3109,9 @@ export const mockBreakSessions: BreakSession[] = [
     agentName: 'Emily Brown',
     teamId: 'team-2',
     teamName: 'East Coast Team',
-    breakType: 'prayer',
+    statusType: 'coaching',
     startTime: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
-    scheduledDuration: 15,
+    scheduledDuration: 30,
     isOvertime: false,
   },
 ]
@@ -3147,14 +3146,14 @@ export const mockAgentStatuses: AgentStatus[] = [
     supervisorName: 'Alex Thompson',
     leaderId: 'user-2',
     leaderName: 'Michael Chen',
-    status: 'in_call',
+    status: 'active',
     lastStatusChange: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
     totalBreakTimeToday: 25,
     scheduledBreakTime: 90,
     shiftstartTime: '09:00',
     shiftEndTime: '18:00',
     isInfraction: true,
-    infractionReason: 'Extended bio break: 5 minutes over limit',
+    infractionReason: 'Extended restroom break: 5 minutes over limit',
   },
   {
     agentId: 'user-5',
@@ -3166,7 +3165,7 @@ export const mockAgentStatuses: AgentStatus[] = [
     supervisorName: 'Alex Thompson',
     leaderId: 'user-6',
     leaderName: 'Robert Taylor',
-    status: 'on_break',
+    status: 'coaching',
     currentBreak: mockBreakSessions[2],
     lastStatusChange: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
     totalBreakTimeToday: 45,
@@ -3203,14 +3202,14 @@ export const mockAgentStatuses: AgentStatus[] = [
     supervisorName: 'Alex Thompson',
     leaderId: 'user-2',
     leaderName: 'Michael Chen',
-    status: 'away',
+    status: 'break',
     lastStatusChange: new Date(Date.now() - 20 * 60 * 1000).toISOString(),
     totalBreakTimeToday: 60,
     scheduledBreakTime: 90,
     shiftstartTime: '09:00',
     shiftEndTime: '18:00',
     isInfraction: true,
-    infractionReason: 'Away status without break - 20 minutes',
+    infractionReason: 'Extended break - 20 minutes over limit',
   },
   {
     agentId: 'user-10',

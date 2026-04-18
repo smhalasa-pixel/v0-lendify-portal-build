@@ -8,9 +8,7 @@ export type Region = 'dubai' | 'jordan'
 // BREAK & RTA SYSTEM TYPES
 // ==========================================
 
-export type BreakType = 'lunch' | 'bio' | 'prayer' | 'meeting' | 'coaching' | 'training' | 'personal' | 'system_issue'
-
-export type AgentActivityStatus = 'active' | 'on_break' | 'offline' | 'away' | 'in_call'
+export type AgentActivityStatus = 'active' | 'break' | 'restroom' | 'offline' | 'coaching'
 
 export interface BreakSession {
   id: string
@@ -18,7 +16,7 @@ export interface BreakSession {
   agentName: string
   teamId: string
   teamName: string
-  breakType: BreakType
+  statusType: AgentActivityStatus // break, restroom, or coaching
   startTime: string
   endTime?: string
   scheduledDuration: number // in minutes
@@ -87,26 +85,20 @@ export interface RTANotification {
   isRead: boolean
 }
 
-export const BREAK_DURATIONS: Record<BreakType, number> = {
-  lunch: 60,
-  bio: 10,
-  prayer: 15,
-  meeting: 30,
+export const STATUS_DURATIONS: Record<AgentActivityStatus, number> = {
+  active: 0,
+  break: 60,
+  restroom: 10,
   coaching: 30,
-  training: 60,
-  personal: 15,
-  system_issue: 15,
+  offline: 0,
 }
 
-export const BREAK_LABELS: Record<BreakType, string> = {
-  lunch: 'Lunch Break',
-  bio: 'Bio Break',
-  prayer: 'Prayer Break',
-  meeting: 'Meeting',
-  coaching: 'Coaching Session',
-  training: 'Training',
-  personal: 'Personal Break',
-  system_issue: 'System Issue',
+export const STATUS_LABELS: Record<AgentActivityStatus, string> = {
+  active: 'Active',
+  break: 'Break',
+  restroom: 'Rest-Room',
+  coaching: 'Coaching',
+  offline: 'Offline',
 }
 
 export interface Team {

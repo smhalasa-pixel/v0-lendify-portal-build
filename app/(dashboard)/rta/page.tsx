@@ -28,14 +28,14 @@ import { Progress } from '@/components/ui/progress'
 import { useAuth, useHasAccess } from '@/lib/auth-context'
 import { dataService } from '@/lib/mock-data'
 import type { AgentStatus, RTAInfraction, AgentActivityStatus } from '@/lib/types'
-import { BREAK_LABELS } from '@/lib/types'
+import { STATUS_LABELS } from '@/lib/types'
 
 const STATUS_CONFIG: Record<AgentActivityStatus, { label: string; color: string; bgColor: string }> = {
   active: { label: 'Active', color: 'text-emerald-400', bgColor: 'bg-emerald-500' },
-  on_break: { label: 'On Break', color: 'text-amber-400', bgColor: 'bg-amber-500' },
+  break: { label: 'Break', color: 'text-amber-400', bgColor: 'bg-amber-500' },
+  restroom: { label: 'Rest-Room', color: 'text-blue-400', bgColor: 'bg-blue-500' },
+  coaching: { label: 'Coaching', color: 'text-purple-400', bgColor: 'bg-purple-500' },
   offline: { label: 'Offline', color: 'text-gray-400', bgColor: 'bg-gray-500' },
-  away: { label: 'Away', color: 'text-rose-400', bgColor: 'bg-rose-500' },
-  in_call: { label: 'In Call', color: 'text-blue-400', bgColor: 'bg-blue-500' },
 }
 
 const SEVERITY_CONFIG = {
@@ -120,7 +120,7 @@ export default function RTADashboardPage() {
   }
 
   const pendingInfractions = infractions.filter(i => i.status === 'pending')
-  const agentsOnBreak = agentStatuses.filter(a => a.status === 'on_break')
+  const agentsOnBreak = agentStatuses.filter(a => a.status !== 'active' && a.status !== 'offline')
   const agentsWithIssues = agentStatuses.filter(a => a.isInfraction)
 
   const adherenceRate = summary.totalAgents > 0 
@@ -286,8 +286,8 @@ export default function RTADashboardPage() {
             <p className={cn(
               "text-3xl font-bold text-emerald-400 tabular-nums transition-all duration-300",
               isRefreshing && "scale-105"
-            )}>{summary.activeAgents + summary.inCallAgents}</p>
-            <p className="text-sm text-muted-foreground">Productive Agents</p>
+            )}>{summary.activeAgents}</p>
+            <p className="text-sm text-muted-foreground">Active Agents</p>
           </CardContent>
         </Card>
 
@@ -302,8 +302,8 @@ export default function RTADashboardPage() {
             <p className={cn(
               "text-3xl font-bold text-amber-400 tabular-nums transition-all duration-300",
               isRefreshing && "scale-105"
-            )}>{summary.onBreakAgents}</p>
-            <p className="text-sm text-muted-foreground">Currently On Break</p>
+            )}>{summary.breakAgents + summary.restroomAgents + summary.coachingAgents}</p>
+            <p className="text-sm text-muted-foreground">Away from Active</p>
           </CardContent>
         </Card>
 
@@ -367,53 +367,53 @@ export default function RTADashboardPage() {
               </div>
             </div>
 
-            {/* In Call */}
-            <div className="flex items-center gap-3">
-              <div className="size-10 rounded-full bg-blue-500/10 flex items-center justify-center">
-                <Phone className="size-5 text-blue-500" />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium">In Call</span>
-                  <span className="text-sm text-blue-400">{summary.inCallAgents}</span>
-                </div>
-                <Progress 
-                  value={(summary.inCallAgents / summary.totalAgents) * 100} 
-                  className="h-1.5 [&>div]:bg-blue-500"
-                />
-              </div>
-            </div>
-
-            {/* On Break */}
+            {/* Break */}
             <div className="flex items-center gap-3">
               <div className="size-10 rounded-full bg-amber-500/10 flex items-center justify-center">
                 <Coffee className="size-5 text-amber-500" />
               </div>
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium">On Break</span>
-                  <span className="text-sm text-amber-400">{summary.onBreakAgents}</span>
+                  <span className="text-sm font-medium">Break</span>
+                  <span className="text-sm text-amber-400">{summary.breakAgents}</span>
                 </div>
                 <Progress 
-                  value={(summary.onBreakAgents / summary.totalAgents) * 100} 
+                  value={(summary.breakAgents / summary.totalAgents) * 100} 
                   className="h-1.5 [&>div]:bg-amber-500"
                 />
               </div>
             </div>
 
-            {/* Away */}
+            {/* Rest-Room */}
             <div className="flex items-center gap-3">
-              <div className="size-10 rounded-full bg-rose-500/10 flex items-center justify-center">
-                <AlertTriangle className="size-5 text-rose-500" />
+              <div className="size-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                <Clock className="size-5 text-blue-500" />
               </div>
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium">Away</span>
-                  <span className="text-sm text-rose-400">{summary.awayAgents}</span>
+                  <span className="text-sm font-medium">Rest-Room</span>
+                  <span className="text-sm text-blue-400">{summary.restroomAgents}</span>
                 </div>
                 <Progress 
-                  value={(summary.awayAgents / summary.totalAgents) * 100} 
-                  className="h-1.5 [&>div]:bg-rose-500"
+                  value={(summary.restroomAgents / summary.totalAgents) * 100} 
+                  className="h-1.5 [&>div]:bg-blue-500"
+                />
+              </div>
+            </div>
+
+            {/* Coaching */}
+            <div className="flex items-center gap-3">
+              <div className="size-10 rounded-full bg-purple-500/10 flex items-center justify-center">
+                <Users className="size-5 text-purple-500" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm font-medium">Coaching</span>
+                  <span className="text-sm text-purple-400">{summary.coachingAgents}</span>
+                </div>
+                <Progress 
+                  value={(summary.coachingAgents / summary.totalAgents) * 100} 
+                  className="h-1.5 [&>div]:bg-purple-500"
                 />
               </div>
             </div>
@@ -437,13 +437,13 @@ export default function RTADashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Currently On Break */}
+        {/* Currently Away from Active */}
         <Card className="lg:col-span-1">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg flex items-center gap-2">
                 <Coffee className="size-5 text-amber-500" />
-                On Break Now
+                Away from Active
               </CardTitle>
               <Badge variant="outline">{agentsOnBreak.length}</Badge>
             </div>
@@ -451,7 +451,7 @@ export default function RTADashboardPage() {
           <CardContent className="space-y-3">
             {agentsOnBreak.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">
-                No agents currently on break
+                All agents currently active
               </p>
             ) : (
               agentsOnBreak.slice(0, 5).map(agent => {
@@ -465,7 +465,7 @@ export default function RTADashboardPage() {
                     key={agent.agentId}
                     className={cn(
                       "flex items-center gap-3 p-2 rounded-lg",
-                      isOvertime ? "bg-rose-500/10 border border-rose-500/30" : "bg-amber-500/5"
+                      isOvertime ? "bg-rose-500/10 border border-rose-500/30" : "bg-muted/50"
                     )}
                   >
                     <Avatar className="size-8">
@@ -477,13 +477,13 @@ export default function RTADashboardPage() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{agent.agentName}</p>
                       <p className="text-xs text-muted-foreground">
-                        {agent.currentBreak && BREAK_LABELS[agent.currentBreak.breakType]}
+                        {STATUS_LABELS[agent.status]}
                       </p>
                     </div>
                     <div className="text-right">
                       <p className={cn(
                         "text-sm font-mono font-bold",
-                        isOvertime ? "text-rose-400" : "text-amber-400"
+                        isOvertime ? "text-rose-400" : STATUS_CONFIG[agent.status].color
                       )}>
                         {breakDuration}m
                       </p>

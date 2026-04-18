@@ -51,14 +51,14 @@ import { Textarea } from '@/components/ui/textarea'
 import { useAuth } from '@/lib/auth-context'
 import { dataService } from '@/lib/mock-data'
 import type { AgentStatus, AgentActivityStatus, Team } from '@/lib/types'
-import { BREAK_LABELS } from '@/lib/types'
+import { STATUS_LABELS } from '@/lib/types'
 
 const STATUS_CONFIG: Record<AgentActivityStatus, { label: string; color: string; bgColor: string; icon: React.ElementType }> = {
   active: { label: 'Active', color: 'text-emerald-400', bgColor: 'bg-emerald-500', icon: Radio },
-  on_break: { label: 'On Break', color: 'text-amber-400', bgColor: 'bg-amber-500', icon: Coffee },
+  break: { label: 'Break', color: 'text-amber-400', bgColor: 'bg-amber-500', icon: Coffee },
+  restroom: { label: 'Rest-Room', color: 'text-blue-400', bgColor: 'bg-blue-500', icon: Clock },
+  coaching: { label: 'Coaching', color: 'text-purple-400', bgColor: 'bg-purple-500', icon: Users },
   offline: { label: 'Offline', color: 'text-gray-400', bgColor: 'bg-gray-500', icon: Users },
-  away: { label: 'Away', color: 'text-rose-400', bgColor: 'bg-rose-500', icon: AlertTriangle },
-  in_call: { label: 'In Call', color: 'text-blue-400', bgColor: 'bg-blue-500', icon: Phone },
 }
 
 export default function AgentStatusPage() {
@@ -148,13 +148,13 @@ export default function AgentStatusPage() {
   const stats = React.useMemo(() => {
     const total = agentStatuses.length
     const active = agentStatuses.filter(a => a.status === 'active').length
-    const onBreak = agentStatuses.filter(a => a.status === 'on_break').length
-    const inCall = agentStatuses.filter(a => a.status === 'in_call').length
-    const away = agentStatuses.filter(a => a.status === 'away').length
+    const onBreak = agentStatuses.filter(a => a.status === 'break').length
+    const restroom = agentStatuses.filter(a => a.status === 'restroom').length
+    const coaching = agentStatuses.filter(a => a.status === 'coaching').length
     const offline = agentStatuses.filter(a => a.status === 'offline').length
     const withInfractions = agentStatuses.filter(a => a.isInfraction).length
 
-    return { total, active, onBreak, inCall, away, offline, withInfractions }
+    return { total, active, onBreak, restroom, coaching, offline, withInfractions }
   }, [agentStatuses])
 
   const handleRefresh = () => {
@@ -318,20 +318,6 @@ export default function AgentStatusPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-blue-500/10 to-background border-blue-500/20">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="size-10 rounded-full bg-blue-500/10 flex items-center justify-center">
-                <Phone className="size-5 text-blue-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-blue-400">{stats.inCall}</p>
-                <p className="text-xs text-muted-foreground">In Call</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         <Card className="bg-gradient-to-br from-amber-500/10 to-background border-amber-500/20">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -340,7 +326,35 @@ export default function AgentStatusPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-amber-400">{stats.onBreak}</p>
-                <p className="text-xs text-muted-foreground">On Break</p>
+                <p className="text-xs text-muted-foreground">Break</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-blue-500/10 to-background border-blue-500/20">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="size-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                <Clock className="size-5 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-blue-400">{stats.restroom}</p>
+                <p className="text-xs text-muted-foreground">Rest-Room</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-purple-500/10 to-background border-purple-500/20">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="size-10 rounded-full bg-purple-500/10 flex items-center justify-center">
+                <Users className="size-5 text-purple-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-purple-400">{stats.coaching}</p>
+                <p className="text-xs text-muted-foreground">Coaching</p>
               </div>
             </div>
           </CardContent>
@@ -422,9 +436,9 @@ export default function AgentStatusPage() {
             <SelectContent>
               <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="in_call">In Call</SelectItem>
-              <SelectItem value="on_break">On Break</SelectItem>
-              <SelectItem value="away">Away</SelectItem>
+              <SelectItem value="break">Break</SelectItem>
+              <SelectItem value="restroom">Rest-Room</SelectItem>
+              <SelectItem value="coaching">Coaching</SelectItem>
               <SelectItem value="offline">Offline</SelectItem>
             </SelectContent>
           </Select>
@@ -523,11 +537,6 @@ export default function AgentStatusPage() {
                     <span className={cn("text-sm font-medium", statusConfig.color)}>
                       {statusConfig.label}
                     </span>
-                    {agent.currentBreak && (
-                      <Badge variant="outline" className="text-xs">
-                        {BREAK_LABELS[agent.currentBreak.breakType]}
-                      </Badge>
-                    )}
                   </div>
                   <span className="text-xs text-muted-foreground">
                     {formatTimeSince(agent.lastStatusChange)}
@@ -541,7 +550,7 @@ export default function AgentStatusPage() {
                     isOvertime ? "bg-rose-500/10" : "bg-amber-500/10"
                   )}>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs text-muted-foreground">Break Duration</span>
+                      <span className="text-xs text-muted-foreground">Time in {STATUS_LABELS[agent.status]}</span>
                       {isOvertime && (
                         <Badge variant="destructive" className="text-[10px]">
                           +{breakDuration - agent.currentBreak.scheduledDuration}m over

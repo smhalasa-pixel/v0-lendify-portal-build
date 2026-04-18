@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Coffee, Clock, Play, Pause, UtensilsCrossed, User, BookOpen, MessageSquare, Wrench, Heart, ChevronDown, AlertTriangle } from 'lucide-react'
+import { Coffee, Clock, Play, Pause, User, ChevronDown, AlertTriangle, DoorOpen } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -24,34 +24,42 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { useAuth } from '@/lib/auth-context'
 import { dataService } from '@/lib/mock-data'
-import type { BreakType, BreakSession, AgentActivityStatus } from '@/lib/types'
-import { BREAK_LABELS, BREAK_DURATIONS } from '@/lib/types'
+import type { BreakSession, AgentActivityStatus } from '@/lib/types'
+import { STATUS_LABELS, STATUS_DURATIONS } from '@/lib/types'
 
-const BREAK_ICONS: Record<BreakType, React.ElementType> = {
-  lunch: UtensilsCrossed,
-  bio: Coffee,
-  prayer: Heart,
-  meeting: MessageSquare,
+// Status types that can be selected (excluding active and offline which are automatic)
+const SELECTABLE_STATUSES: AgentActivityStatus[] = ['break', 'restroom', 'coaching']
+
+const STATUS_ICONS: Record<AgentActivityStatus, React.ElementType> = {
+  active: Play,
+  break: Coffee,
+  restroom: DoorOpen,
   coaching: User,
-  training: BookOpen,
-  personal: Clock,
-  system_issue: Wrench,
+  offline: Clock,
 }
 
 const STATUS_COLORS: Record<AgentActivityStatus, string> = {
   active: 'bg-emerald-500',
-  on_break: 'bg-amber-500',
+  break: 'bg-amber-500',
+  restroom: 'bg-blue-500',
+  coaching: 'bg-purple-500',
   offline: 'bg-gray-500',
-  away: 'bg-rose-500',
-  in_call: 'bg-blue-500',
 }
 
-const STATUS_LABELS: Record<AgentActivityStatus, string> = {
-  active: 'Active',
-  on_break: 'On Break',
-  offline: 'Offline',
-  away: 'Away',
-  in_call: 'In Call',
+const STATUS_BG_COLORS: Record<AgentActivityStatus, string> = {
+  active: 'bg-emerald-500/10 border-emerald-500/30',
+  break: 'bg-amber-500/10 border-amber-500/30',
+  restroom: 'bg-blue-500/10 border-blue-500/30',
+  coaching: 'bg-purple-500/10 border-purple-500/30',
+  offline: 'bg-gray-500/10 border-gray-500/30',
+}
+
+const STATUS_TEXT_COLORS: Record<AgentActivityStatus, string> = {
+  active: 'text-emerald-400',
+  break: 'text-amber-400',
+  restroom: 'text-blue-400',
+  coaching: 'text-purple-400',
+  offline: 'text-gray-400',
 }
 
 export function BreakControl() {
@@ -60,7 +68,7 @@ export function BreakControl() {
   const [status, setStatus] = React.useState<AgentActivityStatus>('active')
   const [elapsedTime, setElapsedTime] = React.useState(0)
   const [isConfirmOpen, setIsConfirmOpen] = React.useState(false)
-  const [selectedBreakType, setSelectedBreakType] = React.useState<BreakType | null>(null)
+  const [selectedStatus, setSelectedStatus] = React.useState<AgentActivityStatus | null>(null)
   const [notes, setNotes] = React.useState('')
   const [totalBreakToday, setTotalBreakToday] = React.useState(0)
   const [isOvertime, setIsOvertime] = React.useState(false)
@@ -117,20 +125,20 @@ export function BreakControl() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
 
-  const handleStartBreak = (breakType: BreakType) => {
-    setSelectedBreakType(breakType)
+  const handleSelectStatus = (newStatus: AgentActivityStatus) => {
+    setSelectedStatus(newStatus)
     setIsConfirmOpen(true)
   }
 
   const confirmStartBreak = () => {
-    if (!user?.id || !selectedBreakType) return
+    if (!user?.id || !selectedStatus) return
 
-    const breakSession = dataService.startBreak(user.id, selectedBreakType, notes)
+    const breakSession = dataService.startBreak(user.id, selectedStatus, notes)
     setCurrentBreak(breakSession)
-    setStatus('on_break')
+    setStatus(selectedStatus)
     setNotes('')
     setIsConfirmOpen(false)
-    setSelectedBreakType(null)
+    setSelectedStatus(null)
   }
 
   const handleEndBreak = () => {
@@ -146,6 +154,8 @@ export function BreakControl() {
 
   if (!showBreakControl) return null
 
+  const isOnBreak = status !== 'active' && status !== 'offline'
+
   return (
     <>
       <div className="px-2 py-2 border-t border-border/50">
@@ -160,18 +170,18 @@ export function BreakControl() {
           </Badge>
         </div>
 
-        {currentBreak ? (
+        {isOnBreak && currentBreak ? (
           // Active Break Display
           <div className={cn(
-            "rounded-lg p-3 space-y-2",
-            isOvertime ? "bg-rose-500/10 border border-rose-500/30" : "bg-amber-500/10 border border-amber-500/30"
+            "rounded-lg p-3 space-y-2 border",
+            isOvertime ? "bg-rose-500/10 border-rose-500/30" : STATUS_BG_COLORS[status]
           )}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                {React.createElement(BREAK_ICONS[currentBreak.breakType], { 
-                  className: cn("size-4", isOvertime ? "text-rose-400" : "text-amber-400")
+                {React.createElement(STATUS_ICONS[status], { 
+                  className: cn("size-4", isOvertime ? "text-rose-400" : STATUS_TEXT_COLORS[status])
                 })}
-                <span className="text-sm font-medium">{BREAK_LABELS[currentBreak.breakType]}</span>
+                <span className="text-sm font-medium">{STATUS_LABELS[status]}</span>
               </div>
               {isOvertime && (
                 <Badge variant="destructive" className="text-[10px]">
@@ -184,7 +194,7 @@ export function BreakControl() {
             <div className="flex items-center justify-between">
               <div className={cn(
                 "text-2xl font-mono font-bold tabular-nums",
-                isOvertime ? "text-rose-400" : "text-amber-400"
+                isOvertime ? "text-rose-400" : STATUS_TEXT_COLORS[status]
               )}>
                 {formatTime(elapsedTime)}
               </div>
@@ -200,38 +210,39 @@ export function BreakControl() {
               variant={isOvertime ? "destructive" : "default"}
             >
               <Play className="size-4 mr-2" />
-              End Break
+              Return to Active
             </Button>
           </div>
         ) : (
-          // Break Menu
+          // Status Menu
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="w-full justify-between">
                 <div className="flex items-center gap-2">
                   <Pause className="size-4" />
-                  <span>Start Break</span>
+                  <span>Change Status</span>
                 </div>
                 <ChevronDown className="size-4 opacity-50" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56">
-              <DropdownMenuLabel>Select Break Type</DropdownMenuLabel>
+              <DropdownMenuLabel>Select Status</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {(Object.keys(BREAK_LABELS) as BreakType[]).map((type) => {
-                const Icon = BREAK_ICONS[type]
+              {SELECTABLE_STATUSES.map((statusType) => {
+                const Icon = STATUS_ICONS[statusType]
                 return (
                   <DropdownMenuItem 
-                    key={type}
-                    onClick={() => handleStartBreak(type)}
+                    key={statusType}
+                    onClick={() => handleSelectStatus(statusType)}
                     className="flex items-center justify-between"
                   >
                     <div className="flex items-center gap-2">
+                      <div className={cn("size-2 rounded-full", STATUS_COLORS[statusType])} />
                       <Icon className="size-4" />
-                      <span>{BREAK_LABELS[type]}</span>
+                      <span>{STATUS_LABELS[statusType]}</span>
                     </div>
                     <Badge variant="secondary" className="text-[10px]">
-                      {BREAK_DURATIONS[type]}m
+                      {STATUS_DURATIONS[statusType]}m
                     </Badge>
                   </DropdownMenuItem>
                 )
@@ -241,13 +252,13 @@ export function BreakControl() {
         )}
       </div>
 
-      {/* Confirm Break Dialog */}
+      {/* Confirm Status Change Dialog */}
       <Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Start {selectedBreakType && BREAK_LABELS[selectedBreakType]}</DialogTitle>
+            <DialogTitle>Change Status to {selectedStatus && STATUS_LABELS[selectedStatus]}</DialogTitle>
             <DialogDescription>
-              You have {BREAK_DURATIONS[selectedBreakType || 'bio']} minutes for this break type.
+              You have {STATUS_DURATIONS[selectedStatus || 'break']} minutes for this status.
               Exceeding this time will be flagged.
             </DialogDescription>
           </DialogHeader>
@@ -255,13 +266,13 @@ export function BreakControl() {
             <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
               <span className="text-sm">Duration</span>
               <Badge variant="outline">
-                {BREAK_DURATIONS[selectedBreakType || 'bio']} minutes
+                {STATUS_DURATIONS[selectedStatus || 'break']} minutes
               </Badge>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Notes (optional)</label>
               <Textarea
-                placeholder="Add any notes for this break..."
+                placeholder="Add any notes..."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={2}
@@ -270,7 +281,7 @@ export function BreakControl() {
             <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
               <AlertTriangle className="size-4 text-amber-500 shrink-0" />
               <span className="text-xs text-amber-500">
-                Break time is monitored. Extended breaks will be recorded and may require justification.
+                Status changes are monitored. Extended time will be recorded and may require justification.
               </span>
             </div>
           </div>
@@ -280,7 +291,7 @@ export function BreakControl() {
             </Button>
             <Button onClick={confirmStartBreak}>
               <Pause className="size-4 mr-2" />
-              Start Break
+              Confirm
             </Button>
           </DialogFooter>
         </DialogContent>
