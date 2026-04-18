@@ -78,9 +78,15 @@ export default function AgentStatusPage() {
   const isRTA = user?.role === 'rta'
   const isAdmin = user?.role === 'admin'
 
-  // Load data
+  const [isLive, setIsLive] = React.useState(true)
+  const [refreshInterval, setRefreshInterval] = React.useState(5)
+  const [isRefreshing, setIsRefreshing] = React.useState(false)
+  const [secondsUntilRefresh, setSecondsUntilRefresh] = React.useState(5)
+
+  // Load data with live feed
   React.useEffect(() => {
     const loadData = () => {
+      setIsRefreshing(true)
       let filters: { teamId?: string; supervisorId?: string } = {}
       
       if (isLeadership && user?.teamId) {
@@ -92,13 +98,28 @@ export default function AgentStatusPage() {
       setAgentStatuses(dataService.getAgentStatuses(filters))
       setTeams(dataService.getTeams())
       setLastRefresh(new Date())
+      setSecondsUntilRefresh(refreshInterval)
+      setTimeout(() => setIsRefreshing(false), 300)
     }
 
     loadData()
-    const interval = setInterval(loadData, 30000) // Refresh every 30 seconds
+    
+    if (!isLive) return
 
+    const interval = setInterval(loadData, refreshInterval * 1000)
     return () => clearInterval(interval)
-  }, [user, isLeadership, isSupervisor])
+  }, [user, isLeadership, isSupervisor, isLive, refreshInterval])
+
+  // Countdown timer
+  React.useEffect(() => {
+    if (!isLive) return
+    
+    const countdownInterval = setInterval(() => {
+      setSecondsUntilRefresh(prev => (prev <= 1 ? refreshInterval : prev - 1))
+    }, 1000)
+    
+    return () => clearInterval(countdownInterval)
+  }, [isLive, refreshInterval])
 
   // Filter agents
   const filteredAgents = React.useMemo(() => {
@@ -137,6 +158,7 @@ export default function AgentStatusPage() {
   }, [agentStatuses])
 
   const handleRefresh = () => {
+    setIsRefreshing(true)
     let filters: { teamId?: string; supervisorId?: string } = {}
     if (isLeadership && user?.teamId) {
       filters.teamId = user.teamId
@@ -145,6 +167,8 @@ export default function AgentStatusPage() {
     }
     setAgentStatuses(dataService.getAgentStatuses(filters))
     setLastRefresh(new Date())
+    setSecondsUntilRefresh(refreshInterval)
+    setTimeout(() => setIsRefreshing(false), 300)
   }
 
   const handleNotifyLeadership = () => {
@@ -185,6 +209,71 @@ export default function AgentStatusPage() {
 
   return (
     <div className="space-y-6">
+      {/* Live Feed Banner */}
+      <div className={cn(
+        "rounded-lg border p-3 transition-all duration-300",
+        isLive 
+          ? "bg-emerald-500/5 border-emerald-500/30" 
+          : "bg-muted/50 border-border"
+      )}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            {isLive ? (
+              <div className="relative flex items-center gap-2">
+                <span className="relative flex size-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full size-3 bg-emerald-500"></span>
+                </span>
+                <span className="font-semibold text-emerald-400">LIVE</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="size-3 rounded-full bg-gray-500"></span>
+                <span className="font-semibold text-muted-foreground">PAUSED</span>
+              </div>
+            )}
+            <span className="text-sm text-muted-foreground">
+              {isLive ? `Refreshing in ${secondsUntilRefresh}s` : 'Live feed paused'}
+            </span>
+            {isRefreshing && (
+              <RefreshCw className="size-4 text-primary animate-spin" />
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">
+              Last update: {lastRefresh.toLocaleTimeString()}
+            </span>
+            <select
+              value={refreshInterval}
+              onChange={(e) => setRefreshInterval(Number(e.target.value))}
+              className="h-8 rounded-md border bg-background px-2 text-xs"
+              disabled={!isLive}
+            >
+              <option value={3}>3s</option>
+              <option value={5}>5s</option>
+              <option value={10}>10s</option>
+              <option value={30}>30s</option>
+            </select>
+            <Button
+              variant={isLive ? "outline" : "default"}
+              size="sm"
+              onClick={() => setIsLive(!isLive)}
+              className={cn(isLive && "border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10")}
+            >
+              {isLive ? 'Pause' : 'Resume'}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+            >
+              <RefreshCw className={cn("size-4", isRefreshing && "animate-spin")} />
+            </Button>
+          </div>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -192,15 +281,6 @@ export default function AgentStatusPage() {
           <p className="text-muted-foreground">
             Real-time view of {isLeadership ? 'your team\'s' : isSupervisor ? 'your teams\'' : 'all'} agent activity
           </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">
-            Last updated: {lastRefresh.toLocaleTimeString()}
-          </span>
-          <Button variant="outline" size="sm" onClick={handleRefresh}>
-            <RefreshCw className="size-4 mr-2" />
-            Refresh
-          </Button>
         </div>
       </div>
 

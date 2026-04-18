@@ -52,26 +52,50 @@ export default function RTADashboardPage() {
   const [agentStatuses, setAgentStatuses] = React.useState<AgentStatus[]>([])
   const [infractions, setInfractions] = React.useState<RTAInfraction[]>([])
   const [lastRefresh, setLastRefresh] = React.useState(new Date())
+  const [isLive, setIsLive] = React.useState(true)
+  const [refreshInterval, setRefreshInterval] = React.useState(5) // seconds
+  const [isRefreshing, setIsRefreshing] = React.useState(false)
+  const [secondsUntilRefresh, setSecondsUntilRefresh] = React.useState(5)
 
-  // Load data
+  // Live feed data loading
   React.useEffect(() => {
     const loadData = () => {
+      setIsRefreshing(true)
       setSummary(dataService.getRTASummary())
       setAgentStatuses(dataService.getAgentStatuses())
       setInfractions(dataService.getInfractions())
       setLastRefresh(new Date())
+      setSecondsUntilRefresh(refreshInterval)
+      setTimeout(() => setIsRefreshing(false), 300)
     }
 
     loadData()
-    const interval = setInterval(loadData, 30000)
-    return () => clearInterval(interval)
-  }, [])
+    
+    if (!isLive) return
+
+    const dataInterval = setInterval(loadData, refreshInterval * 1000)
+    return () => clearInterval(dataInterval)
+  }, [isLive, refreshInterval])
+
+  // Countdown timer
+  React.useEffect(() => {
+    if (!isLive) return
+    
+    const countdownInterval = setInterval(() => {
+      setSecondsUntilRefresh(prev => (prev <= 1 ? refreshInterval : prev - 1))
+    }, 1000)
+    
+    return () => clearInterval(countdownInterval)
+  }, [isLive, refreshInterval])
 
   const handleRefresh = () => {
+    setIsRefreshing(true)
     setSummary(dataService.getRTASummary())
     setAgentStatuses(dataService.getAgentStatuses())
     setInfractions(dataService.getInfractions())
     setLastRefresh(new Date())
+    setSecondsUntilRefresh(refreshInterval)
+    setTimeout(() => setIsRefreshing(false), 300)
   }
 
   const handleExport = () => {
@@ -134,6 +158,72 @@ export default function RTADashboardPage() {
 
   return (
     <div className="space-y-6">
+      {/* Live Feed Banner */}
+      <div className={cn(
+        "rounded-lg border p-3 transition-all duration-300",
+        isLive 
+          ? "bg-emerald-500/5 border-emerald-500/30" 
+          : "bg-muted/50 border-border"
+      )}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            {isLive ? (
+              <div className="relative flex items-center gap-2">
+                <span className="relative flex size-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full size-3 bg-emerald-500"></span>
+                </span>
+                <span className="font-semibold text-emerald-400">LIVE</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="size-3 rounded-full bg-gray-500"></span>
+                <span className="font-semibold text-muted-foreground">PAUSED</span>
+              </div>
+            )}
+            <span className="text-sm text-muted-foreground">
+              {isLive ? `Refreshing in ${secondsUntilRefresh}s` : 'Live feed paused'}
+            </span>
+            {isRefreshing && (
+              <RefreshCw className="size-4 text-primary animate-spin" />
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">
+              Last update: {lastRefresh.toLocaleTimeString()}
+            </span>
+            <select
+              value={refreshInterval}
+              onChange={(e) => setRefreshInterval(Number(e.target.value))}
+              className="h-8 rounded-md border bg-background px-2 text-xs"
+              disabled={!isLive}
+            >
+              <option value={3}>3s</option>
+              <option value={5}>5s</option>
+              <option value={10}>10s</option>
+              <option value={30}>30s</option>
+              <option value={60}>60s</option>
+            </select>
+            <Button
+              variant={isLive ? "outline" : "default"}
+              size="sm"
+              onClick={() => setIsLive(!isLive)}
+              className={cn(isLive && "border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10")}
+            >
+              {isLive ? 'Pause' : 'Resume'}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+            >
+              <RefreshCw className={cn("size-4", isRefreshing && "animate-spin")} />
+            </Button>
+          </div>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -146,7 +236,7 @@ export default function RTADashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">
+          <span className="text-xs text-muted-foreground hidden">
             Last updated: {lastRefresh.toLocaleTimeString()}
           </span>
           <Button variant="outline" size="sm" onClick={handleRefresh}>
@@ -171,12 +261,18 @@ export default function RTADashboardPage() {
                 +2.3%
               </Badge>
             </div>
-            <p className="text-3xl font-bold">{adherenceRate}%</p>
+            <p className={cn(
+              "text-3xl font-bold tabular-nums transition-all duration-300",
+              isRefreshing && "scale-105"
+            )}>{adherenceRate}%</p>
             <p className="text-sm text-muted-foreground">Adherence Rate</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-emerald-500/10 to-background border-emerald-500/20">
+        <Card className={cn(
+          "bg-gradient-to-br from-emerald-500/10 to-background border-emerald-500/20 transition-all duration-300",
+          isRefreshing && "ring-2 ring-emerald-500/20"
+        )}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <Users className="size-8 text-emerald-500" />
@@ -184,26 +280,36 @@ export default function RTADashboardPage() {
                 <span className="text-xs text-muted-foreground">of {summary.totalAgents}</span>
               </div>
             </div>
-            <p className="text-3xl font-bold text-emerald-400">{summary.activeAgents + summary.inCallAgents}</p>
+            <p className={cn(
+              "text-3xl font-bold text-emerald-400 tabular-nums transition-all duration-300",
+              isRefreshing && "scale-105"
+            )}>{summary.activeAgents + summary.inCallAgents}</p>
             <p className="text-sm text-muted-foreground">Productive Agents</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-amber-500/10 to-background border-amber-500/20">
+        <Card className={cn(
+          "bg-gradient-to-br from-amber-500/10 to-background border-amber-500/20 transition-all duration-300",
+          isRefreshing && "ring-2 ring-amber-500/20"
+        )}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <Coffee className="size-8 text-amber-500" />
             </div>
-            <p className="text-3xl font-bold text-amber-400">{summary.onBreakAgents}</p>
+            <p className={cn(
+              "text-3xl font-bold text-amber-400 tabular-nums transition-all duration-300",
+              isRefreshing && "scale-105"
+            )}>{summary.onBreakAgents}</p>
             <p className="text-sm text-muted-foreground">Currently On Break</p>
           </CardContent>
         </Card>
 
         <Card className={cn(
-          "bg-gradient-to-br to-background",
+          "bg-gradient-to-br to-background transition-all duration-300",
           summary.criticalInfractions > 0 
             ? "from-rose-500/20 border-rose-500/30" 
-            : "from-muted/50"
+            : "from-muted/50",
+          isRefreshing && summary.criticalInfractions > 0 && "ring-2 ring-rose-500/30"
         )}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
@@ -212,12 +318,13 @@ export default function RTADashboardPage() {
                 summary.criticalInfractions > 0 ? "text-rose-500" : "text-muted-foreground"
               )} />
               {summary.pendingInfractions > 0 && (
-                <Badge variant="destructive">{summary.pendingInfractions} pending</Badge>
+                <Badge variant="destructive" className="animate-pulse">{summary.pendingInfractions} pending</Badge>
               )}
             </div>
             <p className={cn(
-              "text-3xl font-bold",
-              summary.criticalInfractions > 0 ? "text-rose-400" : ""
+              "text-3xl font-bold tabular-nums transition-all duration-300",
+              summary.criticalInfractions > 0 ? "text-rose-400" : "",
+              isRefreshing && "scale-105"
             )}>{summary.totalInfractions}</p>
             <p className="text-sm text-muted-foreground">Total Infractions</p>
           </CardContent>
