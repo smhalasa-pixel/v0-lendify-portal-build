@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { format } from 'date-fns'
-import { CalendarIcon, TrendingUp, TrendingDown, AlertTriangle, Target, Users, User, Filter, Search, ChevronDown, Check } from 'lucide-react'
+import { CalendarIcon, TrendingUp, TrendingDown, AlertTriangle, Target, Users, User, Filter, Search, ChevronDown, Check, ClipboardCheck } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
@@ -484,11 +484,26 @@ export default function DashboardPage() {
     return dataService.getDashboardMetrics()
   }, [user, isAgent, isLeadership, selectedAgents, selectedTeams, selectedSupervisors, selectedTeamLeads])
 
-  const pipeline = React.useMemo(() => {
+const pipeline = React.useMemo(() => {
     if (isAgent && user) return dataService.getPipeline(user.id)
     return dataService.getPipeline()
   }, [user, isAgent])
 
+  // QA Metrics for the logged-in user
+  const qaMetrics = React.useMemo(() => {
+    if (isAgent && user) {
+      return dataService.getQAMetrics({ agentId: user.id })
+    }
+    if (isLeadership && user?.teamId) {
+      return dataService.getQAMetrics({ teamId: user.teamId })
+    }
+    if (isSupervisor && user?.teamIds) {
+      // For supervisor, aggregate across all their teams
+      return dataService.getQAMetrics()
+    }
+    return dataService.getQAMetrics()
+  }, [isAgent, isLeadership, isSupervisor, user])
+  
   // Clients data for client search - agents only see their own clients
   const clients = React.useMemo(() => {
     if (isAgent && user) {
@@ -1129,8 +1144,109 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* Clients Row - All client metrics together */}
-          {isWidgetEnabled('kpi-clients') && (
+          {/* QC Score Row - For Agents, Team Leads, Supervisors */}
+          {(isAgent || isLeadership || isSupervisor) && isWidgetEnabled('kpi-qc-score') && (
+            <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-background">
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-2">
+                  <ClipboardCheck className="size-4 text-primary" />
+                  <CardTitle className="text-sm">Quality Control Score</CardTitle>
+                </div>
+                <CardDescription className="text-xs">
+                  {isAgent ? 'Your QC performance from recent evaluations' : 
+                   isLeadership ? 'Team average QC performance' : 
+                   'Teams average QC performance'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-4 gap-3">
+                  <div className="text-center">
+                    <div className={cn(
+                      "text-2xl font-bold",
+                      qaMetrics.avgScore >= 85 ? "text-emerald-400" :
+                      qaMetrics.avgScore >= 70 ? "text-amber-400" : "text-rose-400"
+                    )}>
+                      {qaMetrics.avgScore.toFixed(1)}%
+                    </div>
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Avg Score</div>
+                    <div className="flex items-center justify-center gap-1 mt-1">
+                      {qaMetrics.avgScoreChange >= 0 ? (
+                        <TrendingUp className="size-3 text-emerald-400" />
+                      ) : (
+                        <TrendingDown className="size-3 text-rose-400" />
+                      )}
+                      <span className={cn(
+                        "text-xs",
+                        qaMetrics.avgScoreChange >= 0 ? "text-emerald-400" : "text-rose-400"
+                      )}>
+                        {qaMetrics.avgScoreChange >= 0 ? '+' : ''}{qaMetrics.avgScoreChange.toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold">
+                      {qaMetrics.totalEvaluations}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Evaluations</div>
+                    <div className="text-xs text-muted-foreground mt-1">This Month</div>
+                  </div>
+                  <div className="text-center">
+                    <div className={cn(
+                      "text-2xl font-bold",
+                      qaMetrics.passRate >= 90 ? "text-emerald-400" :
+                      qaMetrics.passRate >= 75 ? "text-amber-400" : "text-rose-400"
+                    )}>
+                      {qaMetrics.passRate.toFixed(0)}%
+                    </div>
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Pass Rate</div>
+                    <div className="flex items-center justify-center gap-1 mt-1">
+                      {qaMetrics.passRateChange >= 0 ? (
+                        <TrendingUp className="size-3 text-emerald-400" />
+                      ) : (
+                        <TrendingDown className="size-3 text-rose-400" />
+                      )}
+                      <span className={cn(
+                        "text-xs",
+                        qaMetrics.passRateChange >= 0 ? "text-emerald-400" : "text-rose-400"
+                      )}>
+                        {qaMetrics.passRateChange >= 0 ? '+' : ''}{qaMetrics.passRateChange.toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <Badge 
+                      variant="outline" 
+                      className={cn(
+                        "text-lg px-3 py-1",
+                        qaMetrics.avgScore >= 90 ? "border-emerald-500/50 text-emerald-400 bg-emerald-500/10" :
+                        qaMetrics.avgScore >= 80 ? "border-blue-500/50 text-blue-400 bg-blue-500/10" :
+                        qaMetrics.avgScore >= 70 ? "border-amber-500/50 text-amber-400 bg-amber-500/10" :
+                        "border-rose-500/50 text-rose-400 bg-rose-500/10"
+                      )}
+                    >
+                      {qaMetrics.avgScore >= 95 ? 'A+' : 
+                       qaMetrics.avgScore >= 90 ? 'A' : 
+                       qaMetrics.avgScore >= 87 ? 'A-' : 
+                       qaMetrics.avgScore >= 83 ? 'B+' : 
+                       qaMetrics.avgScore >= 80 ? 'B' : 
+                       qaMetrics.avgScore >= 77 ? 'B-' : 
+                       qaMetrics.avgScore >= 73 ? 'C+' : 
+                       qaMetrics.avgScore >= 70 ? 'C' : 
+                       qaMetrics.avgScore >= 67 ? 'C-' : 
+                       qaMetrics.avgScore >= 60 ? 'D' : 'F'}
+                    </Badge>
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-wide mt-1">QC Grade</div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {isAgent ? 'Personal' : 'Average'}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Clients Row - Executive and Admin only */}
+          {hasExecutiveView && isWidgetEnabled('kpi-clients') && (
             <div className="grid grid-cols-4 gap-2">
               <MetricTile label="Clients Enrolled" value={metrics.clientsEnrolled} change={metrics.clientsEnrolledChange} dateValue={clientsEnrolledDate} onDateChange={setClientsEnrolledDate} />
               <MetricTile label="Clients Active" value={metrics.clientsActive} change={metrics.clientsActiveChange} dateValue={clientsActiveDate} onDateChange={setClientsActiveDate} />
