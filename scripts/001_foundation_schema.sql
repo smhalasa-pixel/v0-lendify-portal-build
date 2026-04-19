@@ -3,7 +3,9 @@
 -- Profiles, teams, and shared reference tables
 -- =====================================================
 
--- USER ROLE ENUM
+-- =====================================================
+-- 1. ENUMS
+-- =====================================================
 do $$ begin
   if not exists (select 1 from pg_type where typname = 'user_role') then
     create type public.user_role as enum (
@@ -20,29 +22,19 @@ do $$ begin
   end if;
 end $$;
 
+-- =====================================================
+-- 2. TABLES (create all tables first, before any policies)
+-- =====================================================
+
 -- TEAMS
 create table if not exists public.teams (
   id uuid primary key default gen_random_uuid(),
   name text not null unique,
   description text,
-  leader_id uuid, -- references profiles(id)
+  leader_id uuid,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
-
-alter table public.teams enable row level security;
-
-drop policy if exists "teams_select_all" on public.teams;
-create policy "teams_select_all" on public.teams for select using (auth.role() = 'authenticated');
-
-drop policy if exists "teams_admin_write" on public.teams;
-create policy "teams_admin_write" on public.teams
-  for all using (
-    exists (
-      select 1 from public.profiles p
-      where p.id = auth.uid() and p.role in ('admin', 'executive')
-    )
-  );
 
 -- PROFILES (mirrors auth.users, holds business role/team info)
 create table if not exists public.profiles (
@@ -60,46 +52,72 @@ create table if not exists public.profiles (
   updated_at timestamptz not null default now()
 );
 
+-- Now add FK from teams.leader_id -> profiles.id (after profiles exists)
+do $$ begin
+  if not exists (
+    select 1 from information_schema.table_constraints
+    where constraint_name = 'teams_leader_id_fkey' and table_name = 'teams'
+  ) then
+    alter table public.teams
+      add constraint teams_leader_id_fkey
+      foreign key (leader_id) references public.profiles(id) on delete set null;
+  end if;
+end $$;
+
+-- =====================================================
+-- 3. RLS
+-- =====================================================
+alter table public.teams enable row level security;
 alter table public.profiles enable row level security;
 
--- Everyone can read profiles (needed for user pickers, team views)
+-- Helper function to check if current user has elevated role.
+-- SECURITY DEFINER avoids RLS recursion when policies query profiles.
+create or replace function public.has_role(required_roles text[])
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  user_role_val text;
+begin
+  select role::text into user_role_val from public.profiles where id = auth.uid();
+  return user_role_val = any(required_roles);
+end;
+$$;
+
+-- Teams policies
+drop policy if exists "teams_select_all" on public.teams;
+create policy "teams_select_all" on public.teams for select using (auth.role() = 'authenticated');
+
+drop policy if exists "teams_admin_write" on public.teams;
+create policy "teams_admin_write" on public.teams
+  for all using (public.has_role(array['admin', 'executive']));
+
+-- Profiles policies
 drop policy if exists "profiles_select_all" on public.profiles;
 create policy "profiles_select_all" on public.profiles
   for select using (auth.role() = 'authenticated');
 
--- Users can update their own profile (limited fields via app logic)
 drop policy if exists "profiles_update_own" on public.profiles;
 create policy "profiles_update_own" on public.profiles
   for update using (auth.uid() = id);
 
--- Admins & executives can update any profile
 drop policy if exists "profiles_admin_update" on public.profiles;
 create policy "profiles_admin_update" on public.profiles
-  for update using (
-    exists (
-      select 1 from public.profiles p
-      where p.id = auth.uid() and p.role in ('admin', 'executive')
-    )
-  );
+  for update using (public.has_role(array['admin', 'executive']));
 
--- Admins can insert/delete profiles
 drop policy if exists "profiles_admin_insert" on public.profiles;
 create policy "profiles_admin_insert" on public.profiles
-  for insert with check (
-    exists (
-      select 1 from public.profiles p
-      where p.id = auth.uid() and p.role in ('admin', 'executive')
-    )
-  );
+  for insert with check (public.has_role(array['admin', 'executive']));
 
 drop policy if exists "profiles_admin_delete" on public.profiles;
 create policy "profiles_admin_delete" on public.profiles
-  for delete using (
-    exists (
-      select 1 from public.profiles p
-      where p.id = auth.uid() and p.role = 'admin'
-    )
-  );
+  for delete using (public.has_role(array['admin']));
+
+-- =====================================================
+-- 4. TRIGGERS
+-- =====================================================
 
 -- Auto-create profile on user signup
 create or replace function public.handle_new_user()
@@ -127,7 +145,7 @@ create trigger on_auth_user_created
   for each row
   execute function public.handle_new_user();
 
--- updated_at triggers helper
+-- updated_at helper
 create or replace function public.set_updated_at()
 returns trigger
 language plpgsql
@@ -146,7 +164,9 @@ drop trigger if exists teams_updated_at on public.teams;
 create trigger teams_updated_at before update on public.teams
   for each row execute function public.set_updated_at();
 
--- Indexes
+-- =====================================================
+-- 5. INDEXES
+-- =====================================================
 create index if not exists idx_profiles_team on public.profiles(team_id);
 create index if not exists idx_profiles_role on public.profiles(role);
 create index if not exists idx_profiles_manager on public.profiles(manager_id);
