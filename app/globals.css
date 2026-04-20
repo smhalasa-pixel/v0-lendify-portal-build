@@ -4,9 +4,8 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * FORGE design system — monochrome near-black base with a single gold accent
- * ("SALES · FORGED · DAILY"). Replaces the previous purple/glass Lendify
- * palette. Every existing page inherits this via the shared CSS vars.
+ * FORGE design system — monochrome near-black base with a single
+ * forge-gold accent. Zero purple, zero violet, zero Lendify legacy.
  */
 
 @theme inline {
@@ -54,92 +53,96 @@
 }
 
 :root {
-  /* Monochrome near-black base — easier on eyes for 8h+ shifts. */
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.17 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.17 0 0);
-  --popover-foreground: oklch(0.985 0 0);
+  /* Forge dark-first palette — monochrome charcoal. */
+  --background: #0A0A0B;
+  --foreground: #FAFAFA;
 
-  /* Primary = white (Vercel-style CTA). */
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.145 0 0);
+  --card: #121214;
+  --card-foreground: #FAFAFA;
+  --popover: #16161A;
+  --popover-foreground: #FAFAFA;
 
-  --secondary: oklch(0.23 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
+  /* Primary action = white on dark (Vercel-style CTA). */
+  --primary: #FAFAFA;
+  --primary-foreground: #0A0A0B;
 
-  --muted: oklch(0.205 0 0);
-  --muted-foreground: oklch(0.708 0 0);
+  --secondary: #1F1F23;
+  --secondary-foreground: #FAFAFA;
 
-  /* Single brand accent — forge-gold, used sparingly. */
-  --accent: oklch(0.78 0.14 78);
-  --accent-foreground: oklch(0.145 0 0);
+  --muted: #18181B;
+  --muted-foreground: #A1A1A8;
 
-  --destructive: oklch(0.58 0.22 25);
-  --destructive-foreground: oklch(0.985 0 0);
+  /* Single brand accent — forge-gold. */
+  --accent: #E8B746;
+  --accent-foreground: #0A0A0B;
 
-  --border: oklch(0.23 0 0);
-  --input: oklch(0.23 0 0);
-  --ring: oklch(0.62 0.19 259);
+  --destructive: #DC2626;
+  --destructive-foreground: #FAFAFA;
 
-  /* Chart palette — 4 monochrome tiers + 1 blue accent. */
-  --chart-1: oklch(0.62 0.19 259);
-  --chart-2: oklch(0.78 0 0);
-  --chart-3: oklch(0.62 0 0);
-  --chart-4: oklch(0.45 0 0);
-  --chart-5: oklch(0.78 0.14 78);
+  --border: #27272A;
+  --input: #1F1F23;
+  --ring: #E8B746;
 
-  --sidebar: oklch(0.13 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.985 0 0);
-  --sidebar-primary-foreground: oklch(0.145 0 0);
-  --sidebar-accent: oklch(0.205 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.23 0 0);
-  --sidebar-ring: oklch(0.62 0.19 259);
+  /* Charts — monochrome tiers with gold + blue. */
+  --chart-1: #E8B746;
+  --chart-2: #FAFAFA;
+  --chart-3: #A1A1A8;
+  --chart-4: #52525B;
+  --chart-5: #3B82F6;
+
+  --sidebar: #0A0A0B;
+  --sidebar-foreground: #FAFAFA;
+  --sidebar-primary: #E8B746;
+  --sidebar-primary-foreground: #0A0A0B;
+  --sidebar-accent: #18181B;
+  --sidebar-accent-foreground: #FAFAFA;
+  --sidebar-border: #27272A;
+  --sidebar-ring: #E8B746;
 
   --radius: 0.5rem;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.17 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.17 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.145 0 0);
-  --secondary: oklch(0.23 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.205 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.78 0.14 78);
-  --accent-foreground: oklch(0.145 0 0);
-  --destructive: oklch(0.58 0.22 25);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.23 0 0);
-  --input: oklch(0.23 0 0);
-  --ring: oklch(0.62 0.19 259);
-  --chart-1: oklch(0.62 0.19 259);
-  --chart-2: oklch(0.78 0 0);
-  --chart-3: oklch(0.62 0 0);
-  --chart-4: oklch(0.45 0 0);
-  --chart-5: oklch(0.78 0.14 78);
-  --sidebar: oklch(0.13 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.985 0 0);
-  --sidebar-primary-foreground: oklch(0.145 0 0);
-  --sidebar-accent: oklch(0.205 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.23 0 0);
-  --sidebar-ring: oklch(0.62 0.19 259);
+  --background: #0A0A0B;
+  --foreground: #FAFAFA;
+  --card: #121214;
+  --card-foreground: #FAFAFA;
+  --popover: #16161A;
+  --popover-foreground: #FAFAFA;
+  --primary: #FAFAFA;
+  --primary-foreground: #0A0A0B;
+  --secondary: #1F1F23;
+  --secondary-foreground: #FAFAFA;
+  --muted: #18181B;
+  --muted-foreground: #A1A1A8;
+  --accent: #E8B746;
+  --accent-foreground: #0A0A0B;
+  --destructive: #DC2626;
+  --destructive-foreground: #FAFAFA;
+  --border: #27272A;
+  --input: #1F1F23;
+  --ring: #E8B746;
+  --chart-1: #E8B746;
+  --chart-2: #FAFAFA;
+  --chart-3: #A1A1A8;
+  --chart-4: #52525B;
+  --chart-5: #3B82F6;
+  --sidebar: #0A0A0B;
+  --sidebar-foreground: #FAFAFA;
+  --sidebar-primary: #E8B746;
+  --sidebar-primary-foreground: #0A0A0B;
+  --sidebar-accent: #18181B;
+  --sidebar-accent-foreground: #FAFAFA;
+  --sidebar-border: #27272A;
+  --sidebar-ring: #E8B746;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
+  }
+  html {
+    background-color: var(--background);
   }
   body {
     @apply bg-background text-foreground;
@@ -150,15 +153,11 @@
     letter-spacing: -0.01em;
   }
   ::selection {
-    background: oklch(0.62 0.19 259 / 0.3);
+    background: rgba(232, 183, 70, 0.3);
   }
 }
 
-/*
- * Compatibility shim — the old codebase scatters `.glass-card` everywhere.
- * Rather than editing 40+ files, we redefine it here as a flat Forge card.
- * Same class name, new look.
- */
+/* Compatibility shim — .glass-card is scattered across the old codebase. */
 .glass-card {
   background: var(--card);
   border: 1px solid var(--border);
@@ -166,7 +165,7 @@
   backdrop-filter: none;
 }
 
-/* Subtle scrollbar in Forge grays instead of purple. */
+/* Scrollbar in Forge grays. */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -175,12 +174,12 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: oklch(0.25 0 0);
+  background: #27272A;
   border-radius: 10px;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.35 0 0);
+  background: #3F3F46;
   background-clip: padding-box;
 }
