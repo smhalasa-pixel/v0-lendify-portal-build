@@ -54,6 +54,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import type { UserRole } from '@/lib/types'
 import { BreakControl } from '@/components/break-control'
+import { ForgeLogo } from '@/components/forge-logo'
 
 const mainNavItems = [
   {
@@ -272,18 +273,23 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link href="/dashboard">
-                <Image
-                  src="/images/lendify-logo.png"
-                  alt="Lendify"
-                  width={32}
-                  height={32}
-                  className="rounded-lg object-contain"
-                  style={{ width: 32, height: 'auto' }}
+                            <Link href="/dashboard">
+                <ForgeLogo
+                  variant="icon-dark"
+                  width={40}
+                  className="shrink-0 ring-1 ring-sidebar-border"
+                  ariaLabel=""
                 />
-                <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-bold text-foreground">Lendify</span>
-                  <span className="text-xs text-muted-foreground">Portal</span>
+                <div className="flex flex-col gap-0.5 leading-none text-left">
+                  <span
+                    className="text-sm font-bold tracking-[0.18em] text-sidebar-foreground"
+                    style={{ fontFamily: 'Georgia, serif' }}
+                  >
+                    FORGE
+                  </span>
+                  <span className="text-[9px] font-bold uppercase tracking-[0.22em] text-[#E8B746]">
+                    SALES · FORGED · DAILY
+                  </span>
                 </div>
               </Link>
             </SidebarMenuButton>
