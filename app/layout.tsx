@@ -1,51 +1,50 @@
-import type { Metadata, Viewport } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
-import { Analytics } from '@vercel/analytics/next'
-import { AuthProvider } from '@/lib/auth-context'
-import './globals.css'
+import type { Metadata, Viewport } from "next"
+import { Geist, Geist_Mono } from "next/font/google"
+import { Analytics } from "@vercel/analytics/next"
+import { AuthProvider } from "@/lib/auth-context"
+import "./globals.css"
 
 const geistSans = Geist({
-  subsets: ['latin'],
-  variable: '--font-geist-sans',
-  display: 'swap',
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
 })
 
 const geistMono = Geist_Mono({
-  subsets: ['latin'],
-  variable: '--font-geist-mono',
-  display: 'swap',
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
 })
 
 export const metadata: Metadata = {
-  title: 'Forge — Internal Operations',
+  title: "Forge — Sales Operations Platform",
   description:
-    'Forge internal operations platform — Sales, forged daily. Pipeline, commissions, coaching, QA and real-time adherence in one workspace.',
-  generator: 'v0.app',
+    "Pipeline, commissions, coaching, quality assurance, and real-time adherence — consolidated into a single internal workspace.",
+  generator: "v0.app",
   icons: {
     icon: [
-      { url: '/icon-light-32x32.png', media: '(prefers-color-scheme: light)' },
-      { url: '/icon-dark-32x32.png', media: '(prefers-color-scheme: dark)' },
-      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: "/icon.svg", type: "image/svg+xml" },
     ],
-    apple: '/apple-icon.png',
   },
 }
 
 export const viewport: Viewport = {
-  themeColor: '#0a0a0a',
-  colorScheme: 'dark',
-  width: 'device-width',
+  themeColor: "#0a0a0a",
+  width: "device-width",
   initialScale: 1,
+  colorScheme: "dark",
 }
 
 export default function RootLayout({
   children,
-}: Readonly<{ children: React.ReactNode }>) {
+}: Readonly<{
+  children: React.ReactNode
+}>) {
   return (
-    <html lang="en" className={`dark ${geistSans.variable} ${geistMono.variable}`}>
-      <body className="bg-background text-foreground antialiased">
+    <html lang="en" suppressHydrationWarning className="dark">
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground font-sans`}
+      >
         <AuthProvider>{children}</AuthProvider>
-        {process.env.NODE_ENV === 'production' && <Analytics />}
+        {process.env.NODE_ENV === "production" && <Analytics />}
       </body>
     </html>
   )
