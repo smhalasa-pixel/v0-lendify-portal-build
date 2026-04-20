@@ -2,33 +2,28 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard,
-  DollarSign,
-  AlertTriangle,
-  Megaphone,
-  BookOpen,
-  FileText,
   Trophy,
-  Settings,
-  Users,
-  ChevronDown,
-  LogOut,
-  Shield,
-  ClipboardList,
+  Megaphone,
+  FileText,
+  CheckSquare,
   Ticket,
-  SlidersHorizontal,
+  LifeBuoy,
+  BookOpen,
+  DollarSign,
+  RotateCcw,
   ClipboardCheck,
-  GraduationCap,
-  Radio,
-  Clock,
-  Bell,
+  Activity,
+  Shield,
+  Settings,
+  LogOut,
+  ChevronDown,
 } from 'lucide-react'
 
-import { cn } from '@/lib/utils'
-import { useAuth, useHasAccess } from '@/lib/auth-context'
+import { useAuth } from '@/lib/auth-context'
+import { useHasAccess } from '@/lib/use-has-access'
 import {
   Sidebar,
   SidebarContent,
@@ -42,6 +37,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar'
+import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -50,244 +46,142 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import type { UserRole } from '@/lib/types'
-import { BreakControl } from '@/components/break-control'
 import { ForgeLogo } from '@/components/forge-logo'
 
-const mainNavItems = [
-  {
-    title: 'Dashboard',
-    href: '/dashboard',
-    icon: LayoutDashboard,
-    roles: ['agent', 'leadership', 'supervisor', 'executive', 'admin'] as UserRole[],
-  },
-  {
-    title: 'Announcements',
-    href: '/announcements',
-    icon: Megaphone,
-    roles: ['agent', 'leadership', 'supervisor', 'executive', 'admin'] as UserRole[],
-  },
-  {
-    title: 'Knowledge Base',
-    href: '/knowledge',
-    icon: BookOpen,
-    roles: ['agent', 'leadership', 'supervisor', 'executive', 'admin'] as UserRole[],
-  },
-  {
-    title: 'Scripts',
-    href: '/scripts',
-    icon: FileText,
-    roles: ['agent', 'leadership', 'supervisor', 'executive', 'admin'] as UserRole[],
-  },
-  {
-    title: 'To Do List',
-    href: '/tasks',
-    icon: ClipboardList,
-    roles: ['agent', 'leadership', 'supervisor', 'admin'] as UserRole[],
-  },
-  {
-    title: 'Leaderboards',
-    href: '/leaderboards',
-    icon: Trophy,
-    roles: ['agent', 'leadership', 'supervisor', 'executive', 'admin'] as UserRole[],
-  },
-  {
-    title: 'Commissions',
-    href: '/commissions',
-    icon: DollarSign,
-    roles: ['agent', 'leadership', 'supervisor', 'admin'] as UserRole[],
-  },
-  {
-    title: 'Clawbacks',
-    href: '/clawbacks',
-    icon: AlertTriangle,
-    roles: ['agent', 'leadership', 'supervisor', 'admin'] as UserRole[],
-  },
-  {
-    title: 'Tickets',
-    href: '/tickets',
-    icon: Ticket,
-    roles: ['agent', 'leadership', 'supervisor', 'admin'] as UserRole[],
-  },
-  {
-    title: 'My Settings',
-    href: '/settings',
-    icon: SlidersHorizontal,
-    roles: ['agent', 'leadership', 'supervisor', 'executive', 'admin', 'qa_senior', 'qa_trainer'] as UserRole[],
-  },
-]
-
-const qaNavItems = [
-  {
-    title: 'QA Dashboard',
-    href: '/qa',
-    icon: ClipboardCheck,
-    roles: ['qa_senior', 'qa_trainer', 'admin'] as UserRole[],
-  },
-  {
-    title: 'New Evaluation',
-    href: '/qa/evaluate',
-    icon: ClipboardList,
-    roles: ['qa_senior', 'qa_trainer', 'admin'] as UserRole[],
-  },
-  {
-    title: 'All Evaluations',
-    href: '/qa/evaluations',
-    icon: FileText,
-    roles: ['qa_senior', 'qa_trainer', 'admin'] as UserRole[],
-  },
-  {
-    title: 'Scorecards',
-    href: '/qa/scorecards',
-    icon: GraduationCap,
-    roles: ['qa_senior', 'qa_trainer', 'admin'] as UserRole[],
-  },
-]
-
-const rtaNavItems = [
-  {
-    title: 'RTA Dashboard',
-    href: '/rta',
-    icon: Radio,
-    roles: ['rta', 'admin'] as UserRole[],
-  },
-  {
-    title: 'Agent Status',
-    href: '/rta/agents',
-    icon: Users,
-    roles: ['rta', 'leadership', 'supervisor', 'admin'] as UserRole[],
-  },
-  {
-    title: 'Break History',
-    href: '/rta/breaks',
-    icon: Clock,
-    roles: ['rta', 'admin'] as UserRole[],
-  },
-  {
-    title: 'Infractions',
-    href: '/rta/infractions',
-    icon: AlertTriangle,
-    roles: ['rta', 'leadership', 'supervisor', 'admin'] as UserRole[],
-  },
-]
-
-const adminNavItems = [
-  {
-    title: 'Admin Panel',
-    href: '/admin',
-    icon: Shield,
-    roles: ['admin'] as UserRole[],
-  },
-  {
-    title: 'User Management',
-    href: '/admin/users',
-    icon: Users,
-    roles: ['admin'] as UserRole[],
-  },
-  {
-    title: 'System Settings',
-    href: '/admin/settings',
-    icon: Settings,
-    roles: ['admin'] as UserRole[],
-  },
-]
-
-function getRoleBadgeVariant(role: UserRole) {
-  switch (role) {
-    case 'admin':
-      return 'destructive'
-    case 'executive':
-      return 'default'
-    case 'supervisor':
-      return 'default'
-    case 'leadership':
-      return 'secondary'
-    case 'qa_senior':
-      return 'default'
-    case 'qa_trainer':
-      return 'secondary'
-    case 'rta':
-      return 'default'
-    default:
-      return 'outline'
-  }
+type NavItem = {
+  title: string
+  url: string
+  icon: React.ComponentType<{ className?: string }>
+  roles?: string[]
 }
 
-function getRoleLabel(role: UserRole) {
-  switch (role) {
-    case 'admin':
-      return 'Administrator'
-    case 'executive':
-      return 'Executive'
-    case 'supervisor':
-      return 'Supervisor'
-    case 'leadership':
-      return 'Team Leader'
-    case 'qa_senior':
-      return 'QA Senior'
-    case 'qa_trainer':
-      return 'QA & Trainer'
-    case 'rta':
-      return 'RTA Monitor'
-    default:
-      return 'Sales Agent'
-  }
+const mainNav: NavItem[] = [
+  { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
+  { title: 'Leaderboards', url: '/leaderboards', icon: Trophy },
+  { title: 'Announcements', url: '/announcements', icon: Megaphone },
+  { title: 'Scripts', url: '/scripts', icon: FileText },
+  { title: 'Knowledge', url: '/knowledge', icon: BookOpen },
+  { title: 'Tasks', url: '/tasks', icon: CheckSquare },
+  { title: 'Tickets', url: '/tickets', icon: Ticket },
+  { title: 'Commissions', url: '/commissions', icon: DollarSign },
+  { title: 'Clawbacks', url: '/clawbacks', icon: RotateCcw },
+]
+
+const qaNav: NavItem[] = [
+  { title: 'QA Dashboard', url: '/qa', icon: ClipboardCheck },
+  { title: 'Evaluate', url: '/qa/evaluate', icon: CheckSquare },
+  { title: 'Evaluations', url: '/qa/evaluations', icon: FileText },
+  { title: 'Scorecards', url: '/qa/scorecards', icon: Shield },
+  { title: 'Queue', url: '/qa/queue', icon: LifeBuoy },
+]
+
+const rtaNav: NavItem[] = [
+  { title: 'RTA Dashboard', url: '/rta', icon: Activity },
+  { title: 'Agents', url: '/rta/agents', icon: Trophy },
+  { title: 'Breaks', url: '/rta/breaks', icon: RotateCcw },
+  { title: 'Infractions', url: '/rta/infractions', icon: Shield },
+]
+
+const adminNav: NavItem[] = [
+  { title: 'Admin', url: '/admin', icon: Shield },
+  { title: 'Users', url: '/admin/users', icon: Trophy },
+  { title: 'Announcements', url: '/admin/announcements', icon: Megaphone },
+  { title: 'Knowledge', url: '/admin/knowledge', icon: BookOpen },
+  { title: 'Scripts', url: '/admin/scripts', icon: FileText },
+  { title: 'Commissions', url: '/admin/commissions', icon: DollarSign },
+  { title: 'Clawbacks', url: '/admin/clawbacks', icon: RotateCcw },
+  { title: 'Settings', url: '/admin/settings', icon: Settings },
+]
+
+function NavSection({
+  label,
+  items,
+  pathname,
+}: {
+  label: string
+  items: NavItem[]
+  pathname: string
+}) {
+  if (items.length === 0) return null
+  return (
+    <SidebarGroup>
+      <SidebarGroupLabel className="text-[11px] uppercase tracking-wider text-muted-foreground">
+        {label}
+      </SidebarGroupLabel>
+      <SidebarGroupContent>
+        <SidebarMenu>
+          {items.map((item) => {
+            const active = pathname === item.url || pathname.startsWith(item.url + '/')
+            return (
+              <SidebarMenuItem key={item.url}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={active}
+                  className="h-8 px-3 rounded-md text-sm data-[active=true]:bg-muted data-[active=true]:text-foreground"
+                >
+                  <Link href={item.url}>
+                    <item.icon className="size-4" />
+                    <span>{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )
+          })}
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
+  )
 }
 
 export function AppSidebar() {
   const pathname = usePathname()
-  const { user, logout, switchRole } = useAuth()
-  const hasAdminAccess = useHasAccess(['admin'])
+  const { user, logout } = useAuth()
+  const { hasAccess } = useHasAccess()
 
-  const filteredMainNav = mainNavItems.filter(item => {
-    if (!user) return false
-    return item.roles.includes(user.role)
-  })
+  const visibleQa = qaNav.filter(() =>
+    hasAccess(['admin', 'qa_analyst', 'qa_manager', 'leadership']),
+  )
+  const visibleRta = rtaNav.filter(() =>
+    hasAccess(['admin', 'supervisor', 'leadership', 'rta_coordinator']),
+  )
+  const visibleAdmin = adminNav.filter(() => hasAccess(['admin']))
 
-  const filteredQANav = qaNavItems.filter(item => {
-    if (!user) return false
-    return item.roles.includes(user.role)
-  })
-
-  const filteredRTANav = rtaNavItems.filter(item => {
-    if (!user) return false
-    return item.roles.includes(user.role)
-  })
-
-  const filteredAdminNav = adminNavItems.filter(item => {
-    if (!user) return false
-    return item.roles.includes(user.role)
-  })
-
-  const initials = user?.name
+  const initials = (user?.name || 'U')
     .split(' ')
-    .map(n => n[0])
+    .map((n) => n[0])
     .join('')
-    .toUpperCase() || '?'
+    .slice(0, 2)
+    .toUpperCase()
 
   return (
-    <Sidebar variant="inset" collapsible="icon">
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-                            <Link href="/dashboard">
+            <SidebarMenuButton
+              size="lg"
+              asChild
+              className="data-[state=open]:bg-sidebar-accent"
+            >
+              <Link href="/dashboard" className="flex items-center gap-3">
+                {/* Forge brand mark */}
                 <ForgeLogo
                   variant="icon-dark"
-                  width={40}
+                  width={36}
                   className="shrink-0 ring-1 ring-sidebar-border"
                   ariaLabel=""
                 />
-                <div className="flex flex-col gap-0.5 leading-none text-left">
+                <div className="flex flex-col gap-0.5 leading-none text-left min-w-0">
                   <span
-                    className="text-sm font-bold tracking-[0.18em] text-sidebar-foreground"
+                    className="text-sm font-bold tracking-[0.18em] text-sidebar-foreground truncate"
                     style={{ fontFamily: 'Georgia, serif' }}
                   >
                     FORGE
                   </span>
-                  <span className="text-[9px] font-bold uppercase tracking-[0.22em] text-[#E8B746]">
+                  <span
+                    className="text-[9px] font-bold uppercase tracking-[0.22em] truncate"
+                    style={{ color: '#E8B746' }}
+                  >
                     SALES · FORGED · DAILY
                   </span>
                 </div>
@@ -298,98 +192,10 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Main Menu</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {filteredMainNav.map(item => (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === item.href || pathname.startsWith(`${item.href}/`)}
-                  >
-                    <Link href={item.href}>
-                      <item.icon className="size-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {filteredQANav.length > 0 && (
-          <SidebarGroup>
-            <SidebarGroupLabel>Quality Assurance</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {filteredQANav.map(item => (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={pathname === item.href || pathname.startsWith(`${item.href}/`)}
-                    >
-                      <Link href={item.href}>
-                        <item.icon className="size-4" />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-
-        {filteredRTANav.length > 0 && (
-          <SidebarGroup>
-            <SidebarGroupLabel>Real-Time Adherence</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {filteredRTANav.map(item => (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={pathname === item.href || pathname.startsWith(`${item.href}/`)}
-                    >
-                      <Link href={item.href}>
-                        <item.icon className="size-4" />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-
-        {hasAdminAccess && filteredAdminNav.length > 0 && (
-          <SidebarGroup>
-            <SidebarGroupLabel>Administration</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {filteredAdminNav.map(item => (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={pathname === item.href || pathname.startsWith(`${item.href}/`)}
-                    >
-                      <Link href={item.href}>
-                        <item.icon className="size-4" />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-
-        {/* Break Control for agents/leaders/supervisors */}
-        <BreakControl />
+        <NavSection label="Workspace" items={mainNav} pathname={pathname} />
+        <NavSection label="Quality" items={visibleQa} pathname={pathname} />
+        <NavSection label="Real-time" items={visibleRta} pathname={pathname} />
+        <NavSection label="Admin" items={visibleAdmin} pathname={pathname} />
       </SidebarContent>
 
       <SidebarFooter>
@@ -399,81 +205,46 @@ export function AppSidebar() {
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton
                   size="lg"
-                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                  className="data-[state=open]:bg-sidebar-accent"
                 >
-                  <Avatar className="size-8">
-                    <AvatarImage src={user?.avatar} alt={user?.name} />
-                    <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                      {initials}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col gap-0.5 leading-none text-left">
-                    <span className="font-medium truncate max-w-[120px]">
-                      {user?.name || 'Guest'}
-                    </span>
-                    <Badge
-                      variant={getRoleBadgeVariant(user?.role || 'agent')}
-                      className="w-fit text-[10px] px-1.5 py-0"
-                    >
-                      {getRoleLabel(user?.role || 'agent')}
-                    </Badge>
+                  <div className="flex aspect-square size-8 items-center justify-center rounded-md bg-muted text-xs font-semibold text-foreground">
+                    {initials}
                   </div>
-                  <ChevronDown className="ml-auto size-4" />
+                  <div className="flex flex-col gap-0.5 leading-none text-left min-w-0 flex-1">
+                    <span className="text-sm font-medium text-sidebar-foreground truncate">
+                      {user?.name || 'User'}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground truncate">
+                      {user?.role || ''}
+                    </span>
+                  </div>
+                  <ChevronDown className="size-4 text-muted-foreground" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                className="w-[--radix-dropdown-menu-trigger-width] min-w-56"
                 side="top"
-                align="start"
-                sideOffset={4}
+                align="end"
+                className="min-w-[14rem]"
               >
-                <DropdownMenuLabel className="text-xs text-muted-foreground">
-                  Demo: Switch Role
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium">{user?.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {user?.email}
+                    </span>
+                  </div>
                 </DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => switchRole('agent')}>
-                  <Badge variant="outline" className="mr-2">Sales Agent</Badge>
-                  Sarah Johnson
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => switchRole('leadership')}>
-                  <Badge variant="secondary" className="mr-2">Team Leader</Badge>
-                  Michael Chen
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => switchRole('supervisor')}>
-                  <Badge variant="default" className="mr-2">Supervisor</Badge>
-                  Alex Thompson
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => switchRole('executive')}>
-                  <Badge variant="default" className="mr-2">Executive</Badge>
-                  Jennifer Martinez
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => switchRole('admin')}>
-                  <Badge variant="destructive" className="mr-2">Admin</Badge>
-                  System Administrator
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/settings">
+                    <Settings className="size-4" />
+                    <span>Settings</span>
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuLabel className="text-xs text-muted-foreground">
-                  QA Roles
-                </DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => switchRole('qa_senior')}>
-                  <Badge variant="default" className="mr-2">QA Senior</Badge>
-                  Marcus Rodriguez
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => switchRole('qa_trainer')}>
-                  <Badge variant="secondary" className="mr-2">QA Trainer</Badge>
-                  Lisa Chen
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel className="text-xs text-muted-foreground">
-                  RTA Roles
-                </DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => switchRole('rta')}>
-                  <Badge variant="default" className="mr-2">RTA Monitor</Badge>
-                  Rachel Adams
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={logout} className="text-destructive">
-                  <LogOut className="mr-2 size-4" />
-                  Sign out
+                <DropdownMenuItem onClick={logout}>
+                  <LogOut className="size-4" />
+                  <span>Sign out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
