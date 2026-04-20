@@ -3,108 +3,17 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Lendify Portal - Ultra Premium Dark Theme */
-/* Glassmorphism + Glowing Purple + Animated Gradients */
-:root {
-  /* Pure black background for maximum contrast */
-  --background: #000000;
-  --foreground: oklch(0.96 0.01 280);
-  /* Glassmorphic cards with subtle purple tint */
-  --card: rgba(20, 10, 35, 0.6);
-  --card-foreground: oklch(0.96 0.01 280);
-  --popover: rgba(20, 10, 35, 0.9);
-  --popover-foreground: oklch(0.96 0.01 280);
-  /* Vibrant glowing purple primary */
-  --primary: oklch(0.68 0.32 285);
-  --primary-foreground: oklch(0.98 0 0);
-  --secondary: rgba(40, 20, 60, 0.5);
-  --secondary-foreground: oklch(0.92 0.02 280);
-  --muted: rgba(30, 15, 50, 0.4);
-  --muted-foreground: oklch(0.70 0.04 280);
-  --accent: rgba(80, 40, 120, 0.3);
-  --accent-foreground: oklch(0.96 0.01 280);
-  --destructive: oklch(0.60 0.26 25);
-  --destructive-foreground: oklch(0.98 0 0);
-  /* Glowing purple borders */
-  --border: rgba(138, 43, 226, 0.2);
-  --input: rgba(40, 20, 60, 0.5);
-  --ring: oklch(0.68 0.32 285);
-  /* Vibrant chart palette */
-  --chart-1: oklch(0.68 0.32 285);
-  --chart-2: oklch(0.62 0.28 320);
-  --chart-3: oklch(0.75 0.22 260);
-  --chart-4: oklch(0.58 0.26 340);
-  --chart-5: oklch(0.65 0.30 275);
-  --radius: 0.75rem;
-  /* Premium sidebar */
-  --sidebar: rgba(8, 4, 16, 0.95);
-  --sidebar-foreground: oklch(0.96 0.01 280);
-  --sidebar-primary: oklch(0.68 0.32 285);
-  --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent: rgba(80, 40, 120, 0.25);
-  --sidebar-accent-foreground: oklch(0.96 0.01 280);
-  --sidebar-border: rgba(138, 43, 226, 0.15);
-  --sidebar-ring: oklch(0.68 0.32 285);
-  /* Custom tokens for Lendify */
-  --success: oklch(0.72 0.20 145);
-  --success-foreground: oklch(0.10 0.02 145);
-  --warning: oklch(0.82 0.18 85);
-  --warning-foreground: oklch(0.12 0.05 85);
-  --info: oklch(0.68 0.22 260);
-  --info-foreground: oklch(0.98 0 0);
-  /* Premium glow colors */
-  --glow-purple: rgba(138, 43, 226, 0.5);
-  --glow-pink: rgba(236, 72, 153, 0.4);
-  --glow-blue: rgba(59, 130, 246, 0.4);
-  /* Gradient stops */
-  --gradient-start: oklch(0.68 0.32 285);
-  --gradient-end: oklch(0.58 0.28 320);
-}
-
-.light {
-  --background: oklch(0.98 0.01 280);
-  --foreground: oklch(0.18 0.04 280);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.04 280);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.04 280);
-  --primary: oklch(0.52 0.28 285);
-  --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.95 0.02 280);
-  --secondary-foreground: oklch(0.22 0.04 280);
-  --muted: oklch(0.94 0.02 280);
-  --muted-foreground: oklch(0.45 0.04 280);
-  --accent: oklch(0.92 0.04 285);
-  --accent-foreground: oklch(0.22 0.04 280);
-  --destructive: oklch(0.55 0.22 25);
-  --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.88 0.03 280);
-  --input: oklch(0.88 0.03 280);
-  --ring: oklch(0.52 0.28 285);
-  --chart-1: oklch(0.52 0.28 285);
-  --chart-2: oklch(0.48 0.24 310);
-  --chart-3: oklch(0.58 0.20 260);
-  --chart-4: oklch(0.45 0.22 320);
-  --chart-5: oklch(0.50 0.26 275);
-  --sidebar: oklch(0.96 0.02 280);
-  --sidebar-foreground: oklch(0.18 0.04 280);
-  --sidebar-primary: oklch(0.52 0.28 285);
-  --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent: oklch(0.92 0.03 285);
-  --sidebar-accent-foreground: oklch(0.22 0.04 280);
-  --sidebar-border: oklch(0.88 0.03 280);
-  --sidebar-ring: oklch(0.52 0.28 285);
-  --success: oklch(0.55 0.17 145);
-  --success-foreground: oklch(0.98 0 0);
-  --warning: oklch(0.70 0.15 85);
-  --warning-foreground: oklch(0.20 0.05 85);
-  --info: oklch(0.52 0.20 260);
-  --info-foreground: oklch(0.98 0 0);
-}
+/*
+ * FORGE design system — monochrome near-black base with a single gold accent
+ * ("SALES · FORGED · DAILY"). Replaces the previous purple/glass Lendify
+ * palette. Every existing page inherits this via the shared CSS vars.
+ */
 
 @theme inline {
-  --font-sans: 'Geist', 'Geist Fallback';
-  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+  --font-serif: Georgia, 'Times New Roman', serif;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -129,10 +38,6 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -141,13 +46,95 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  /* Custom Lendify tokens */
-  --color-success: var(--success);
-  --color-success-foreground: var(--success-foreground);
-  --color-warning: var(--warning);
-  --color-warning-foreground: var(--warning-foreground);
-  --color-info: var(--info);
-  --color-info-foreground: var(--info-foreground);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  /* Monochrome near-black base — easier on eyes for 8h+ shifts. */
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.17 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.17 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+
+  /* Primary = white (Vercel-style CTA). */
+  --primary: oklch(0.985 0 0);
+  --primary-foreground: oklch(0.145 0 0);
+
+  --secondary: oklch(0.23 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+
+  --muted: oklch(0.205 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+
+  /* Single brand accent — forge-gold, used sparingly. */
+  --accent: oklch(0.78 0.14 78);
+  --accent-foreground: oklch(0.145 0 0);
+
+  --destructive: oklch(0.58 0.22 25);
+  --destructive-foreground: oklch(0.985 0 0);
+
+  --border: oklch(0.23 0 0);
+  --input: oklch(0.23 0 0);
+  --ring: oklch(0.62 0.19 259);
+
+  /* Chart palette — 4 monochrome tiers + 1 blue accent. */
+  --chart-1: oklch(0.62 0.19 259);
+  --chart-2: oklch(0.78 0 0);
+  --chart-3: oklch(0.62 0 0);
+  --chart-4: oklch(0.45 0 0);
+  --chart-5: oklch(0.78 0.14 78);
+
+  --sidebar: oklch(0.13 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.985 0 0);
+  --sidebar-primary-foreground: oklch(0.145 0 0);
+  --sidebar-accent: oklch(0.205 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(0.23 0 0);
+  --sidebar-ring: oklch(0.62 0.19 259);
+
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.17 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.17 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.985 0 0);
+  --primary-foreground: oklch(0.145 0 0);
+  --secondary: oklch(0.23 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.205 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.78 0.14 78);
+  --accent-foreground: oklch(0.145 0 0);
+  --destructive: oklch(0.58 0.22 25);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(0.23 0 0);
+  --input: oklch(0.23 0 0);
+  --ring: oklch(0.62 0.19 259);
+  --chart-1: oklch(0.62 0.19 259);
+  --chart-2: oklch(0.78 0 0);
+  --chart-3: oklch(0.62 0 0);
+  --chart-4: oklch(0.45 0 0);
+  --chart-5: oklch(0.78 0.14 78);
+  --sidebar: oklch(0.13 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.985 0 0);
+  --sidebar-primary-foreground: oklch(0.145 0 0);
+  --sidebar-accent: oklch(0.205 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(0.23 0 0);
+  --sidebar-ring: oklch(0.62 0.19 259);
 }
 
 @layer base {
@@ -156,56 +143,44 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: 'cv11', 'ss01';
+    font-variant-numeric: tabular-nums;
+  }
+  h1, h2, h3, h4 {
+    letter-spacing: -0.01em;
+  }
+  ::selection {
+    background: oklch(0.62 0.19 259 / 0.3);
   }
 }
 
-/* Clean Card Styling */
+/*
+ * Compatibility shim — the old codebase scatters `.glass-card` everywhere.
+ * Rather than editing 40+ files, we redefine it here as a flat Forge card.
+ * Same class name, new look.
+ */
 .glass-card {
-  background: rgba(18, 10, 30, 0.8);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(138, 43, 226, 0.15);
-  transition: border-color 0.2s ease, background-color 0.2s ease;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  backdrop-filter: none;
 }
 
-.glass-card:hover {
-  border-color: rgba(138, 43, 226, 0.3);
-  background: rgba(22, 12, 38, 0.85);
-}
-
-/* Subtle gradient background */
-.gradient-bg {
-  background: #000000;
-}
-
-/* Premium scrollbar */
+/* Subtle scrollbar in Forge grays instead of purple. */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 10px;
+  height: 10px;
 }
-
 ::-webkit-scrollbar-track {
-  background: rgba(20, 10, 35, 0.5);
-  border-radius: 3px;
+  background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: rgba(138, 43, 226, 0.4);
-  border-radius: 3px;
+  background: oklch(0.25 0 0);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(138, 43, 226, 0.6);
-}
-
-/* Focus ring */
-*:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(138, 43, 226, 0.4);
-}
-
-/* Selection styling */
-::selection {
-  background: rgba(138, 43, 226, 0.3);
-  color: white;
+  background: oklch(0.35 0 0);
+  background-clip: padding-box;
 }
