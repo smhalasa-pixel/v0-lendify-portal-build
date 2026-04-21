@@ -2,15 +2,8 @@
 
 import * as React from "react"
 import { Card } from "@/components/ui/card"
-import { Target, Lock, CheckCircle2 } from "lucide-react"
+import { Target, CheckCircle2, Flame } from "lucide-react"
 import { cn } from "@/lib/utils"
-
-type Tier = {
-  name: string
-  closesRequired: number
-  bonusPercent: number
-  color: string
-}
 
 type Props = {
   daily: { current: number; target: number }
@@ -18,17 +11,10 @@ type Props = {
   monthly: { current: number; target: number }
 }
 
-const TIERS: Tier[] = [
-  { name: "Bronze", closesRequired: 8, bonusPercent: 0, color: "chart-5" },
-  { name: "Silver", closesRequired: 15, bonusPercent: 5, color: "chart-2" },
-  { name: "Gold", closesRequired: 25, bonusPercent: 10, color: "chart-4" },
-  { name: "Platinum", closesRequired: 40, bonusPercent: 20, color: "primary" },
-]
-
 function Ring({
   progress,
-  size = 160,
-  stroke = 12,
+  size = 180,
+  stroke = 14,
   children,
   colorClass = "text-primary",
 }: {
@@ -60,7 +46,10 @@ function Ring({
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          className={cn("fill-none stroke-current transition-all duration-1000 ease-out", colorClass)}
+          className={cn(
+            "fill-none stroke-current transition-all duration-1000 ease-out",
+            colorClass,
+          )}
           strokeWidth={stroke}
           strokeDasharray={circumference}
           strokeDashoffset={offset}
@@ -75,19 +64,10 @@ function Ring({
 }
 
 export function GoalRing({ daily, weekly, monthly }: Props) {
-  const monthlyPct = monthly.target > 0 ? (monthly.current / monthly.target) * 100 : 0
-
-  // Figure out current tier + next tier
-  const currentTier = [...TIERS]
-    .reverse()
-    .find((t) => monthly.current >= t.closesRequired)
-  const nextTier = TIERS.find((t) => monthly.current < t.closesRequired)
-  const tierProgress = nextTier
-    ? ((monthly.current - (currentTier?.closesRequired ?? 0)) /
-        (nextTier.closesRequired - (currentTier?.closesRequired ?? 0))) *
-      100
-    : 100
-  const closesToNextTier = nextTier ? nextTier.closesRequired - monthly.current : 0
+  const monthlyPct =
+    monthly.target > 0 ? (monthly.current / monthly.target) * 100 : 0
+  const remaining = Math.max(0, monthly.target - monthly.current)
+  const goalHit = monthly.current >= monthly.target
 
   return (
     <Card className="p-5">
@@ -98,105 +78,57 @@ export function GoalRing({ daily, weekly, monthly }: Props) {
           </div>
           <div>
             <h3 className="text-sm font-semibold">Monthly Goal</h3>
-            <p className="text-[11px] text-muted-foreground">Unlock bonus tiers</p>
+            <p className="text-[11px] text-muted-foreground">
+              {goalHit ? "Goal crushed" : `${remaining} to go`}
+            </p>
           </div>
         </div>
-        {currentTier && (
-          <div
-            className={cn(
-              "rounded-full border px-2 py-1 text-[11px] font-semibold",
-              currentTier.color === "chart-5" && "border-chart-5/40 bg-chart-5/10 text-chart-5",
-              currentTier.color === "chart-2" && "border-chart-2/40 bg-chart-2/10 text-chart-2",
-              currentTier.color === "chart-4" && "border-chart-4/40 bg-chart-4/10 text-chart-4",
-              currentTier.color === "primary" && "border-primary/40 bg-primary/10 text-primary",
-            )}
-          >
-            {currentTier.name}
-            {currentTier.bonusPercent > 0 && ` +${currentTier.bonusPercent}%`}
+        {goalHit && (
+          <div className="rounded-full border border-chart-3/40 bg-chart-3/10 px-2 py-1 text-[11px] font-semibold text-chart-3">
+            <div className="flex items-center gap-1">
+              <Flame className="size-3" />
+              On fire
+            </div>
           </div>
         )}
       </div>
 
-      <div className="mt-4 flex flex-col items-center gap-2">
-        <Ring progress={monthlyPct} colorClass="text-primary">
-          <div className="font-mono text-3xl font-bold tabular-nums">
+      <div className="mt-6 flex flex-col items-center gap-3">
+        <Ring
+          progress={monthlyPct}
+          colorClass={goalHit ? "text-chart-3" : "text-primary"}
+        >
+          <div className="font-mono text-4xl font-bold tabular-nums leading-none">
             {monthly.current}
           </div>
-          <div className="text-[11px] text-muted-foreground">
+          <div className="mt-1 text-[11px] font-medium text-muted-foreground">
             of {monthly.target} target
           </div>
+          <div
+            className={cn(
+              "mt-1 font-mono text-xs font-bold tabular-nums",
+              goalHit ? "text-chart-3" : "text-primary",
+            )}
+          >
+            {Math.round(monthlyPct)}%
+          </div>
         </Ring>
-        {nextTier ? (
-          <div className="text-center text-xs text-muted-foreground">
-            <span className="font-semibold text-foreground">
-              {closesToNextTier} more
-            </span>{" "}
-            to unlock{" "}
-            <span
-              className={cn(
-                "font-semibold",
-                nextTier.color === "chart-5" && "text-chart-5",
-                nextTier.color === "chart-2" && "text-chart-2",
-                nextTier.color === "chart-4" && "text-chart-4",
-                nextTier.color === "primary" && "text-primary",
-              )}
-            >
-              {nextTier.name}
-            </span>
+
+        {goalHit ? (
+          <div className="flex items-center gap-1 text-xs font-semibold text-chart-3">
+            <CheckCircle2 className="size-3.5" />
+            Monthly target secured
           </div>
         ) : (
-          <div className="flex items-center gap-1 text-xs font-semibold text-primary">
-            <CheckCircle2 className="size-3.5" />
-            Platinum tier locked in
+          <div className="text-center text-xs text-muted-foreground">
+            <span className="font-semibold text-foreground">{remaining}</span>{" "}
+            more to hit your target
           </div>
         )}
       </div>
 
-      {/* Tier ladder */}
-      <div className="mt-4 space-y-1.5">
-        {TIERS.map((tier) => {
-          const unlocked = monthly.current >= tier.closesRequired
-          return (
-            <div
-              key={tier.name}
-              className={cn(
-                "flex items-center justify-between rounded-md px-2 py-1.5 text-xs",
-                unlocked ? "bg-muted/50" : "opacity-50",
-              )}
-            >
-              <div className="flex items-center gap-2">
-                {unlocked ? (
-                  <CheckCircle2
-                    className={cn(
-                      "size-3.5",
-                      tier.color === "chart-5" && "text-chart-5",
-                      tier.color === "chart-2" && "text-chart-2",
-                      tier.color === "chart-4" && "text-chart-4",
-                      tier.color === "primary" && "text-primary",
-                    )}
-                  />
-                ) : (
-                  <Lock className="size-3.5 text-muted-foreground" />
-                )}
-                <span className={cn("font-semibold", !unlocked && "text-muted-foreground")}>
-                  {tier.name}
-                </span>
-              </div>
-              <div className="font-mono text-muted-foreground tabular-nums">
-                {tier.closesRequired} closes
-                {tier.bonusPercent > 0 && (
-                  <span className="ml-2 font-semibold text-foreground">
-                    +{tier.bonusPercent}%
-                  </span>
-                )}
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* Daily/Weekly strip */}
-      <div className="mt-4 grid grid-cols-2 gap-3 border-t border-border/50 pt-4">
+      {/* Today/Weekly strip */}
+      <div className="mt-6 grid grid-cols-2 gap-3 border-t border-border/50 pt-4">
         <div>
           <div className="flex items-center justify-between text-[11px] text-muted-foreground">
             <span className="font-medium uppercase tracking-wide">Today</span>
@@ -204,29 +136,53 @@ export function GoalRing({ daily, weekly, monthly }: Props) {
               {daily.current}/{daily.target}
             </span>
           </div>
-          <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
+          <div className="mt-1 h-2 overflow-hidden rounded-full bg-muted">
             <div
-              className="h-full rounded-full bg-chart-3 transition-all"
+              className={cn(
+                "h-full rounded-full transition-all duration-500",
+                daily.current >= daily.target ? "bg-chart-3" : "bg-chart-2",
+              )}
               style={{
-                width: `${Math.min(100, (daily.current / Math.max(1, daily.target)) * 100)}%`,
+                width: `${Math.min(
+                  100,
+                  (daily.current / Math.max(1, daily.target)) * 100,
+                )}%`,
               }}
             />
+          </div>
+          <div className="mt-1 text-[10px] text-muted-foreground">
+            {daily.current >= daily.target
+              ? "Daily target hit"
+              : `${Math.max(0, daily.target - daily.current)} to go`}
           </div>
         </div>
         <div>
           <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-            <span className="font-medium uppercase tracking-wide">This week</span>
+            <span className="font-medium uppercase tracking-wide">
+              This week
+            </span>
             <span className="font-mono tabular-nums">
               {weekly.current}/{weekly.target}
             </span>
           </div>
-          <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
+          <div className="mt-1 h-2 overflow-hidden rounded-full bg-muted">
             <div
-              className="h-full rounded-full bg-chart-2 transition-all"
+              className={cn(
+                "h-full rounded-full transition-all duration-500",
+                weekly.current >= weekly.target ? "bg-chart-3" : "bg-chart-4",
+              )}
               style={{
-                width: `${Math.min(100, (weekly.current / Math.max(1, weekly.target)) * 100)}%`,
+                width: `${Math.min(
+                  100,
+                  (weekly.current / Math.max(1, weekly.target)) * 100,
+                )}%`,
               }}
             />
+          </div>
+          <div className="mt-1 text-[10px] text-muted-foreground">
+            {weekly.current >= weekly.target
+              ? "Weekly target hit"
+              : `${Math.max(0, weekly.target - weekly.current)} to go`}
           </div>
         </div>
       </div>

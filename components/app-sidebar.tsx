@@ -22,7 +22,6 @@ import {
   MessageSquare,
   PhoneCall,
   Tv,
-  Flame,
   Radio,
   Sunrise,
 } from "lucide-react"
@@ -82,7 +81,6 @@ const mainNav: NavItem[] = [
 const callsNav: NavItem[] = [
   { title: "Command Center", url: "/calls", icon: PhoneCall },
   { title: "Floor TV", url: "/calls/floor", icon: Tv },
-  { title: "Hot Leads", url: "/calls/hot-leads", icon: Flame },
   {
     title: "RingCentral",
     url: "/calls/ringcentral",

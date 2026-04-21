@@ -9,7 +9,8 @@ import { GoalRing } from "./goal-ring"
 import { RankCard } from "./rank-card"
 import { AchievementsRow } from "./achievements-row"
 import { PaceTracker } from "./pace-tracker"
-import { MyQueue } from "./my-queue"
+import { KpiTiles } from "./kpi-tiles"
+import { ActivitySnapshot } from "./activity-snapshot"
 import { MotivationCard } from "./motivation-card"
 import { AnnouncementsList } from "@/components/dashboard/announcements-list"
 
@@ -52,6 +53,20 @@ function seeded(seed: string, max: number) {
   return Math.abs(h) % max
 }
 
+function scoreToGrade(score: number): string {
+  if (score >= 95) return "A+"
+  if (score >= 90) return "A"
+  if (score >= 87) return "A-"
+  if (score >= 83) return "B+"
+  if (score >= 80) return "B"
+  if (score >= 77) return "B-"
+  if (score >= 73) return "C+"
+  if (score >= 70) return "C"
+  if (score >= 67) return "C-"
+  if (score >= 60) return "D"
+  return "F"
+}
+
 export function AgentDashboard() {
   const { user } = useAuth()
 
@@ -64,25 +79,22 @@ export function AgentDashboard() {
     const announcements = dataService.getAnnouncements()
     const pipeline = dataService.getPipeline(user.id)
 
-    // Today
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     const yesterday = new Date(today)
     yesterday.setDate(yesterday.getDate() - 1)
     const mtdStart = new Date(today.getFullYear(), today.getMonth(), 1)
 
-    const commissionsToday = allCommissions.filter((c) => {
-      const d = new Date(c.fundedDate)
-      return d >= today
-    })
+    const commissionsToday = allCommissions.filter(
+      (c) => new Date(c.fundedDate) >= today,
+    )
     const commissionsYesterday = allCommissions.filter((c) => {
       const d = new Date(c.fundedDate)
       return d >= yesterday && d < today
     })
-    const commissionsMtd = allCommissions.filter((c) => {
-      const d = new Date(c.fundedDate)
-      return d >= mtdStart
-    })
+    const commissionsMtd = allCommissions.filter(
+      (c) => new Date(c.fundedDate) >= mtdStart,
+    )
 
     const todayEarned = commissionsToday.reduce(
       (s, c) => s + c.commissionAmount,
@@ -92,7 +104,6 @@ export function AgentDashboard() {
       (s, c) => s + c.commissionAmount,
       0,
     )
-    // Project: days elapsed → days in month
     const daysElapsed = today.getDate()
     const daysInMonth = new Date(
       today.getFullYear(),
@@ -107,7 +118,7 @@ export function AgentDashboard() {
       0,
     )
 
-    // Personal best day (rough: max by date)
+    // Personal best day
     const byDay = new Map<string, number>()
     for (const c of allCommissions) {
       const key = new Date(c.fundedDate).toDateString()
@@ -135,7 +146,6 @@ export function AgentDashboard() {
         closes: e.unitsEnrolled,
         isMe: e.agentId === user.id,
       }))
-    // Ensure I'm in there
     if (!teamEntries.some((e) => e.isMe)) {
       teamEntries.push({
         id: user.id,
@@ -157,104 +167,96 @@ export function AgentDashboard() {
       ? Math.max(0, aboveMe.unitsEnrolled - metrics.unitsEnrolled)
       : 0
 
-    // Rank change: from previousRank
+    // Rank change
     const rankChange = myEntry?.previousRank
       ? myEntry.previousRank - myEntry.rank
       : 0
 
-    // Streak: derive from consecutive days with closes (deterministic fallback)
-    const streakDays = 2 + seeded(user.id, 9) // 2-10 days
+    // Streak
+    const streakDays = 2 + seeded(user.id, 9)
 
     // Today/Yesterday closes
     const todayCloses = commissionsToday.length
     const yesterdayCloses = commissionsYesterday.length
 
-    // Today calls (approximated from pipeline activity; in production comes from RingCentral)
-    const todayCalls = 45 + seeded(user.id + "calls", 80) // 45-125
+    // Today calls — in production this comes from RingCentral
+    const todayDials = 45 + seeded(user.id + "dials", 80) // 45-125
+    const yesterdayDials = 40 + seeded(user.id + "ydials", 80)
+    const connectRate = 0.25 + (seeded(user.id + "cr", 20) / 100) // 25-45%
+    const todayConnects = Math.round(todayDials * connectRate)
+    const talkTimeMinutes = Math.round(todayConnects * (4 + seeded(user.id + "tt", 5))) // 4-9 min/connect
+    const avgHandleSeconds = 360 + seeded(user.id + "aht", 240) // 6-10 minutes
 
-    // Hourly pace (synthetic but deterministic per-user)
+    // Pipeline metrics
+    const activePipeline = pipeline.filter(
+      (p) => p.status === "lead" || p.status === "application" || p.status === "submitted",
+    )
+    const pipelineValue = activePipeline.reduce((s, p) => s + p.loanAmount, 0)
+    const callbacksScheduled = 3 + seeded(user.id + "cb", 8)
+    const followUpsDue = 2 + seeded(user.id + "fu", 6)
+
+    // Hourly pace (deterministic per-user)
     const hours = [9, 10, 11, 12, 13, 14, 15, 16, 17]
     const currentHour = new Date().getHours()
-    const hourly = hours.map((h, i) => {
-      const baseToday =
-        h <= currentHour ? seeded(user.id + h + "t", 3) : 0
+    const hourly = hours.map((h) => {
+      const baseToday = h <= currentHour ? seeded(user.id + h + "t", 3) : 0
       const baseYesterday = seeded(user.id + h + "y", 3)
-      // nudge so totals match
       return {
         hour: h,
-        today: h === 12 ? 0 : baseToday, // lunch lull
+        today: h === 12 ? 0 : baseToday,
         yesterday: h === 12 ? 0 : baseYesterday,
       }
     })
-    // Normalize today total to match actual todayCloses
     const rawTodayTotal = hourly.reduce((s, b) => s + b.today, 0)
     if (rawTodayTotal > 0 && todayCloses > 0) {
       const scale = todayCloses / rawTodayTotal
       hourly.forEach((b) => (b.today = Math.round(b.today * scale)))
     } else if (rawTodayTotal === 0 && todayCloses > 0) {
-      // distribute across past hours
-      const pastHours = hourly.filter((b) => b.hour <= currentHour && b.hour !== 12)
+      const pastHours = hourly.filter(
+        (b) => b.hour <= currentHour && b.hour !== 12,
+      )
       for (let i = 0; i < todayCloses && pastHours.length > 0; i++) {
         pastHours[i % pastHours.length].today += 1
       }
     }
 
     // Goal targets
-    const monthlyTarget = metrics.monthlyTargetUnits || 20
+    const monthlyTarget = metrics.monthlyTargetUnits || 15
     const weeklyTarget = Math.ceil(monthlyTarget / 4)
-    const dailyTarget = Math.ceil(monthlyTarget / 22)
+    const dailyTarget = Math.max(1, Math.ceil(monthlyTarget / 22))
 
-    // Weekly current: commissions this week
+    // Weekly close count
     const weekStart = new Date(today)
-    weekStart.setDate(today.getDate() - today.getDay() + 1) // Monday
-    const thisWeekCloses = allCommissions.filter((c) => {
-      const d = new Date(c.fundedDate)
-      return d >= weekStart
-    }).length
+    weekStart.setDate(today.getDate() - today.getDay() + 1)
+    const thisWeekCloses = allCommissions.filter(
+      (c) => new Date(c.fundedDate) >= weekStart,
+    ).length
 
-    // Hot leads / call queue from pipeline (lead + application stages are highest intent)
-    const hotPipeline = pipeline
-      .filter((p) => p.status === "lead" || p.status === "application")
-      .slice(0, 6)
-    const queueItems = hotPipeline.map((p, i) => {
-      const type: "hot-lead" | "callback" | "voicemail" | "follow-up" =
-        i === 0
-          ? "hot-lead"
-          : i === 1
-            ? "callback"
-            : i === 2
-              ? "voicemail"
-              : "follow-up"
-      const priority: "hot" | "warm" | "normal" =
-        i < 2 ? "hot" : i < 4 ? "warm" : "normal"
-      return {
-        id: p.id,
-        type,
-        name: p.borrowerName,
-        phone: "555-" + String(1000 + seeded(p.id, 8999)),
-        subtitle: p.loanType,
-        priority,
-        minutesWaiting: seeded(p.id, 45) + 2,
-        debtLoad: p.loanAmount,
-      }
-    })
-
-    // Level from lifetime closes (approximated as commissions count)
-    const totalClosesLifetime = allCommissions.length + 20 + seeded(user.id, 180)
+    // Level from lifetime closes
+    const totalClosesLifetime =
+      allCommissions.length + 20 + seeded(user.id, 180)
     const levelInfo = computeLevel(totalClosesLifetime)
 
-    // QC score
-    const qcScore =
-      typeof metrics.closingRate === "number" ? 82 + seeded(user.id + "qc", 16) : 85
+    // QC score (synthesized from a deterministic distribution around 85)
+    const qcScore = 80 + seeded(user.id + "qc", 16) // 80-95
+    const qcChange = (seeded(user.id + "qcd", 10) - 5) * 0.5 // -2.5 to +2.5
+    const qcEvaluations = 3 + seeded(user.id + "qce", 10)
 
-    // First close today?
+    // Late Bird: did any close today happen after shift hours?
+    // Shift ends 17:00; any close with fundedDate hour >= 17 today counts.
+    const closedAfterShiftToday = commissionsToday.some((c) => {
+      const d = new Date(c.fundedDate)
+      return d.getHours() >= 17
+    })
+
     const isFirstCloseToday = todayCloses === 1
-    // Shift start (deterministic per day)
-    const isShiftStart =
-      new Date().getHours() < 9 || seeded(user.id + today.toDateString(), 10) > 4
 
     const firstName = user.name.split(" ")[0]
     const teamName = user.teamName || "Your Team"
+
+    // Monthly debt target (approximated from units target × avg deal size)
+    const avgDealSize = metrics.avgLoanSize || 45_000
+    const monthlyDebtTarget = monthlyTarget * avgDealSize
 
     return {
       firstName,
@@ -273,10 +275,20 @@ export function AgentDashboard() {
       mtdEarned,
       projectedPayout,
       personalBest,
-      todayCalls,
+      todayDials,
+      yesterdayDials,
+      todayConnects,
+      talkTimeMinutes,
+      avgHandleSeconds,
+      activePipelineCount: activePipeline.length,
+      pipelineValue,
+      callbacksScheduled,
+      followUpsDue,
       qcScore,
+      qcChange,
+      qcEvaluations,
       isFirstCloseToday,
-      isShiftStart,
+      closedAfterShiftToday,
       biggestDebtClosedThisMonth: biggestDebtThisMonth,
       teamEntries,
       gapToNextAbove,
@@ -286,7 +298,15 @@ export function AgentDashboard() {
       monthlyTarget,
       thisWeekCloses,
       mtdCloses: metrics.unitsEnrolled,
-      queueItems,
+      debtLoadEnrolled: metrics.debtLoadEnrolled,
+      debtLoadEnrolledChange: metrics.debtLoadEnrolledChange,
+      avgDebtLoadPerFile: metrics.avgDebtLoadPerFile,
+      unitsEnrolledChange: metrics.unitsEnrolledChange,
+      qualifiedConversionRate: metrics.qualifiedConversionRate,
+      qualifiedConversionRateChange: metrics.qualifiedConversionRateChange,
+      qualifiedClosed: metrics.qualifiedClosed,
+      qualifiedAssigned: metrics.qualifiedAssigned,
+      monthlyDebtTarget,
       announcements,
     }
   }, [user])
@@ -313,6 +333,34 @@ export function AgentDashboard() {
         yesterdayCloses={data.yesterdayCloses}
       />
 
+      {/* Primary KPIs: Units Closed, Debt Enrolled, Qualified Conv., QC Score */}
+      <KpiTiles
+        unitsClosed={{
+          mtd: data.mtdCloses,
+          change: data.unitsEnrolledChange,
+          target: data.monthlyTarget,
+          today: data.todayCloses,
+        }}
+        debtEnrolled={{
+          mtd: data.debtLoadEnrolled,
+          change: data.debtLoadEnrolledChange,
+          target: data.monthlyDebtTarget,
+          avgPerDeal: data.avgDebtLoadPerFile,
+        }}
+        qualifiedConversion={{
+          rate: data.qualifiedConversionRate,
+          change: data.qualifiedConversionRateChange,
+          closed: data.qualifiedClosed,
+          assigned: data.qualifiedAssigned,
+        }}
+        qcScore={{
+          score: data.qcScore,
+          change: data.qcChange,
+          evaluations: data.qcEvaluations,
+          grade: scoreToGrade(data.qcScore),
+        }}
+      />
+
       {/* Top row: Money + Goal + Rank */}
       <div className="grid gap-4 lg:grid-cols-3">
         <MoneyTicker
@@ -334,31 +382,41 @@ export function AgentDashboard() {
         />
       </div>
 
-      {/* Middle row: Pace + Queue */}
+      {/* Middle row: Pace + Activity snapshot */}
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <PaceTracker hourly={data.hourly} dailyTarget={data.dailyTarget} />
         </div>
-        <MyQueue items={data.queueItems} />
+        <ActivitySnapshot
+          todayDials={data.todayDials}
+          yesterdayDials={data.yesterdayDials}
+          todayConnects={data.todayConnects}
+          talkTimeMinutes={data.talkTimeMinutes}
+          avgHandleSeconds={data.avgHandleSeconds}
+          pipelineCount={data.activePipelineCount}
+          pipelineValue={data.pipelineValue}
+          callbacksScheduled={data.callbacksScheduled}
+          followUpsDue={data.followUpsDue}
+        />
       </div>
 
-      {/* Bottom row: Achievements + Tip + Announcements */}
+      {/* Bottom row: Achievements + Tip */}
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <AchievementsRow
             todayCloses={data.todayCloses}
-            todayCalls={data.todayCalls}
+            todayCalls={data.todayDials}
             streakDays={data.streakDays}
             qcScore={data.qcScore}
             isFirstCloseToday={data.isFirstCloseToday}
-            isShiftStart={data.isShiftStart}
+            closedAfterShiftToday={data.closedAfterShiftToday}
             biggestDebtClosedThisMonth={data.biggestDebtClosedThisMonth}
           />
         </div>
         <MotivationCard />
       </div>
 
-      {/* Announcements at the bottom (always useful) */}
+      {/* Announcements */}
       <AnnouncementsList
         announcements={data.announcements}
         userId={user.id}

@@ -12,7 +12,7 @@ import {
   Phone,
   DollarSign,
   Clock,
-  Sunrise,
+  Moon,
   Lock,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -40,7 +40,7 @@ type Props = {
   streakDays: number
   qcScore: number
   isFirstCloseToday: boolean
-  isShiftStart: boolean // logged in before 9am
+  closedAfterShiftToday: boolean // at least one close after assigned shift hours
   biggestDebtClosedThisMonth: number
 }
 
@@ -50,7 +50,7 @@ export function AchievementsRow({
   streakDays,
   qcScore,
   isFirstCloseToday,
-  isShiftStart,
+  closedAfterShiftToday,
   biggestDebtClosedThisMonth,
 }: Props) {
   const achievements: Achievement[] = [
@@ -112,13 +112,13 @@ export function AchievementsRow({
       progress: qcScore < 95 ? { current: qcScore, target: 95 } : undefined,
     },
     {
-      id: "early-bird",
-      name: "Early Bird",
-      description: "Clocked in before 9 AM",
-      icon: Sunrise,
+      id: "late-bird",
+      name: "Late Bird",
+      description: "Closed a deal after shift hours",
+      icon: Moon,
       color: "chart-2",
-      earnedToday: isShiftStart,
-      earned: isShiftStart,
+      earnedToday: closedAfterShiftToday,
+      earned: closedAfterShiftToday,
     },
     {
       id: "big-ticket",
