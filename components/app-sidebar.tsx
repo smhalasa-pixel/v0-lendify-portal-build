@@ -24,6 +24,8 @@ import {
   Tv,
   Radio,
   Sunrise,
+  Mail,
+  Target,
 } from "lucide-react"
 
 import { useAuth } from "@/lib/auth-context"
@@ -61,6 +63,7 @@ type NavItem = {
 
 const mainNav: NavItem[] = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Inbox", url: "/inbox", icon: Mail },
   {
     title: "Daily Huddle",
     url: "/huddle",
@@ -106,6 +109,7 @@ const rtaNav: NavItem[] = [
 
 const adminNav: NavItem[] = [
   { title: "Admin", url: "/admin", icon: Shield },
+  { title: "Targets", url: "/admin/targets", icon: Target },
   { title: "Users", url: "/admin/users", icon: Trophy },
   { title: "Announcements", url: "/admin/announcements", icon: Megaphone },
   { title: "Knowledge", url: "/admin/knowledge", icon: BookOpen },

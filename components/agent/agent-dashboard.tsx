@@ -20,6 +20,11 @@ import {
   type PeriodKey,
   type AgentPeriod,
 } from "./period-selector"
+import {
+  currentMonthKey,
+  resolveAgentTarget,
+  useTargets,
+} from "@/lib/targets"
 
 // Level curve based on lifetime closes
 const LEVEL_CURVE = [
@@ -76,7 +81,40 @@ function scoreToGrade(score: number): string {
 
 export function AgentDashboard() {
   const { user } = useAuth()
+  const { targets } = useTargets()
 
+  // Resolved admin-set targets for this agent, this month
+  const monthKey = React.useMemo(() => currentMonthKey(), [])
+  const resolvedUnitsTarget = React.useMemo(
+    () =>
+      user
+        ? resolveAgentTarget(
+            {
+              agentId: user.id,
+              teamId: user.teamId,
+              metric: "unitsClosed",
+              periodKey: monthKey,
+            },
+            targets,
+          )
+        : null,
+    [user, monthKey, targets],
+  )
+  const resolvedDebtTarget = React.useMemo(
+    () =>
+      user
+        ? resolveAgentTarget(
+            {
+              agentId: user.id,
+              teamId: user.teamId,
+              metric: "debtEnrolled",
+              periodKey: monthKey,
+            },
+            targets,
+          )
+        : null,
+    [user, monthKey, targets],
+  )
   // Period selector state
   const [periodKey, setPeriodKey] = React.useState<PeriodKey>("mtd")
   const [customRange, setCustomRange] = React.useState<DateRange | undefined>(
@@ -316,8 +354,9 @@ export function AgentDashboard() {
       0,
     )
 
-    // Goal progress (always reflects today/this-week/this-month regardless of period — those are fixed horizons)
-    const monthlyTarget = metrics.monthlyTargetUnits || 15
+    // Goal progress — read from admin-set targets (cascade: agent override > team > org > default)
+    const monthlyTarget =
+      resolvedUnitsTarget?.value || metrics.monthlyTargetUnits || 15
     const weeklyTarget = Math.ceil(monthlyTarget / 4)
     const dailyTarget = Math.max(1, Math.ceil(monthlyTarget / 22))
 
@@ -431,8 +470,13 @@ export function AgentDashboard() {
                 ),
               )
 
+    // Debt target — from admin targets when available; otherwise derive from avg deal size
     const avgDealSize = metrics.avgLoanSize || 45_000
-    const periodDebtTarget = periodUnitsTarget * avgDealSize
+    const monthlyDebtTarget = resolvedDebtTarget?.value || monthlyTarget * avgDealSize
+    const periodDebtTarget =
+      periodKey === "mtd"
+        ? monthlyDebtTarget
+        : (monthlyDebtTarget / Math.max(1, monthlyTarget)) * periodUnitsTarget
 
     return {
       periodCloses,
@@ -468,7 +512,7 @@ export function AgentDashboard() {
       periodUnitsTarget,
       periodDebtTarget,
     }
-  }, [user, liveData, period, periodKey])
+  }, [user, liveData, period, periodKey, resolvedUnitsTarget, resolvedDebtTarget])
 
   if (!user || !liveData || !periodData) return null
 

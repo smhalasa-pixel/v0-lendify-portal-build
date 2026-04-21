@@ -17,6 +17,8 @@ import {
 } from '@/components/ui/breadcrumb'
 import { usePathname } from 'next/navigation'
 import { Spinner } from '@/components/ui/spinner'
+import { NotificationBell } from '@/components/header/notification-bell'
+import { InboxButton } from '@/components/header/inbox-button'
 
 function getBreadcrumbs(pathname: string) {
   const segments = pathname.split('/').filter(Boolean)
@@ -64,7 +66,7 @@ export default function DashboardLayout({
           <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-2 border-b border-border/50 px-4 backdrop-blur-xl bg-background/80">
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-2 h-4" />
-            <Breadcrumb>
+            <Breadcrumb className="flex-1 min-w-0">
               <BreadcrumbList>
                 {breadcrumbs.map((crumb, index) => (
                   <React.Fragment key={crumb.href}>
@@ -80,6 +82,10 @@ export default function DashboardLayout({
                 ))}
               </BreadcrumbList>
             </Breadcrumb>
+            <div className="ml-auto flex items-center gap-1">
+              <InboxButton />
+              <NotificationBell />
+            </div>
           </header>
           <main className="flex-1 overflow-auto">
             {children}

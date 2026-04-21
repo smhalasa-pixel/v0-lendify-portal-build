@@ -1,88 +1,116 @@
-'use client'
+"use client"
 
-import * as React from 'react'
-import Link from 'next/link'
+import * as React from "react"
+import Link from "next/link"
 import {
   Users,
   Settings,
-  LayoutGrid,
   FileText,
   Megaphone,
   BookOpen,
   DollarSign,
   AlertTriangle,
-  Activity,
   Shield,
-} from 'lucide-react'
+  Target as TargetIcon,
+  CheckCircle2,
+  XCircle,
+  ArrowRight,
+  Mail,
+  PenSquare,
+  Gauge,
+} from "lucide-react"
 
-import { useAuth } from '@/lib/auth-context'
-import { dataService } from '@/lib/mock-data'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { useAuth } from "@/lib/auth-context"
+import { dataService } from "@/lib/mock-data"
+import {
+  currentMonthKey,
+  getAllTargets,
+  parseMonthKey,
+  useTargets,
+} from "@/lib/targets"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 
-const adminModules = [
+// -----------------------------------------------------------------------------
+
+const operationsModules = [
   {
-    title: 'User Management',
-    description: 'Manage users, roles, and permissions',
-    href: '/admin/users',
+    title: "Targets Center",
+    description: "Set monthly org/team/agent targets with cascade rules",
+    href: "/admin/targets",
+    icon: TargetIcon,
+    group: "operations",
+  },
+  {
+    title: "User Management",
+    description: "Manage users, roles, permissions, and team assignments",
+    href: "/admin/users",
     icon: Users,
-    stats: '24 active users',
+    group: "operations",
   },
   {
-    title: 'Announcement Manager',
-    description: 'Create and manage announcements',
-    href: '/admin/announcements',
-    icon: Megaphone,
-    stats: '5 active announcements',
-  },
-  {
-    title: 'Knowledge Base Editor',
-    description: 'Manage knowledge base articles',
-    href: '/admin/knowledge',
-    icon: BookOpen,
-    stats: '12 articles',
-  },
-  {
-    title: 'Script Manager',
-    description: 'Create and organize call scripts',
-    href: '/admin/scripts',
-    icon: FileText,
-    stats: '8 scripts',
-  },
-  {
-    title: 'Commission Rules',
-    description: 'Configure commission structures and tiers',
-    href: '/admin/commissions',
-    icon: DollarSign,
-    stats: '4 active plans',
-  },
-  {
-    title: 'Clawback Rules',
-    description: 'Define clawback policies and thresholds',
-    href: '/admin/clawbacks',
-    icon: AlertTriangle,
-    stats: '2 policies',
-  },
-  {
-    title: 'System Settings',
-    description: 'Configure layouts and platform settings',
-    href: '/admin/settings',
+    title: "System Settings",
+    description: "Platform configuration, layouts, and global defaults",
+    href: "/admin/settings",
     icon: Settings,
-    stats: 'Last updated 2d ago',
+    group: "operations",
   },
 ]
 
+const financeModules = [
+  {
+    title: "Commission Rules",
+    description: "Tier structures, multipliers, and payout plans",
+    href: "/admin/commissions",
+    icon: DollarSign,
+    group: "finance",
+  },
+  {
+    title: "Clawback Rules",
+    description: "NSF windows, thresholds, and dispute policies",
+    href: "/admin/clawbacks",
+    icon: AlertTriangle,
+    group: "finance",
+  },
+]
+
+const contentModules = [
+  {
+    title: "Announcements",
+    description: "Floor-wide, role-targeted, or team-specific posts",
+    href: "/admin/announcements",
+    icon: Megaphone,
+    group: "content",
+  },
+  {
+    title: "Knowledge Base",
+    description: "Articles, policies, training, and compliance refs",
+    href: "/admin/knowledge",
+    icon: BookOpen,
+    group: "content",
+  },
+  {
+    title: "Script Manager",
+    description: "Openers, rebuttals, and closing scripts",
+    href: "/admin/scripts",
+    icon: FileText,
+    group: "content",
+  },
+]
+
+// -----------------------------------------------------------------------------
+
 export default function AdminPage() {
   const { user } = useAuth()
-  
-  // Redirect non-admins
-  if (user?.role !== 'admin') {
+
+  if (user?.role !== "admin") {
     return (
-      <div className="p-6 flex items-center justify-center min-h-[60vh]">
-        <Card className="max-w-md w-full">
+      <div className="flex min-h-[60vh] items-center justify-center p-6">
+        <Card className="w-full max-w-md">
           <CardContent className="pt-6 text-center">
-            <Shield className="size-12 mx-auto text-muted-foreground mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Access Restricted</h2>
+            <Shield className="mx-auto mb-4 size-12 text-muted-foreground" />
+            <h2 className="mb-2 text-xl font-semibold">Access Restricted</h2>
             <p className="text-muted-foreground">
               The Admin Panel is only accessible to administrators. Please contact your system administrator for access.
             </p>
@@ -92,137 +120,241 @@ export default function AdminPage() {
     )
   }
 
-  const agents = dataService.getAgents()
-  const activeAgents = agents.filter(a => a.status === 'active').length
-  const teams = dataService.getTeams()
-  const pendingApprovals = 3 // Would come from real data - clawback disputes, access requests, etc.
+  // Live reads
+  const { targets } = useTargets()
+  const monthKey = React.useMemo(() => currentMonthKey(), [])
+  const monthLabel = parseMonthKey(monthKey).label
+
+  const agents = React.useMemo(() => dataService.getAgents(), [])
+  const teams = React.useMemo(() => dataService.getTeams(), [])
+
+  // Targets coverage this month
+  const orgTargetsThisMonth = targets.filter(
+    (t) => t.scope === "organization" && t.periodKey === monthKey,
+  )
+  const teamIdsWithTargets = new Set(
+    targets.filter((t) => t.scope === "team" && t.periodKey === monthKey).map((t) => t.scopeId),
+  )
+  const agentIdsWithOverrides = new Set(
+    targets.filter((t) => t.scope === "agent" && t.periodKey === monthKey).map((t) => t.scopeId),
+  )
+
+  const orgReady = orgTargetsThisMonth.length > 0
+  const teamsReady = teamIdsWithTargets.size
+  const agentsOverridden = agentIdsWithOverrides.size
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="mx-auto max-w-[1400px] space-y-6 p-4 lg:p-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Admin Panel</h1>
-        <p className="text-muted-foreground">
-          Manage platform settings, users, and content
-        </p>
-      </div>
-
-      {/* System Overview */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="size-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Users className="size-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{activeAgents}</p>
-                <p className="text-sm text-muted-foreground">Active Users</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="size-10 rounded-lg bg-info/10 flex items-center justify-center">
-                <Activity className="size-5 text-info" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">99.9%</p>
-                <p className="text-sm text-muted-foreground">System Uptime</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="size-10 rounded-lg bg-chart-2/10 flex items-center justify-center">
-                <LayoutGrid className="size-5 text-chart-2" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{teams.length}</p>
-                <p className="text-sm text-muted-foreground">Total Teams</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="size-10 rounded-lg bg-warning/10 flex items-center justify-center">
-                <AlertTriangle className="size-5 text-warning" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{pendingApprovals}</p>
-                <p className="text-sm text-muted-foreground">Pending Approvals</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Admin Modules Grid */}
-      <div>
-        <h2 className="text-lg font-semibold mb-4">Administration Modules</h2>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {adminModules.map((module) => {
-            const Icon = module.icon
-            return (
-              <Link key={module.title} href={module.href}>
-                <Card className="h-full transition-all hover:shadow-md hover:border-primary/30 cursor-pointer group">
-                  <CardContent className="pt-6">
-                    <div className="size-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                      <Icon className="size-5 text-primary" />
-                    </div>
-                    <h3 className="font-semibold mb-1">{module.title}</h3>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      {module.description}
-                    </p>
-                    <Badge variant="secondary" className="text-xs">
-                      {module.stats}
-                    </Badge>
-                  </CardContent>
-                </Card>
-              </Link>
-            )
-          })}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <div className="flex size-11 items-center justify-center rounded-xl bg-primary/15 text-primary">
+            <Shield className="size-5" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Admin Command Center</h1>
+            <p className="text-sm text-muted-foreground">
+              Manage targets, users, finances, and content for the entire floor.
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild size="sm" variant="outline">
+            <Link href="/inbox">
+              <Mail className="mr-1.5 size-3.5" />
+              Inbox
+            </Link>
+          </Button>
+          <Button asChild size="sm" variant="outline">
+            <Link href="/admin/announcements">
+              <PenSquare className="mr-1.5 size-3.5" />
+              New announcement
+            </Link>
+          </Button>
+          <Button asChild size="sm">
+            <Link href="/admin/targets">
+              <TargetIcon className="mr-1.5 size-3.5" />
+              Set targets
+            </Link>
+          </Button>
         </div>
       </div>
 
-      {/* Recent Activity */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Admin Activity</CardTitle>
-          <CardDescription>Latest changes and updates to the platform</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {[
-              { action: 'Updated commission structure', user: 'Jennifer Martinez', time: '2 hours ago', type: 'settings' },
-              { action: 'Added new announcement', user: 'Jennifer Martinez', time: '5 hours ago', type: 'content' },
-              { action: 'Approved clawback dispute', user: 'Jennifer Martinez', time: '1 day ago', type: 'finance' },
-              { action: 'Created new knowledge article', user: 'Jennifer Martinez', time: '2 days ago', type: 'content' },
-              { action: 'Modified user permissions', user: 'Jennifer Martinez', time: '3 days ago', type: 'users' },
-            ].map((activity, index) => (
-              <div key={index} className="flex items-center gap-4 py-2">
-                <div className="size-8 rounded-full bg-muted flex items-center justify-center">
-                  {activity.type === 'settings' && <Settings className="size-4 text-muted-foreground" />}
-                  {activity.type === 'content' && <FileText className="size-4 text-muted-foreground" />}
-                  {activity.type === 'finance' && <DollarSign className="size-4 text-muted-foreground" />}
-                  {activity.type === 'users' && <Users className="size-4 text-muted-foreground" />}
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{activity.action}</p>
-                  <p className="text-xs text-muted-foreground">by {activity.user}</p>
-                </div>
-                <span className="text-xs text-muted-foreground">{activity.time}</span>
-              </div>
-            ))}
+      {/* Targets readiness for the current month */}
+      <Card className="overflow-hidden border-primary/30 bg-primary/[0.02]">
+        <CardContent className="grid gap-4 p-5 md:grid-cols-[1fr,auto] md:items-center">
+          <div>
+            <div className="mb-1 flex items-center gap-2">
+              <TargetIcon className="size-4 text-primary" />
+              <span className="text-xs font-semibold uppercase tracking-wider text-primary">
+                {monthLabel} · Targets Readiness
+              </span>
+            </div>
+            <h2 className="mb-3 text-lg font-semibold">
+              {orgReady
+                ? `Monthly targets are live for ${monthLabel}`
+                : `No org targets set for ${monthLabel} yet`}
+            </h2>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <CoverageStat
+                label="Org metrics"
+                count={orgTargetsThisMonth.length}
+                total={7}
+                ready={orgReady}
+              />
+              <CoverageStat
+                label="Teams with override"
+                count={teamsReady}
+                total={teams.length}
+                ready={teamsReady > 0}
+              />
+              <CoverageStat
+                label="Agent overrides"
+                count={agentsOverridden}
+                total={agents.length}
+                ready={true}
+                subtle
+              />
+            </div>
           </div>
+          <Button asChild>
+            <Link href="/admin/targets">
+              Open Targets Center
+              <ArrowRight className="ml-1.5 size-3.5" />
+            </Link>
+          </Button>
         </CardContent>
       </Card>
+
+      {/* System overview */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <OverviewStat
+          label="Active agents"
+          value={agents.filter((a) => a.status === "active").length}
+          icon={Users}
+          color="bg-primary/10 text-primary"
+        />
+        <OverviewStat
+          label="Teams"
+          value={teams.length}
+          icon={Gauge}
+          color="bg-chart-2/10 text-chart-2"
+        />
+        <OverviewStat
+          label="Targets set (all scopes)"
+          value={targets.filter((t) => t.periodKey === monthKey).length}
+          icon={TargetIcon}
+          color="bg-chart-3/10 text-chart-3"
+        />
+        <OverviewStat
+          label="Pending approvals"
+          value={3}
+          icon={AlertTriangle}
+          color="bg-warning/10 text-warning"
+        />
+      </div>
+
+      {/* Grouped modules */}
+      <ModuleSection title="Operations" modules={operationsModules} />
+      <ModuleSection title="Finance" modules={financeModules} />
+      <ModuleSection title="Content & Training" modules={contentModules} />
+    </div>
+  )
+}
+
+// -----------------------------------------------------------------------------
+
+function CoverageStat({
+  label,
+  count,
+  total,
+  ready,
+  subtle = false,
+}: {
+  label: string
+  count: number
+  total: number
+  ready: boolean
+  subtle?: boolean
+}) {
+  return (
+    <div className="rounded-lg border border-border/60 bg-background/60 p-3">
+      <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+        {subtle ? (
+          <div className="size-1.5 rounded-full bg-muted-foreground/50" />
+        ) : ready ? (
+          <CheckCircle2 className="size-3.5 text-chart-3" />
+        ) : (
+          <XCircle className="size-3.5 text-destructive" />
+        )}
+        {label}
+      </div>
+      <div className="flex items-baseline gap-1.5">
+        <span className="text-xl font-bold tabular-nums">{count}</span>
+        <span className="text-xs text-muted-foreground">of {total}</span>
+      </div>
+    </div>
+  )
+}
+
+function OverviewStat({
+  label,
+  value,
+  icon: Icon,
+  color,
+}: {
+  label: string
+  value: number
+  icon: React.ElementType
+  color: string
+}) {
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <div className="flex items-center gap-3">
+          <div className={`flex size-10 items-center justify-center rounded-lg ${color}`}>
+            <Icon className="size-5" />
+          </div>
+          <div>
+            <p className="text-2xl font-bold tabular-nums">{value}</p>
+            <p className="text-xs text-muted-foreground">{label}</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function ModuleSection({
+  title,
+  modules,
+}: {
+  title: string
+  modules: typeof operationsModules
+}) {
+  return (
+    <div>
+      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+        {title}
+      </h2>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {modules.map((m) => {
+          const Icon = m.icon
+          return (
+            <Link key={m.title} href={m.href}>
+              <Card className="group h-full cursor-pointer transition-all hover:border-primary/40 hover:shadow-sm">
+                <CardContent className="pt-6">
+                  <div className="mb-3 flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
+                    <Icon className="size-5" />
+                  </div>
+                  <h3 className="mb-1 font-semibold">{m.title}</h3>
+                  <p className="text-xs text-muted-foreground">{m.description}</p>
+                </CardContent>
+              </Card>
+            </Link>
+          )
+        })}
+      </div>
     </div>
   )
 }
