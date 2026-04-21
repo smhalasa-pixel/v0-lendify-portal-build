@@ -185,8 +185,14 @@ export default function TasksPage() {
       return allUsers.filter(u => u.role === 'agent' && u.teamId === user.teamId)
     }
     
-    if (user.role === 'supervisor' || user.role === 'admin') {
-      // Supervisors and admins can assign to any agent
+    if (user.role === 'supervisor') {
+      // Supervisors can assign to agents on any of their teams
+      const teamIds = new Set(user.teamIds || [])
+      return allUsers.filter(u => u.role === 'agent' && u.teamId && teamIds.has(u.teamId))
+    }
+    
+    if (user.role === 'admin' || user.role === 'executive') {
+      // Admins and execs can assign to any agent
       return allUsers.filter(u => u.role === 'agent')
     }
     
@@ -195,12 +201,18 @@ export default function TasksPage() {
 
   const assignableTeams = React.useMemo(() => {
     if (!user) return []
-    
-    // Only supervisors and admins can assign to teams
-    if (user.role === 'supervisor' || user.role === 'admin') {
+
+    // Supervisors: only their own teams
+    if (user.role === 'supervisor') {
+      const allowed = new Set(user.teamIds || [])
+      return teams.filter(t => allowed.has(t.id))
+    }
+
+    // Admins and executives: all teams
+    if (user.role === 'admin' || user.role === 'executive') {
       return teams
     }
-    
+
     return []
   }, [user, teams])
 

@@ -43,6 +43,7 @@ import { ClientSearch } from '@/components/dashboard/client-search'
 import { AnnouncementsList } from '@/components/dashboard/announcements-list'
 import { TeamPerformanceTable } from '@/components/dashboard/team-performance-table'
 import { AgentPerformanceTable } from '@/components/dashboard/agent-performance-table'
+import { FloorStatusWidget } from '@/components/dashboard/floor-status-widget'
 import { cn } from '@/lib/utils'
 import { CurrencyDisplay } from '@/components/ui/currency-display'
 import type { DateRange } from 'react-day-picker'
@@ -1354,6 +1355,9 @@ const pipeline = React.useMemo(() => {
             </CardContent>
           </Card>
           )}
+
+          {/* Live Floor Status - team leads, supervisors, execs, admins */}
+          {!isAgent && <FloorStatusWidget />}
 
           {/* Client Search */}
           {isWidgetEnabled('client-search') && <ClientSearch data={clients} />}
