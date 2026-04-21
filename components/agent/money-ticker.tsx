@@ -9,6 +9,8 @@ type Props = {
   mtdEarned: number
   projectedPayout: number
   personalBest: number
+  periodLabel?: string // e.g. "Today", "This Week", "Oct 1–15"
+  isLive?: boolean // true only when period === "today"
 }
 
 function useCountUp(target: number, durationMs = 1200) {
@@ -45,6 +47,8 @@ export function MoneyTicker({
   mtdEarned,
   projectedPayout,
   personalBest,
+  periodLabel = "Today",
+  isLive = true,
 }: Props) {
   const animated = useCountUp(todayEarned)
   const isRecord = todayEarned > 0 && todayEarned >= personalBest
@@ -63,10 +67,10 @@ export function MoneyTicker({
           </div>
           <div>
             <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-              Money Earned Today
+              Money Earned {periodLabel}
             </div>
             <div className="text-xs text-muted-foreground">
-              Live commission tally
+              {isLive ? "Live commission tally" : "Commission total for period"}
             </div>
           </div>
         </div>
@@ -90,7 +94,7 @@ export function MoneyTicker({
       <div className="relative mt-5 grid grid-cols-3 gap-3 border-t border-border/50 pt-4">
         <div>
           <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-            Month to date
+            {isLive ? "Month to date" : "MTD total"}
           </div>
           <div className="mt-0.5 font-mono text-sm font-bold tabular-nums">
             {fmt(mtdEarned)}
@@ -99,7 +103,7 @@ export function MoneyTicker({
         <div>
           <div className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
             <TrendingUp className="size-3" />
-            Projected payout
+            {isLive ? "Projected payout" : "Avg per day"}
           </div>
           <div className="mt-0.5 font-mono text-sm font-bold tabular-nums text-chart-3">
             {fmt(projectedPayout)}
@@ -107,7 +111,7 @@ export function MoneyTicker({
         </div>
         <div>
           <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-            Personal best
+            {isLive ? "Personal best" : "Best day in period"}
           </div>
           <div className="mt-0.5 font-mono text-sm font-bold tabular-nums">
             {fmt(personalBest)}

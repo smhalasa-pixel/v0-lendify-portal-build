@@ -136,7 +136,7 @@ function Tile({
 
 type Props = {
   unitsClosed: {
-    mtd: number
+    mtd: number // period total (renamed conceptually)
     change: number
     target: number
     today: number
@@ -159,6 +159,9 @@ type Props = {
     evaluations: number
     grade: string
   }
+  periodLabel?: string
+  periodShortLabel?: string
+  isLive?: boolean
 }
 
 function formatMoney(n: number) {
@@ -172,6 +175,9 @@ export function KpiTiles({
   debtEnrolled,
   qualifiedConversion,
   qcScore,
+  periodLabel = "MTD",
+  periodShortLabel,
+  isLive = true,
 }: Props) {
   const unitsPct =
     unitsClosed.target > 0
@@ -182,29 +188,39 @@ export function KpiTiles({
       ? (debtEnrolled.mtd / debtEnrolled.target) * 100
       : 0
 
+  const targetLabel = periodShortLabel
+    ? `${periodShortLabel} target`
+    : `${periodLabel} target`
+
+  const unitsSub = isLive
+    ? `${unitsClosed.today} today · target ${unitsClosed.target}`
+    : `Target ${unitsClosed.target} · ${periodLabel}`
+
+  const debtSub = `Avg ${formatMoney(debtEnrolled.avgPerDeal)} per deal`
+
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <Tile
-        label="Units Closed"
+        label={`Units Closed${isLive ? "" : ` · ${periodShortLabel ?? periodLabel}`}`}
         value={unitsClosed.mtd}
-        sub={`${unitsClosed.today} today · target ${unitsClosed.target}`}
+        sub={unitsSub}
         change={unitsClosed.change}
         icon={Trophy}
         iconColor="bg-primary/15 text-primary"
         accent="primary"
         progress={unitsPct}
-        progressLabel="Monthly target"
+        progressLabel={targetLabel}
       />
       <Tile
-        label="Debt Enrolled"
+        label={`Debt Enrolled${isLive ? "" : ` · ${periodShortLabel ?? periodLabel}`}`}
         value={formatMoney(debtEnrolled.mtd)}
-        sub={`Avg ${formatMoney(debtEnrolled.avgPerDeal)} per deal`}
+        sub={debtSub}
         change={debtEnrolled.change}
         icon={DollarSign}
         iconColor="bg-chart-3/15 text-chart-3"
         accent="chart-3"
         progress={debtPct}
-        progressLabel="Monthly target"
+        progressLabel={targetLabel}
       />
       <Tile
         label="Qualified Conv."

@@ -23,6 +23,8 @@ type Props = {
   pipelineValue: number
   callbacksScheduled: number
   followUpsDue: number
+  periodLabel?: string
+  isLive?: boolean
 }
 
 function formatTalkTime(mins: number) {
@@ -104,6 +106,8 @@ export function ActivitySnapshot({
   pipelineValue,
   callbacksScheduled,
   followUpsDue,
+  periodLabel = "Today",
+  isLive = true,
 }: Props) {
   const connectRate =
     todayDials > 0 ? (todayConnects / todayDials) * 100 : 0
@@ -117,7 +121,9 @@ export function ActivitySnapshot({
             <Activity className="size-4 text-chart-2" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold">Today&apos;s Activity</h3>
+            <h3 className="text-sm font-semibold">
+              {isLive ? "Today's Activity" : `Activity · ${periodLabel}`}
+            </h3>
             <p className="text-[11px] text-muted-foreground">
               Dials, talk time, pipeline
             </p>
@@ -129,11 +135,11 @@ export function ActivitySnapshot({
         <Row
           icon={Phone}
           iconClass="bg-chart-2/15 text-chart-2"
-          label="Dials today"
+          label={isLive ? "Dials today" : `Dials · ${periodLabel}`}
           value={todayDials}
-          sub={`vs ${yesterdayDials} yesterday`}
+          sub={isLive ? `vs ${yesterdayDials} yesterday` : `Avg ${Math.round(yesterdayDials)}/day`}
           trend={
-            dialsDelta !== 0
+            isLive && dialsDelta !== 0
               ? { value: dialsDelta, positive: dialsDelta > 0 }
               : null
           }
@@ -172,7 +178,7 @@ export function ActivitySnapshot({
         <TrendingUp className="size-3.5 text-chart-3" />
         <div className="text-[11px] text-muted-foreground">
           <span className="font-semibold text-foreground">
-            Keep dialing.
+            {isLive ? "Keep dialing." : "Historical conversion ratio."}
           </span>{" "}
           Every 10 dials ≈ 1 enrollment at your current rate.
         </div>
