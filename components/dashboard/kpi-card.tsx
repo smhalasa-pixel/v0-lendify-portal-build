@@ -110,7 +110,7 @@ export function KPICard({
       <div className="flex flex-col items-center gap-1 py-3">
         <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{title}</div>
         {formatType === 'currency' && typeof value === 'number' ? (
-          <CurrencyDisplay amount={value} className="text-lg font-semibold tracking-tight tabular-nums" />
+          <CurrencyDisplay value={value} className="text-lg font-semibold tracking-tight tabular-nums" />
         ) : (
           <div className="text-lg font-semibold tracking-tight tabular-nums">
             {formatValue(value, formatType)}
@@ -194,7 +194,7 @@ export function KPICard({
       <div className="flex items-baseline justify-between gap-3">
         {formatType === 'currency' && typeof value === 'number' ? (
           <CurrencyDisplay
-            amount={value}
+            value={value}
             className="text-2xl font-semibold tracking-tight tabular-nums"
           />
         ) : (
