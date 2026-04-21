@@ -17,6 +17,7 @@ import {
 
 import { useAuth } from '@/lib/auth-context'
 import { dataService } from '@/lib/mock-data'
+import { useTeamScope } from '@/lib/team-scope'
 import {
   Select,
   SelectContent,
@@ -172,6 +173,7 @@ interface TeamLeaderboardEntry {
 
 export default function LeaderboardsPage() {
   const { user } = useAuth()
+  const scope = useTeamScope()
   
   // Role checks
   const isAgent = user?.role === 'agent'
@@ -181,13 +183,35 @@ export default function LeaderboardsPage() {
   
   // All roles can toggle between agent and team views
   const canToggleView = true
+  const canToggleScope = !scope.isOrgWide && !scope.isSelfOnly
   
   const [period, setPeriod] = React.useState('mtd')
   const [viewType, setViewType] = React.useState<'agent' | 'team'>(canToggleView ? 'agent' : 'team')
+  // Default team leads / supervisors to their scope; agents & executives see the whole floor
+  const [scopeFilter, setScopeFilter] = React.useState<'mine' | 'all'>(
+    canToggleScope ? 'mine' : 'all',
+  )
   const [customRange, setCustomRange] = React.useState<{ from?: Date; to?: Date }>({})
   const [calendarOpen, setCalendarOpen] = React.useState(false)
 
-  const leaderboard = React.useMemo(() => dataService.getLeaderboard(period as 'mtd' | 'qtd' | 'ytd'), [period])
+  const fullLeaderboard = React.useMemo(
+    () => dataService.getLeaderboard(period as 'mtd' | 'qtd' | 'ytd'),
+    [period],
+  )
+
+  // Filter to scope when requested
+  const leaderboard = React.useMemo(() => {
+    if (!canToggleScope || scopeFilter === 'all') return fullLeaderboard
+    const allowedAgents = new Set(scope.agentIds)
+    const allowedTeams = new Set(scope.teamIds)
+    const filtered = fullLeaderboard.filter(
+      (e) =>
+        allowedAgents.has(e.agentId) ||
+        (e.teamId && allowedTeams.has(e.teamId)),
+    )
+    // Re-rank within the filtered list to keep "#1" meaningful
+    return filtered.map((entry, idx) => ({ ...entry, rank: idx + 1 }))
+  }, [fullLeaderboard, scopeFilter, scope, canToggleScope])
   
   // Aggregate leaderboard data by team
   const teamLeaderboard = React.useMemo<TeamLeaderboardEntry[]>(() => {
@@ -295,10 +319,40 @@ export default function LeaderboardsPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Leaderboards</h1>
           <p className="text-muted-foreground">
-            See how you stack up against your peers
+            {canToggleScope && scopeFilter === 'mine'
+              ? `Rankings within ${scope.label}`
+              : 'See how you stack up against your peers'}
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {/* Scope Toggle - for team leads and supervisors */}
+          {canToggleScope && (
+            <div className="flex items-center bg-muted rounded-lg p-1">
+              <button
+                onClick={() => setScopeFilter('mine')}
+                className={cn(
+                  "px-3 py-1.5 text-sm font-medium rounded-md transition-all",
+                  scopeFilter === 'mine'
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {isSupervisor ? 'My Teams' : 'My Team'}
+              </button>
+              <button
+                onClick={() => setScopeFilter('all')}
+                className={cn(
+                  "px-3 py-1.5 text-sm font-medium rounded-md transition-all",
+                  scopeFilter === 'all'
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                All Floor
+              </button>
+            </div>
+          )}
+
           {/* View Toggle - only for Agent and Executive */}
           {canToggleView && (
             <div className="flex items-center bg-muted rounded-lg p-1">

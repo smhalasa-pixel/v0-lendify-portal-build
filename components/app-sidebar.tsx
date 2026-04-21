@@ -19,8 +19,12 @@ import {
   Shield,
   Settings,
   LogOut,
-  TrendingUp,
   MessageSquare,
+  PhoneCall,
+  Tv,
+  Flame,
+  Radio,
+  Sunrise,
 } from "lucide-react"
 
 import { useAuth } from "@/lib/auth-context"
@@ -58,7 +62,12 @@ type NavItem = {
 
 const mainNav: NavItem[] = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Pipeline", url: "/pipeline", icon: TrendingUp },
+  {
+    title: "Daily Huddle",
+    url: "/huddle",
+    icon: Sunrise,
+    roles: ["leadership", "supervisor", "executive", "admin"],
+  },
   { title: "Coaching", url: "/coaching", icon: MessageSquare },
   { title: "Leaderboards", url: "/leaderboards", icon: Trophy },
   { title: "Announcements", url: "/announcements", icon: Megaphone },
@@ -68,6 +77,18 @@ const mainNav: NavItem[] = [
   { title: "Tickets", url: "/tickets", icon: Ticket },
   { title: "Commissions", url: "/commissions", icon: DollarSign },
   { title: "Clawbacks", url: "/clawbacks", icon: RotateCcw },
+]
+
+const callsNav: NavItem[] = [
+  { title: "Command Center", url: "/calls", icon: PhoneCall },
+  { title: "Floor TV", url: "/calls/floor", icon: Tv },
+  { title: "Hot Leads", url: "/calls/hot-leads", icon: Flame },
+  {
+    title: "RingCentral",
+    url: "/calls/ringcentral",
+    icon: Radio,
+    roles: ["admin", "supervisor", "executive"],
+  },
 ]
 
 const qaNav: NavItem[] = [
@@ -137,6 +158,9 @@ export function AppSidebar() {
   const { user, logout } = useAuth()
   const { hasAccess } = useHasAccess()
 
+  const visibleCalls = callsNav.filter((item) =>
+    item.roles ? hasAccess(item.roles) : true,
+  )
   const visibleQa = qaNav.filter(() =>
     hasAccess(["admin", "qa_analyst", "qa_manager", "leadership"])
   )
@@ -186,7 +210,14 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <NavSection label="Workspace" items={mainNav} pathname={pathname} />
+        <NavSection
+          label="Workspace"
+          items={mainNav.filter((item) =>
+            item.roles ? hasAccess(item.roles) : true,
+          )}
+          pathname={pathname}
+        />
+        <NavSection label="Calls" items={visibleCalls} pathname={pathname} />
         <NavSection label="Quality" items={visibleQa} pathname={pathname} />
         <NavSection label="Real-time Adherence" items={visibleRta} pathname={pathname} />
         <NavSection label="Administration" items={visibleAdmin} pathname={pathname} />

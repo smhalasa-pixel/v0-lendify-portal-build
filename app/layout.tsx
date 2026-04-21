@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { Toaster } from 'sonner'
 import { AuthProvider } from '@/lib/auth-context'
 import './globals.css'
 
@@ -16,7 +17,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'Forge — Sales Operations Platform',
-  description: 'Internal sales operations platform for agents, team leaders, supervisors, and executives. Pipeline, QA, RTA, commissions, coaching — forged daily.',
+  description: 'Internal sales operations platform for agents, team leaders, supervisors, and executives. Live call monitoring, QA, RTA, commissions, coaching — forged daily.',
   generator: 'v0.app',
   icons: {
     icon: '/icon.svg',
@@ -40,6 +41,12 @@ export default function RootLayout({
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} dark bg-background`} suppressHydrationWarning>
       <body className="min-h-screen bg-background text-foreground font-sans antialiased">
         <AuthProvider>{children}</AuthProvider>
+        <Toaster
+          position="bottom-right"
+          richColors
+          closeButton
+          theme="dark"
+        />
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

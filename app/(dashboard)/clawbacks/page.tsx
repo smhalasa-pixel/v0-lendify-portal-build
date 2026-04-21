@@ -15,6 +15,7 @@ import type { DateRange } from 'react-day-picker'
 
 import { useAuth } from '@/lib/auth-context'
 import { dataService } from '@/lib/mock-data'
+import { useTeamScope } from '@/lib/team-scope'
 import { KPICard } from '@/components/dashboard/kpi-card'
 import { DateRangePicker } from '@/components/date-range-picker'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -83,6 +84,7 @@ function getTierBadgeColor(tier: number): string {
 
 export default function ClawbacksPage() {
   const { user } = useAuth()
+  const scope = useTeamScope()
   const isAgent = user?.role === 'agent'
 
   const [searchQuery, setSearchQuery] = React.useState('')
@@ -92,13 +94,14 @@ export default function ClawbacksPage() {
   const [selectedClawback, setSelectedClawback] = React.useState<string | null>(null)
   const [disputeReason, setDisputeReason] = React.useState('')
 
-  // Get clawbacks based on role
+  // Scope clawbacks to the user's visibility
   const allClawbacks = React.useMemo(() => {
-    if (isAgent && user) {
-      return dataService.getClawbacks(user.id)
-    }
-    return dataService.getClawbacks()
-  }, [user, isAgent])
+    const full = dataService.getClawbacks()
+    if (scope.isOrgWide) return full
+    if (scope.isSelfOnly && user) return full.filter((c) => c.agentId === user.id)
+    const allowed = new Set(scope.agentIds)
+    return full.filter((c) => allowed.has(c.agentId))
+  }, [scope, user])
 
   // Filter clawbacks
   const filteredClawbacks = React.useMemo(() => {
@@ -160,7 +163,9 @@ export default function ClawbacksPage() {
           <p className="text-muted-foreground">
             {isAgent
               ? 'Track and manage commission clawbacks'
-              : 'Manage all commission clawbacks and disputes'}
+              : scope.isOrgWide
+                ? 'Manage all commission clawbacks and disputes'
+                : `Clawbacks for ${scope.label}`}
           </p>
         </div>
         <DateRangePicker
@@ -245,6 +250,7 @@ export default function ClawbacksPage() {
               <TableHeader>
                 <TableRow className="bg-muted/30">
                   <TableHead className="font-semibold text-center">ID</TableHead>
+                  {!isAgent && <TableHead className="font-semibold text-center">Agent</TableHead>}
                   <TableHead className="font-semibold text-center">Client Name</TableHead>
                   <TableHead className="font-semibold text-center">Status</TableHead>
                   <TableHead className="font-semibold text-center">Debt Load</TableHead>
@@ -259,7 +265,7 @@ export default function ClawbacksPage() {
                 {filteredClawbacks.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={9}
+                      colSpan={isAgent ? 9 : 10}
                       className="text-center text-muted-foreground py-8"
                     >
                       No clawbacks found
@@ -275,6 +281,11 @@ export default function ClawbacksPage() {
                         <TableCell className="text-center font-mono text-xs text-muted-foreground">
                           {clawback.id.slice(0, 12)}
                         </TableCell>
+                        {!isAgent && (
+                          <TableCell className="text-center text-xs text-muted-foreground">
+                            {clawback.agentName}
+                          </TableCell>
+                        )}
                         <TableCell className="text-center font-medium">
                           {clawback.borrowerName}
                         </TableCell>

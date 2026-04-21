@@ -6,12 +6,10 @@ import {
   Coffee,
   Phone,
   PhoneForwarded,
-  PhoneMissed,
   PowerOff,
   Radio,
   Timer,
   TrendingUp,
-  ShieldAlert,
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"

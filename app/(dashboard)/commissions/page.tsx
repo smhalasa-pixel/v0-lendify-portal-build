@@ -17,6 +17,7 @@ import type { DateRange } from 'react-day-picker'
 
 import { useAuth } from '@/lib/auth-context'
 import { dataService } from '@/lib/mock-data'
+import { useTeamScope } from '@/lib/team-scope'
 import { KPICard } from '@/components/dashboard/kpi-card'
 import { DateRangePicker } from '@/components/date-range-picker'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -72,19 +73,25 @@ function getTierBadgeColor(tier: number): string {
 
 export default function CommissionsPage() {
   const { user } = useAuth()
+  const scope = useTeamScope()
   const isAgent = user?.role === 'agent'
 
   const [searchQuery, setSearchQuery] = React.useState('')
   const [statusFilter, setStatusFilter] = React.useState<string>('all')
   const [dateRange, setDateRange] = React.useState<DateRange | undefined>(undefined)
 
-  // Get commissions based on role
+  // Get commissions scoped to the user's visibility
+  //   - agent     : self only
+  //   - team lead : agents on their team
+  //   - supervisor: agents on all their teams
+  //   - exec/admin: everything
   const allCommissions = React.useMemo(() => {
-    if (isAgent && user) {
-      return dataService.getCommissions(user.id)
-    }
-    return dataService.getCommissions()
-  }, [user, isAgent])
+    const full = dataService.getCommissions()
+    if (scope.isOrgWide) return full
+    if (scope.isSelfOnly && user) return full.filter((c) => c.agentId === user.id)
+    const allowed = new Set(scope.agentIds)
+    return full.filter((c) => allowed.has(c.agentId))
+  }, [scope, user])
 
   // Filter commissions
   const filteredCommissions = React.useMemo(() => {
@@ -138,7 +145,11 @@ export default function CommissionsPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Commissions</h1>
           <p className="text-muted-foreground">
-            {isAgent ? 'Your commission history and earnings' : 'All commission records and payouts'}
+            {isAgent
+              ? 'Your commission history and earnings'
+              : scope.isOrgWide
+                ? 'All commission records and payouts'
+                : `Commissions for ${scope.label} (${scope.agentIds.length} agent${scope.agentIds.length === 1 ? '' : 's'})`}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -228,6 +239,7 @@ export default function CommissionsPage() {
               <TableHeader>
                 <TableRow className="bg-muted/30">
                   <TableHead className="font-semibold text-center">ID</TableHead>
+                  {!isAgent && <TableHead className="font-semibold text-center">Agent</TableHead>}
                   <TableHead className="font-semibold text-center">Client Name</TableHead>
                   <TableHead className="font-semibold text-center">Status</TableHead>
                   <TableHead className="font-semibold text-center">Debt Load</TableHead>
@@ -241,7 +253,7 @@ export default function CommissionsPage() {
                 {filteredCommissions.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={8}
+                      colSpan={isAgent ? 8 : 9}
                       className="text-center text-muted-foreground py-8"
                     >
                       No commissions found
@@ -257,6 +269,11 @@ export default function CommissionsPage() {
                         <TableCell className="text-center font-mono text-xs text-muted-foreground">
                           {commission.id.slice(0, 12)}
                         </TableCell>
+                        {!isAgent && (
+                          <TableCell className="text-center text-xs text-muted-foreground">
+                            {commission.agentName}
+                          </TableCell>
+                        )}
                         <TableCell className="text-center font-medium">
                           {commission.borrowerName}
                         </TableCell>
