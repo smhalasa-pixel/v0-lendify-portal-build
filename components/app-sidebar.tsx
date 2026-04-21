@@ -162,10 +162,24 @@ export function AppSidebar() {
     item.roles ? hasAccess(item.roles) : true,
   )
   const visibleQa = qaNav.filter(() =>
-    hasAccess(["admin", "qa_analyst", "qa_manager", "leadership"])
+    hasAccess([
+      "admin",
+      "qa_analyst",
+      "qa_senior",
+      "qa_trainer",
+      "supervisor",
+      "executive",
+      "leadership",
+    ])
   )
   const visibleRta = rtaNav.filter(() =>
-    hasAccess(["admin", "supervisor", "leadership", "rta_coordinator"])
+    hasAccess([
+      "admin",
+      "supervisor",
+      "executive",
+      "leadership",
+      "rta",
+    ])
   )
   const visibleAdmin = adminNav.filter(() => hasAccess(["admin"]))
 
